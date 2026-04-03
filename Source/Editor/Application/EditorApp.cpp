@@ -792,7 +792,8 @@ void EditorApp::TickFrame(float dt)
     m_Viewport.Update(dt);
     m_VoxelInspector.Update(dt);
     m_HUDPanel.Update(dt);
-    m_InteractionLoop.Tick(dt);
+    if (m_Toolbar.IsPieActive())
+        m_InteractionLoop.Tick(dt);
 
     // Toolbar strip at the top
     m_Toolbar.Draw(0.f, 0.f, static_cast<float>(m_ClientWidth), toolbarH);

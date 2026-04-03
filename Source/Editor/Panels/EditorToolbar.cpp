@@ -103,20 +103,25 @@ void EditorToolbar::Draw(float x, float y, float w, float h)
         bx += gap * 2.f;
     }
 
-    // Play / Reset — restarts the interaction loop
-    if (DrawButton(bx, btnY, btnW, btnH, "> Play", kBtnBgPlay, kTextColor)) {
-        if (m_Loop) {
-            m_Loop->Reset();
-            Logger::Log(LogLevel::Info, "EditorToolbar", "Interaction loop reset (Play)");
+    // Play — enters PIE; resets the loop on first press so it starts fresh.
+    {
+        const uint32_t playBg = m_PieActive ? kBtnBgActive : kBtnBgPlay;
+        if (DrawButton(bx, btnY, btnW, btnH, "> Play", playBg, kTextColor)) {
+            if (!m_PieActive) {
+                m_PieActive = true;
+                if (m_Loop) m_Loop->Reset();
+                Logger::Log(LogLevel::Info, "EditorToolbar", "PIE started");
+            }
         }
     }
     bx += btnW + gap;
 
-    // Stop — also resets (placeholder for a future pause state)
+    // Stop — exits PIE and resets the loop back to initial state.
     if (DrawButton(bx, btnY, btnW, btnH, "[] Stop", kBtnBgStop, kTextColor)) {
-        if (m_Loop) {
-            m_Loop->Reset();
-            Logger::Log(LogLevel::Info, "EditorToolbar", "Interaction loop reset (Stop)");
+        if (m_PieActive) {
+            m_PieActive = false;
+            if (m_Loop) m_Loop->Reset();
+            Logger::Log(LogLevel::Info, "EditorToolbar", "PIE stopped");
         }
     }
     bx += btnW + gap;
@@ -145,8 +150,10 @@ void EditorToolbar::Draw(float x, float y, float w, float h)
                     CloseHandle(pi.hProcess);
                     CloseHandle(pi.hThread);
                 } else {
+                    const DWORD err = GetLastError();
                     Logger::Log(LogLevel::Warning, "EditorToolbar",
-                                "CreateProcess failed for NovaForgeGame.exe");
+                                "CreateProcess failed for NovaForgeGame.exe (error "
+                                + std::to_string(err) + ")");
                 }
             }
         }

@@ -25,11 +25,15 @@ public:
     /// @brief Returns the fixed toolbar height (same as kHeight).
     [[nodiscard]] float GetHeight() const noexcept { return kHeight; }
 
+    /// @brief Returns true when Play-In-Editor is active.
+    [[nodiscard]] bool IsPieActive() const noexcept { return m_PieActive; }
+
 private:
     UIRenderer*                m_Renderer{nullptr};
     NF::Game::InteractionLoop* m_Loop{nullptr};
     EditorInputState*          m_Input{nullptr};
     nf::EditorToolContext*     m_ToolContext{nullptr};
+    bool                       m_PieActive{false};  ///< True while Play-In-Editor is running.
 
     /// @brief Draw a labelled button; returns true when clicked this frame.
     bool DrawButton(float x, float y, float w, float h, const char* label,
