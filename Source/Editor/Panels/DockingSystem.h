@@ -37,6 +37,11 @@ public:
 
     void SetUIRenderer(UIRenderer* renderer) noexcept { m_Renderer = renderer; }
     void RegisterPanel(const std::string& name, DrawFn drawFn);
+
+    /// @brief Mark a panel as transparent so the docking system does not draw
+    ///        an opaque background behind it.  Use this for the 3-D Viewport
+    ///        panel so the OpenGL scene is visible through the chrome.
+    void SetPanelTransparent(const std::string& name);
     void SetRootSplit(const std::string& leftPanel,
                       const std::string& rightPanel,
                       float ratio = 0.25f);
@@ -65,6 +70,7 @@ private:
     std::vector<DockNode>   m_Nodes;
     std::vector<PanelEntry> m_Panels;
     std::vector<PanelRect>  m_LastPanelRects;
+    std::vector<std::string> m_TransparentPanels; ///< Panels that skip background drawing.
     uint32_t                m_NextId{1};
     UIRenderer*             m_Renderer{nullptr};
 

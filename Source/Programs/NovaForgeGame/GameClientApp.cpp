@@ -325,6 +325,9 @@ void GameClientApp::Shutdown()
 
 void GameClientApp::TickFrame(float dt)
 {
+    m_RenderDevice->BeginFrame();
+    m_RenderDevice->Clear(0.10f, 0.10f, 0.12f, 1.f);
+
     // --- Phase 5: read input and feed to PlayerMovement ---
     {
         auto& pm = m_Orchestrator.GetPlayerMovement();
@@ -354,6 +357,7 @@ void GameClientApp::TickFrame(float dt)
         NF::Matrix4x4 view = GetViewMatrix();
         NF::Matrix4x4 proj = GetProjectionMatrix();
         m_ForwardRenderer.BeginScene(view, proj);
+        m_MeshCache.SetCameraPosition(m_Orchestrator.GetPlayerMovement().GetEyePosition());
         m_MeshCache.Render();
         m_ForwardRenderer.EndScene();
     }
@@ -364,6 +368,8 @@ void GameClientApp::TickFrame(float dt)
     m_UIRenderer.BeginFrame();
     DrawHUD();
     m_UIRenderer.EndFrame();
+
+    m_RenderDevice->EndFrame();
 }
 
 // ---------------------------------------------------------------------------
