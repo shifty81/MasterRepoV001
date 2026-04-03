@@ -12,6 +12,25 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${NF_OUTPUT_ROOT}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${NF_OUTPUT_ROOT}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${NF_OUTPUT_ROOT}/lib)
 
+# ---------------------------------------------------------------------------
+# Mirror project folders into the output directory so the executables can
+# find Content/, Config/, and Saved/ relative to Nova_<version>/.
+# During development we create symbolic links so edits are reflected
+# immediately without a copy step.
+# ---------------------------------------------------------------------------
+file(MAKE_DIRECTORY "${NF_OUTPUT_ROOT}/Saved/Logs")
+
+# Symlink Content/ and Config/ into the output tree.
+foreach(_dir Content Config)
+    if(NOT EXISTS "${NF_OUTPUT_ROOT}/${_dir}")
+        file(CREATE_LINK
+             "${CMAKE_SOURCE_DIR}/${_dir}"
+             "${NF_OUTPUT_ROOT}/${_dir}"
+             SYMBOLIC)
+        message(STATUS "  Linked ${_dir}/ -> Nova_${PROJECT_VERSION}/${_dir}/")
+    endif()
+endforeach()
+
 # Build options
 option(NF_BUILD_EDITOR "Build NovaForge Editor" ON)
 option(NF_BUILD_GAME   "Build NovaForge Game Runtime" ON)

@@ -1,6 +1,7 @@
 // Entry point for the NovaForge Game runtime
 #include "GameClientApp.h"
 #include "Core/Logging/Log.h"
+#include <filesystem>
 
 #ifdef _WIN32
 // Build as a WIN32 (windowed) application but keep using main() as entry point
@@ -8,8 +9,22 @@
 #pragma comment(linker, "/subsystem:windows /entry:mainCRTStartup")
 #endif
 
-int main(int /*argc*/, char* /*argv*/[])
+int main(int /*argc*/, char* argv[])
 {
+    // Set the working directory to the parent of the executable's directory
+    // so that Content/, Config/, and Saved/ resolve correctly when the
+    // executable lives inside Nova_<version>/bin/.
+    {
+        std::error_code ec;
+        auto exeDir = std::filesystem::weakly_canonical(
+            std::filesystem::path(argv[0]).parent_path(), ec);
+        if (!ec && !exeDir.empty()) {
+            auto parentDir = exeDir.parent_path();
+            if (std::filesystem::exists(parentDir / "Config" / "novaforge.project.json", ec))
+                std::filesystem::current_path(parentDir, ec);
+        }
+    }
+
     NF::Logger::Log(NF::LogLevel::Info, "Game", "Starting NovaForge Game");
 
     NF::Game::GameClientApp app;
