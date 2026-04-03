@@ -28,14 +28,17 @@ void EditorModeManager::Draw(float x, float y, float w, float h)
     const auto& theme = ActiveTheme();
     const float dpi   = m_Renderer->GetDpiScale();
 
-    // Strip background — slightly darker than toolbar.
-    m_Renderer->DrawRect({x, y, w, h}, theme.toolbarBg);
+    // Strip background — distinct from toolbar so the band is clearly visible.
+    m_Renderer->DrawRect({x, y, w, h}, theme.modeTabBg);
+    // Top separator to distinguish from Band 1 (toolbar).
+    m_Renderer->DrawRect({x, y, w, 1.f}, theme.separator);
+    // Bottom separator.
     m_Renderer->DrawRect({x, y + h - 1.f, w, 1.f}, theme.separator);
 
     // Tab layout.
     constexpr int modeCount = static_cast<int>(EditorMode::Count);
-    const float tabW   = 80.f * dpi;
-    const float tabH   = h - 2.f;
+    const float tabW   = 90.f * dpi;
+    const float tabH   = h - 4.f;
     const float padX   = 8.f * dpi;
     float cx = x + padX;
 
@@ -52,24 +55,26 @@ void EditorModeManager::Draw(float x, float y, float w, float h)
                 SetActiveMode(mode);
         }
 
-        // Tab background.
+        // Tab background — always draw a subtle bg so tabs are visible.
         uint32_t bg = active  ? theme.selectBg
                     : hovered ? theme.hoverBg
-                              : 0x00000000; // transparent
-        if (bg != 0)
-            m_Renderer->DrawRect({cx, y + 1.f, tabW, tabH}, bg);
+                              : theme.buttonBg;
+        m_Renderer->DrawRect({cx, y + 2.f, tabW, tabH}, bg);
+
+        // Tab outline so each tab is visually distinct.
+        m_Renderer->DrawOutlineRect({cx, y + 2.f, tabW, tabH}, theme.panelBorder);
 
         // Active accent bar at the bottom of the tab.
         if (active)
             m_Renderer->DrawRect({cx, y + h - 3.f, tabW, 3.f}, theme.worldAccent);
 
-        // Label.
+        // Label — scale 2.0 to match toolbar text size.
         const char* label = EditorModeName(mode);
-        const uint32_t textCol = active ? theme.textHeader : theme.textSecondary;
+        const uint32_t textCol = active ? theme.textHeader : theme.textPrimary;
         m_Renderer->DrawText(label,
-                             cx + 6.f * dpi,
+                             cx + 8.f * dpi,
                              y + 4.f * dpi,
-                             textCol, 1.8f);
+                             textCol, 2.f);
 
         cx += tabW + 2.f * dpi;
     }

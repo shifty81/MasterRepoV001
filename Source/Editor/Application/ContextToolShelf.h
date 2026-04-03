@@ -17,7 +17,7 @@ namespace NF::Editor {
 class ContextToolShelf {
 public:
     /// @brief Logical height (pre-DPI) of the tool shelf.
-    static constexpr float kShelfHeight = 22.f;
+    static constexpr float kShelfHeight = 26.f;
 
     ContextToolShelf() = default;
 

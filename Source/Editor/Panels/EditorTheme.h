@@ -22,6 +22,8 @@ struct Theme {
     uint32_t titleBarBg;       ///< Panel title bar fill.
     uint32_t titleBarAccent;   ///< Thin accent strip at the top of a title bar.
     uint32_t toolbarBg;        ///< Toolbar row background.
+    uint32_t modeTabBg;        ///< Mode-tab strip background (Band 2).
+    uint32_t shelfBg;          ///< Context tool-shelf background (Band 3).
     uint32_t menuBarBg;        ///< Menu bar row background.
     uint32_t menuOpenBg;       ///< Open menu header highlight.
     uint32_t dropdownBg;       ///< Drop-down panel background.
@@ -103,6 +105,8 @@ inline constexpr Theme kDarkTheme {
     .titleBarBg     = 0x2F343DFF,
     .titleBarAccent = 0x5E89B8FF,
     .toolbarBg      = 0x252527FF,
+    .modeTabBg      = 0x2A2D33FF,
+    .shelfBg        = 0x30333AFF,
     .menuBarBg      = 0x2D2D30FF,
     .menuOpenBg     = 0x3E3E42FF,
     .dropdownBg     = 0x1E1E1EFF,
@@ -180,6 +184,8 @@ inline constexpr Theme kLightTheme {
     .titleBarBg     = 0xE0E0E4FF,
     .titleBarAccent = 0x3574B0FF,
     .toolbarBg      = 0xE8E8E8FF,
+    .modeTabBg      = 0xDDDDE0FF,
+    .shelfBg        = 0xD4D4D8FF,
     .menuBarBg      = 0xF2F2F2FF,
     .menuOpenBg     = 0xCCDDEEFF,
     .dropdownBg     = 0xFFFFFFFF,
@@ -257,6 +263,8 @@ inline constexpr Theme kHighContrastTheme {
     .titleBarBg     = 0x1A1A1AFF,
     .titleBarAccent = 0xFFFF00FF,
     .toolbarBg      = 0x0A0A0AFF,
+    .modeTabBg      = 0x141414FF,
+    .shelfBg        = 0x1A1A1AFF,
     .menuBarBg      = 0x111111FF,
     .menuOpenBg     = 0x333333FF,
     .dropdownBg     = 0x0A0A0AFF,
