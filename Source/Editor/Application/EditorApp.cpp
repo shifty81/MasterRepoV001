@@ -930,9 +930,6 @@ void EditorApp::ApplyPropertyEditsToWorld()
             }
         }
     }
-
-    // Mark world dirty for any property edit
-    m_ToolContext.worldDirty = true;
 }
 
 // ---------------------------------------------------------------------------

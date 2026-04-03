@@ -409,7 +409,9 @@ TEST_CASE("Voxel edits persist across save and reload", "[Persistence]") {
     const auto coords = chunkMap.GetLoadedCoords();
     REQUIRE(!coords.empty());
 
-    // Place a specific voxel at a known location using the edit API
+    // Place a specific voxel at a known location using the edit API.
+    // Terrain generation height is 8 + (wx*3 + wz*7) % 5, max 12.
+    // Using y=30 guarantees we're above generated terrain (Air region).
     const int32_t testX = coords[0].X * kChunkSize + 1;
     const int32_t testY = 30;  // Well above default terrain height (max ~12)
     const int32_t testZ = coords[0].Z * kChunkSize + 1;
