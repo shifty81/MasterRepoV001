@@ -25,7 +25,7 @@
 - [ ] wire `PropertyInspectorSystem` with dirty tracking — Inspector shows read-only data; editing not wired
 - [x] bind `WorldOutlinerPanel` to real world/chunk data — `SceneOutliner` reads `Level.GetWorld().GetLiveEntities()`
 - [x] bind status bar to live tool/mode/selection state — `StatusBarPanel` reflects tool/world/chunk state
-- [ ] bind menu/toolbar enable state to command availability — commands have `CanExecute` but toolbar doesn't check it
+- [x] bind menu/toolbar enable state to command availability — Undo/Redo toolbar buttons check `CanExecute`; drop-down items dim when disabled; File/Edit/View menus wired to `EditorCommandRegistry`
 
 ## Phase 4 — Dev World Baseline
 - [x] boot editor directly into `DevWorld` — confirmed; 9 chunks loaded on first boot
