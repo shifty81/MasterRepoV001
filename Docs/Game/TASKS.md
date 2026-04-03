@@ -38,7 +38,7 @@
 - [x] wire voxel inspect/add/remove from viewport hit data — all four tool modes functional
 - [x] add voxel edit undo/redo — `VoxelPlaceCommand` and `VoxelRemoveCommand` pushed through `CommandHistory`
 - [x] batch chunk mesh invalidation — `ChunkMeshCache.RebuildDirty()` called every frame
-- [ ] separate collision rebuild from mesh rebuild where possible — not implemented
+- [x] separate collision rebuild from mesh rebuild where possible — dual dirty flags (m_MeshDirty/m_CollisionDirty) in Chunk; ChunkMap provides GetMeshDirtyChunks/GetCollisionDirtyChunks
 - [x] prove starter R.I.G. interaction loop — `RigState` + `Inventory` + `MiningTool` + PIE mode working
 - [x] launch standalone client from editor workflow — `CreateProcess` path correct; error now logged with code
 

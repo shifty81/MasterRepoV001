@@ -1,5 +1,6 @@
 #include "Editor/Application/ContextToolShelf.h"
 #include "Editor/Panels/EditorTheme.h"
+#include <cstring>
 
 namespace NF::Editor {
 
@@ -7,14 +8,18 @@ namespace NF::Editor {
 // Helpers
 // ---------------------------------------------------------------------------
 
+static constexpr float kCharWidthEstimate = 6.f;   // approx px per char at scale 1.0
+static constexpr float kShelfTextScale    = 1.5f;
+static constexpr float kLabelPadRight     = 8.f;
+static constexpr float kBtnPadInner       = 4.f;
+
 void ContextToolShelf::DrawLabel(float& cx, float y, float h,
                                  const char* text, uint32_t color)
 {
     if (!m_Renderer) return;
     const float dpi = m_Renderer->GetDpiScale();
-    m_Renderer->DrawText(text, cx, y + 3.f * dpi, color, 1.5f);
-    // Estimate label width (approx 6px per char at scale 1.5)
-    cx += static_cast<float>(std::char_traits<char>::length(text)) * 6.f * dpi * 1.5f + 8.f * dpi;
+    m_Renderer->DrawText(text, cx, y + 3.f * dpi, color, kShelfTextScale);
+    cx += static_cast<float>(std::strlen(text)) * kCharWidthEstimate * dpi * kShelfTextScale + kLabelPadRight * dpi;
 }
 
 bool ContextToolShelf::DrawShelfButton(float& cx, float y, float h,
@@ -24,7 +29,7 @@ bool ContextToolShelf::DrawShelfButton(float& cx, float y, float h,
 
     const auto& theme = ActiveTheme();
     const float dpi   = m_Renderer->GetDpiScale();
-    const float btnW  = static_cast<float>(std::char_traits<char>::length(label)) * 6.f * dpi * 1.5f + 12.f * dpi;
+    const float btnW  = static_cast<float>(std::strlen(label)) * kCharWidthEstimate * dpi * kShelfTextScale + 12.f * dpi;
     const float btnH  = h - 4.f;
     const float btnY  = y + 2.f;
 
@@ -43,9 +48,9 @@ bool ContextToolShelf::DrawShelfButton(float& cx, float y, float h,
     m_Renderer->DrawOutlineRect({cx, btnY, btnW, btnH}, theme.panelBorder);
 
     uint32_t textCol = active ? theme.textHeader : theme.textPrimary;
-    m_Renderer->DrawText(label, cx + 4.f * dpi, btnY + 2.f * dpi, textCol, 1.5f);
+    m_Renderer->DrawText(label, cx + kBtnPadInner * dpi, btnY + 2.f * dpi, textCol, kShelfTextScale);
 
-    cx += btnW + 4.f * dpi;
+    cx += btnW + kBtnPadInner * dpi;
     return clicked;
 }
 
