@@ -8,7 +8,7 @@
 
 ## Phase 1 — Editor Reality Pass
 - [x] verify the editor window is fully interactive — Win32 window, DPI-aware, confirmed booting
-- [ ] fix font/theme defaults — stb_easy_font is functional but no bitmap font pass yet
+- [x] fix font/theme defaults — centralized EditorTheme system with Dark/Light/HighContrast presets; all panels wired to ActiveTheme()
 - [x] fix DPI-aware resize/maximize behavior — `SetProcessDpiAwarenessContext` + `WM_DPICHANGED` wired
 - [x] verify dock layout remains stable — DockingSystem confirmed stable in screenshot
 - [x] bind menu and toolbar actions to real commands — 9 commands registered in `EditorCommandRegistry`
