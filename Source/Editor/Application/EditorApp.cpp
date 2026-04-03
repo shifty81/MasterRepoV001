@@ -2,6 +2,7 @@
 #include "Core/Config/ProjectManifest.h"
 #include "Core/Logging/Log.h"
 #include "Game/Voxel/VoxelType.h"
+#include "Game/Voxel/Chunk.h"
 #include <chrono>
 
 #ifdef _WIN32
@@ -334,6 +335,9 @@ bool EditorApp::Init() {
     m_Toolbar.SetInputState(&m_Input);
     m_Toolbar.SetToolContext(&m_ToolContext);
 
+    // Wire PropertyInspectorSystem to Inspector so it renders the property grid
+    m_Inspector.SetPropertyInspectorSystem(&m_PropertyInspectorSystem);
+
     // ---- Command registry and hotkeys ----
     RegisterEditorCommands();
     m_HotkeyMap.BuildDefaultBindings();
@@ -350,6 +354,8 @@ bool EditorApp::Init() {
         handle.label = "Entity " + std::to_string(id);
         m_Selection.Select(handle);
         m_Inspector.SetSelectedEntity(id, &m_Level.GetWorld());
+        BuildPropertySetForSelection(handle);
+        UpdateViewportHighlight();
     });
 
     // Use manifest content root if available, else default
@@ -696,6 +702,8 @@ void EditorApp::SyncInspectorToSelection()
 {
     if (!m_Selection.HasSelection()) {
         m_Inspector.SetSelectedEntity(NullEntity, nullptr);
+        m_PropertyInspectorSystem.Clear();
+        UpdateViewportHighlight();
         return;
     }
 
@@ -713,6 +721,140 @@ void EditorApp::SyncInspectorToSelection()
         m_Inspector.SetSelectedEntity(NullEntity, nullptr);
         break;
     }
+
+    BuildPropertySetForSelection(handle);
+    UpdateViewportHighlight();
+}
+
+// ---------------------------------------------------------------------------
+// BuildPropertySetForSelection
+// ---------------------------------------------------------------------------
+
+void EditorApp::BuildPropertySetForSelection(const nf::SelectionHandle& handle)
+{
+    nf::PropertySet ps;
+    ps.title = "Selection";
+
+    ps.entries.push_back({
+        "Label", nf::PropertyType::String, nf::PropertyWidgetHint::TextField,
+        handle.label, {}, false, false
+    });
+    ps.entries.push_back({
+        "Id", nf::PropertyType::Int, nf::PropertyWidgetHint::ReadOnlyLabel,
+        static_cast<int>(handle.id & 0x7FFFFFFF), {}, true, false
+    });
+
+    switch (handle.kind) {
+    case nf::SelectionKind::WorldObject:
+        ps.entries.push_back({
+            "Kind", nf::PropertyType::String, nf::PropertyWidgetHint::ReadOnlyLabel,
+            std::string("WorldObject"), {}, true, false
+        });
+        break;
+    case nf::SelectionKind::Chunk:
+        ps.entries.push_back({
+            "Kind", nf::PropertyType::String, nf::PropertyWidgetHint::ReadOnlyLabel,
+            std::string("Chunk"), {}, true, false
+        });
+        ps.entries.push_back({
+            "Visible", nf::PropertyType::Bool, nf::PropertyWidgetHint::Checkbox,
+            true, {}, false, false
+        });
+        break;
+    case nf::SelectionKind::Voxel: {
+        ps.entries.push_back({
+            "Kind", nf::PropertyType::String, nf::PropertyWidgetHint::ReadOnlyLabel,
+            std::string("Voxel"), {}, true, false
+        });
+        const int32_t vx = nf::UnpackVoxelCoord(handle.id, 0);
+        const int32_t vy = nf::UnpackVoxelCoord(handle.id, nf::kVoxelCoordBits);
+        const int32_t vz = nf::UnpackVoxelCoord(handle.id, nf::kVoxelCoordBits * 2);
+        ps.entries.push_back({"X", nf::PropertyType::Int, nf::PropertyWidgetHint::ReadOnlyLabel,
+            static_cast<int>(vx), {}, true, false});
+        ps.entries.push_back({"Y", nf::PropertyType::Int, nf::PropertyWidgetHint::ReadOnlyLabel,
+            static_cast<int>(vy), {}, true, false});
+        ps.entries.push_back({"Z", nf::PropertyType::Int, nf::PropertyWidgetHint::ReadOnlyLabel,
+            static_cast<int>(vz), {}, true, false});
+        const int typeId = static_cast<int>(
+            m_GameWorld.GetVoxelEditApi().GetVoxel(vx, vy, vz));
+        ps.entries.push_back({
+            "Type", nf::PropertyType::Int, nf::PropertyWidgetHint::NumericField,
+            typeId, {}, false, false
+        });
+        break;
+    }
+    case nf::SelectionKind::Asset:
+        ps.entries.push_back({
+            "Kind", nf::PropertyType::String, nf::PropertyWidgetHint::ReadOnlyLabel,
+            std::string("Asset"), {}, true, false
+        });
+        break;
+    default:
+        break;
+    }
+
+    m_PropertyInspectorSystem.SetPropertySet(std::move(ps));
+}
+
+// ---------------------------------------------------------------------------
+// UpdateViewportHighlight
+// ---------------------------------------------------------------------------
+
+void EditorApp::UpdateViewportHighlight()
+{
+    ViewportHighlightState state;
+    if (m_Selection.HasSelection()) {
+        const auto& h    = m_Selection.GetSelection();
+        state.highlightLabel = h.label;
+        switch (h.kind) {
+        case nf::SelectionKind::WorldObject:
+            state.selectedWorldObjectId = h.id;
+            break;
+        case nf::SelectionKind::Chunk:
+            state.selectedChunkId = h.id;
+            break;
+        case nf::SelectionKind::Voxel:
+            state.selectedVoxelId = h.id;
+            break;
+        default:
+            break;
+        }
+    }
+    m_Viewport.SetHighlightState(std::move(state));
+}
+
+// ---------------------------------------------------------------------------
+// RebuildWorldOutliner
+// ---------------------------------------------------------------------------
+
+void EditorApp::RebuildWorldOutliner()
+{
+    const auto& chunkMap = m_GameWorld.GetChunkMap();
+    const auto  coords   = chunkMap.GetLoadedCoords();
+
+    std::vector<RuntimeChunkMetadata> chunks;
+    chunks.reserve(coords.size());
+    for (const auto& coord : coords) {
+        RuntimeChunkMetadata meta;
+        // Build a stable chunk ID from the coordinate fields.
+        meta.id = (static_cast<std::uint64_t>(static_cast<std::uint32_t>(coord.X)))
+                | (static_cast<std::uint64_t>(static_cast<std::uint32_t>(coord.Y)) << 20u)
+                | (static_cast<std::uint64_t>(static_cast<std::uint32_t>(coord.Z)) << 40u);
+        meta.coordX = coord.X;
+        meta.coordY = coord.Y;
+        meta.coordZ = coord.Z;
+        meta.label  = "Chunk (" + std::to_string(coord.X) + ","
+                    + std::to_string(coord.Y) + ","
+                    + std::to_string(coord.Z) + ")";
+        const auto* chunk = chunkMap.GetChunk(coord);
+        meta.loaded = (chunk != nullptr);
+        meta.dirty  = (chunk != nullptr && chunk->IsDirty());
+        chunks.push_back(std::move(meta));
+    }
+
+    m_SceneOutliner.SetChunkData(
+        m_GameWorld.IsReady() ? "DevWorld" : "No World",
+        std::move(chunks));
 }
 
 // ---------------------------------------------------------------------------
@@ -801,6 +943,7 @@ void EditorApp::TickFrame(float dt)
 
     // ---- Update editor state ----
     UpdateStatusBar();
+    RebuildWorldOutliner();
 
     // Begin UI rendering pass (2-D overlay on top of the 3-D scene)
     m_UIRenderer.SetViewportSize(static_cast<float>(m_ClientWidth),
