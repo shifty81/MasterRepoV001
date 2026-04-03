@@ -2,6 +2,7 @@ add_library(NFEditor STATIC
     Application/EditorApp.cpp
     Viewport/EditorViewport.cpp
     Viewport/TransformGizmo.cpp
+    Panels/EditorTheme.cpp
     Panels/SceneOutliner.cpp
     Panels/Inspector.cpp
     Panels/ContentBrowser.cpp

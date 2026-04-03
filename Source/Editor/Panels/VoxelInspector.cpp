@@ -1,4 +1,5 @@
 #include "Editor/Panels/VoxelInspector.h"
+#include "Editor/Panels/EditorTheme.h"
 #include "UI/Rendering/UIRenderer.h"
 #include "Game/Voxel/ChunkCoord.h"
 #include <string>
@@ -11,13 +12,14 @@ void VoxelInspector::Update([[maybe_unused]] float dt) {}
 void VoxelInspector::Draw(float x, float y, float w, float h) {
     if (!m_Renderer) return;
 
-    static constexpr uint32_t kTextColor    = 0xB0B0B0FF;
-    static constexpr uint32_t kLabelColor   = 0x808080FF;
-    static constexpr uint32_t kHoverColor   = 0x3F3F50FF;
-    static constexpr uint32_t kSelectColor  = 0x264F78FF;
-    static constexpr uint32_t kToggleOnCol  = 0x3B8A3BFF; // green = on
-    static constexpr uint32_t kToggleOffCol = 0x8A3B3BFF; // red   = off
-    static constexpr uint32_t kSepColor     = 0x444444FF;
+    const auto& t = ActiveTheme();
+    const uint32_t kTextColor    = t.textPrimary;
+    const uint32_t kLabelColor   = t.textSecondary;
+    const uint32_t kHoverColor   = t.hoverBg;
+    const uint32_t kSelectColor  = t.selectBg;
+    const uint32_t kToggleOnCol  = t.toggleOn;
+    const uint32_t kToggleOffCol = t.toggleOff;
+    const uint32_t kSepColor     = t.separator;
 
     const float dpi   = m_Renderer->GetDpiScale();
     const float lineH = 18.f * dpi;

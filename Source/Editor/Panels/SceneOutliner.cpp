@@ -1,4 +1,5 @@
 #include "Editor/Panels/SceneOutliner.h"
+#include "Editor/Panels/EditorTheme.h"
 #include "UI/Rendering/UIRenderer.h"
 #include <string>
 #include <utility>
@@ -16,14 +17,15 @@ void SceneOutliner::SetChunkData(std::string worldName, std::vector<RuntimeChunk
 void SceneOutliner::Draw(float x, float y, float w, float h) {
     if (!m_Renderer) return;
 
-    static constexpr uint32_t kTextColor   = 0xB0B0B0FF;
-    static constexpr uint32_t kLabelColor  = 0x808080FF;
-    static constexpr uint32_t kHoverColor  = 0x3F3F50FF;
-    static constexpr uint32_t kSelectColor = 0x264F78FF;
-    static constexpr uint32_t kHeaderColor = 0xCCCCCCFF;
-    static constexpr uint32_t kSepColor    = 0x444444FF;
-    static constexpr uint32_t kDirtyColor  = 0xFFAA44FF;
-    static constexpr uint32_t kWorldColor  = 0x78C8FFFF;
+    const auto& t = ActiveTheme();
+    const uint32_t kTextColor   = t.textPrimary;
+    const uint32_t kLabelColor  = t.textSecondary;
+    const uint32_t kHoverColor  = t.hoverBg;
+    const uint32_t kSelectColor = t.selectBg;
+    const uint32_t kHeaderColor = t.textHeader;
+    const uint32_t kSepColor    = t.separator;
+    const uint32_t kDirtyColor  = t.dirty;
+    const uint32_t kWorldColor  = t.worldAccent;
 
     const float dpi   = m_Renderer->GetDpiScale();
     const float lineH = 18.f * dpi;

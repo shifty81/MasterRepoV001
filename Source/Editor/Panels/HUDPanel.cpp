@@ -1,4 +1,5 @@
 #include "Editor/Panels/HUDPanel.h"
+#include "Editor/Panels/EditorTheme.h"
 #include "UI/Rendering/UIRenderer.h"
 #include "Game/Interaction/ResourceItem.h"
 #include "Game/World/GameWorld.h"
@@ -15,8 +16,8 @@ void HUDPanel::DrawBar(float x, float y, float w, float barH,
 {
     if (!m_Renderer) return;
 
-    constexpr uint32_t kBgColor   = 0x1F2329FF;
-    constexpr uint32_t kTextColor = 0xDDE3EAFF;
+    const uint32_t kBgColor   = ActiveTheme().hudBg;
+    const uint32_t kTextColor = ActiveTheme().hudText;
     constexpr uint32_t kGlowColor = 0xFFFFFF10;
     const float dpi   = m_Renderer->GetDpiScale();
     const float scale = 2.f;
@@ -37,15 +38,16 @@ void HUDPanel::DrawBar(float x, float y, float w, float barH,
 void HUDPanel::Draw(float x, float y, float w, float h) {
     if (!m_Renderer) return;
 
-    constexpr uint32_t kTextColor   = 0xD5DCE4FF;
-    constexpr uint32_t kLabelColor  = 0x93A1B2FF;
-    constexpr uint32_t kSepColor    = 0x3F4A57FF;
-    constexpr uint32_t kPanelGlow   = 0xFFFFFF08;
-    constexpr uint32_t kHealthCol   = 0x4FCB74FF;
-    constexpr uint32_t kEnergyCol   = 0x4FA3FFFF;
-    constexpr uint32_t kItemCol     = 0xE2B36AFF;
-    constexpr uint32_t kReadyCol    = 0x58C27DFF;
-    constexpr uint32_t kWarnCol     = 0xE0A84EFF;
+    const auto& t = ActiveTheme();
+    const uint32_t kTextColor   = t.hudText;
+    const uint32_t kLabelColor  = t.hudLabel;
+    const uint32_t kSepColor    = t.hudSep;
+    const uint32_t kPanelGlow   = t.hudGlow;
+    const uint32_t kHealthCol   = t.healthBar;
+    const uint32_t kEnergyCol   = t.energyBar;
+    const uint32_t kItemCol     = t.itemColor;
+    const uint32_t kReadyCol    = t.readyColor;
+    const uint32_t kWarnCol     = t.warnColor;
 
     const float dpi   = m_Renderer->GetDpiScale();
     const float lineH = 18.f * dpi;

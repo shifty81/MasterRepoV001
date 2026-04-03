@@ -1,4 +1,5 @@
 #pragma once
+#include "Editor/Panels/EditorTheme.h"
 #include <cstdint>
 #include <string>
 
@@ -7,9 +8,6 @@ namespace NF { class UIRenderer; }
 namespace NF::Editor {
 
 struct EditorInputState;
-
-/// @brief Editor colour theme.
-enum class EditorTheme { Dark, Light, HighContrast };
 
 /// @brief Persistent editor preferences stored and loaded on disk.
 ///
