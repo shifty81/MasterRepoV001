@@ -4,6 +4,7 @@
 #include "Game/Voxel/VoxelType.h"
 #include "Game/Voxel/Chunk.h"
 #include "Editor/Commands/VoxelEditCommands.h"
+#include <algorithm>
 #include <chrono>
 
 #ifdef _WIN32
@@ -911,7 +912,7 @@ void EditorApp::ApplyPropertyEditsToWorld()
 
                 const auto oldType = m_GameWorld.GetVoxelEditApi().GetVoxel(vx, vy, vz);
                 const auto newType = static_cast<NF::Game::VoxelId>(
-                    std::max(0, std::min(255, std::get<int>(entry.value))));
+                    std::clamp(std::get<int>(entry.value), 0, 255));
 
                 if (newType != oldType) {
                     auto cmd = std::make_shared<VoxelTypeEditCommand>(
