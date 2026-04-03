@@ -47,7 +47,8 @@ public:
         if (x >= kChunkSize || y >= kChunkSize || z >= kChunkSize)
             return false;
         m_Voxels[LocalToIndex(x, y, z)] = id;
-        m_Dirty = true;
+        m_MeshDirty = true;
+        m_CollisionDirty = true;
         return true;
     }
 
@@ -75,18 +76,32 @@ public:
 
     // ---- Dirty state --------------------------------------------------------
 
-    [[nodiscard]] bool IsDirty() const noexcept { return m_Dirty; }
+    /// @brief True when the chunk's visual mesh needs rebuilding.
+    [[nodiscard]] bool IsMeshDirty() const noexcept { return m_MeshDirty; }
 
-    /// @brief Clear the dirty flag (call after serialization / meshing).
-    void ClearDirty() noexcept { m_Dirty = false; }
+    /// @brief True when the chunk's collision data needs rebuilding.
+    [[nodiscard]] bool IsCollisionDirty() const noexcept { return m_CollisionDirty; }
 
-    /// @brief Force-mark dirty (used by edit API).
-    void MarkDirty() noexcept { m_Dirty = true; }
+    /// @brief Legacy query — returns true if either mesh or collision is dirty.
+    [[nodiscard]] bool IsDirty() const noexcept { return m_MeshDirty || m_CollisionDirty; }
+
+    /// @brief Clear the mesh dirty flag (call after mesh rebuild).
+    void ClearMeshDirty() noexcept { m_MeshDirty = false; }
+
+    /// @brief Clear the collision dirty flag (call after collision rebuild).
+    void ClearCollisionDirty() noexcept { m_CollisionDirty = false; }
+
+    /// @brief Clear both dirty flags (call after serialization).
+    void ClearDirty() noexcept { m_MeshDirty = false; m_CollisionDirty = false; }
+
+    /// @brief Force-mark both dirty flags (used by edit API / deserialization).
+    void MarkDirty() noexcept { m_MeshDirty = true; m_CollisionDirty = true; }
 
 private:
     ChunkCoord                         m_Coord;
     std::array<VoxelId, kChunkVolume>  m_Voxels{};
-    bool                               m_Dirty{false};
+    bool                               m_MeshDirty{false};
+    bool                               m_CollisionDirty{false};
 };
 
 } // namespace NF::Game

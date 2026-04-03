@@ -115,7 +115,7 @@ void ChunkMeshCache::Shutdown()
 
 void ChunkMeshCache::RebuildDirty(ChunkMap& map)
 {
-    auto dirtyChunks = map.GetDirtyChunks();
+    auto dirtyChunks = map.GetMeshDirtyChunks();
     if (dirtyChunks.empty()) return;
 
     for (Chunk* chunk : dirtyChunks) {
@@ -125,7 +125,7 @@ void ChunkMeshCache::RebuildDirty(ChunkMap& map)
 
         // Generate mesh data on the CPU.
         MeshData meshData = m_Mesher.Generate(*chunk);
-        chunk->ClearDirty();
+        chunk->ClearMeshDirty();
 
         if (meshData.Indices.empty()) {
             // No visible geometry — evict from cache.
