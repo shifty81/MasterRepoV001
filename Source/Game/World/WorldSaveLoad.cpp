@@ -1,5 +1,6 @@
 #include "Game/World/WorldSaveLoad.h"
 #include "Core/Logging/Log.h"
+#include <filesystem>
 #include <fstream>
 
 namespace NF::Game {
@@ -13,6 +14,13 @@ bool WorldSaveLoad::SaveToFile(const std::string& path, uint32_t seed,
 {
     auto bytes = SaveToMemory(seed, entityIds);
     if (bytes.empty()) return false;
+
+    // Ensure parent directory exists.
+    std::filesystem::path p(path);
+    if (p.has_parent_path()) {
+        std::error_code ec;
+        std::filesystem::create_directories(p.parent_path(), ec);
+    }
 
     std::ofstream file(path, std::ios::binary);
     if (!file.is_open()) {

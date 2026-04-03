@@ -386,3 +386,100 @@ TEST_CASE("WorldFileService fails on empty path", "[WorldFileService]") {
     REQUIRE_FALSE(svc.LoadWorld(""));
     REQUIRE_FALSE(svc.SaveWorld());
 }
+
+// =============================================================================
+// Voxel edit persistence — save/reload round-trip
+// =============================================================================
+
+TEST_CASE("Voxel edits persist across save and reload", "[Persistence]") {
+    auto contentRoot = FindContentRoot();
+    REQUIRE(!contentRoot.empty());
+
+    const std::string chunkPath = TempPath("nf_persistence_chunks.nfck");
+    const std::string savePath  = TempPath("nf_persistence_world.nfsv");
+
+    // Initialize world and make a voxel edit
+    GameWorld gw;
+    REQUIRE(gw.Initialize(contentRoot));
+    REQUIRE(gw.HasVisibleWorld());
+
+    // Find an existing non-air voxel to verify we can read it back
+    // Pick the voxel at world (0,0,0) in the first generated chunk
+    const auto& chunkMap = gw.GetChunkMap();
+    const auto coords = chunkMap.GetLoadedCoords();
+    REQUIRE(!coords.empty());
+
+    // Place a specific voxel at a known location using the edit API
+    const int32_t testX = coords[0].X * kChunkSize + 1;
+    const int32_t testY = 30;  // Well above default terrain height (max ~12)
+    const int32_t testZ = coords[0].Z * kChunkSize + 1;
+
+    auto& editApi = gw.GetVoxelEditApi();
+    const VoxelId originalType = editApi.GetVoxel(testX, testY, testZ);
+
+    // Place a Metal voxel (type 5) at the test location
+    const VoxelId metalType = static_cast<VoxelId>(VoxelType::Metal);
+    REQUIRE(editApi.SetVoxel(testX, testY, testZ, metalType) == SetResult::Success);
+    REQUIRE(editApi.GetVoxel(testX, testY, testZ) == metalType);
+
+    // Save chunks and world header
+    REQUIRE(gw.SaveChunks(chunkPath));
+    REQUIRE(gw.SaveWorld(savePath));
+
+    // Shut down and re-initialize (fresh world with procedural terrain)
+    gw.Shutdown();
+    REQUIRE(gw.Initialize(contentRoot));
+
+    // Verify the voxel is NOT metal before loading (procedurally generated)
+    REQUIRE(gw.GetVoxelEditApi().GetVoxel(testX, testY, testZ) != metalType);
+
+    // Load saved chunks
+    REQUIRE(gw.LoadChunks(chunkPath));
+
+    // Verify the voxel IS metal after loading
+    REQUIRE(gw.GetVoxelEditApi().GetVoxel(testX, testY, testZ) == metalType);
+
+    gw.Shutdown();
+    std::remove(chunkPath.c_str());
+    std::remove(savePath.c_str());
+}
+
+TEST_CASE("VoxelSerializer map round-trip preserves all chunk data", "[Persistence]") {
+    ChunkMap map;
+
+    // Create 3 chunks with distinct voxel patterns
+    for (int cx = 0; cx < 3; ++cx) {
+        ChunkCoord coord{cx, 0, 0};
+        Chunk* chunk = map.GetOrCreateChunk(coord);
+        for (uint8_t x = 0; x < kChunkSize; ++x) {
+            for (uint8_t z = 0; z < kChunkSize; ++z) {
+                for (uint8_t y = 0; y < 4; ++y) {
+                    chunk->SetVoxel(x, y, z,
+                        static_cast<VoxelId>((cx + x + y + z) % 8));
+                }
+            }
+        }
+    }
+
+    // Serialize to memory
+    auto bytes = VoxelSerializer::SerializeMap(map);
+    REQUIRE(!bytes.empty());
+
+    // Deserialize into a fresh map
+    ChunkMap map2;
+    REQUIRE(VoxelSerializer::DeserializeMap(map2, bytes.data(), bytes.size()));
+    REQUIRE(map2.ChunkCount() == 3);
+
+    // Verify every voxel matches
+    for (int cx = 0; cx < 3; ++cx) {
+        ChunkCoord coord{cx, 0, 0};
+        const Chunk* c1 = map.GetChunk(coord);
+        const Chunk* c2 = map2.GetChunk(coord);
+        REQUIRE(c1 != nullptr);
+        REQUIRE(c2 != nullptr);
+
+        for (int i = 0; i < kChunkVolume; ++i) {
+            REQUIRE(c1->GetRawData()[i] == c2->GetRawData()[i]);
+        }
+    }
+}

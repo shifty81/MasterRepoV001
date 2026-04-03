@@ -17,7 +17,7 @@
 - [x] EditorCommandHistory authoritative — CommandHistory in EditorApp
 - [x] VoxelAddCommand implemented — VoxelPlaceCommand in VoxelEditCommands.h
 - [x] VoxelRemoveCommand implemented — VoxelRemoveCommand in VoxelEditCommands.h
-- [ ] PropertyEditCommand implemented where needed
+- [x] PropertyEditCommand implemented where needed — VoxelTypeEditCommand for inspector edits
 - [x] Undo wired to command history — Edit.Undo registered in EditorCommandRegistry
 - [x] Redo wired to command history — Edit.Redo registered in EditorCommandRegistry
 - [x] toolbar buttons honor CanExecute state — Undo/Redo check CanExecute
@@ -25,17 +25,17 @@
 
 ## Inspector
 - [x] selected voxel fields visible — position and type shown in Inspector
-- [ ] selected voxel type editable
-- [ ] change writes into world state
-- [ ] change participates in undo/redo
+- [x] selected voxel type editable — click to increment/decrement type in property grid
+- [x] change writes into world state — VoxelTypeEditCommand applies edit via VoxelEditApi
+- [x] change participates in undo/redo — VoxelTypeEditCommand pushed to CommandHistory
 - [x] dirty state updates after edit — m_ToolContext.worldDirty set on edit
 
 ## Persistence
 - [ ] EditorWorldSession created or hardened
-- [x] save command writes dev world — World.SaveDevWorld registered
-- [x] reload command reloads same dev world — World.ReloadDevWorld registered
-- [ ] round-trip smoke test added
-- [ ] world dirty flag resets correctly after save
+- [x] save command writes dev world — saves entities + chunks to Content/Worlds/
+- [x] reload command reloads same dev world — loads saved chunk data after re-init
+- [x] round-trip smoke test added — 2 persistence tests (326 total)
+- [x] world dirty flag resets correctly after save
 
 ## Viewport and World Truth
 - [x] one authoritative viewport implementation remains active — EditorViewport
@@ -64,6 +64,6 @@
 - [x] voxel remove works
 - [x] undo works
 - [x] redo works
-- [ ] save works — registered but round-trip untested
-- [ ] reload works — registered but round-trip untested
+- [x] save works — saves entities + chunks; dirty flag resets
+- [x] reload works — loads saved chunk data; verified in round-trip test
 - [ ] standalone game reflects saved state

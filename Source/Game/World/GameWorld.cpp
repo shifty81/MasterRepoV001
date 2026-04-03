@@ -110,6 +110,7 @@ void GameWorld::Shutdown()
 {
     if (!m_Ready) return;
     m_Level.Unload();
+    m_ChunkMap.Clear();
     m_PlayerEntity = NullEntity;
     m_Ready = false;
     m_BootstrapStatusText = "shutdown";

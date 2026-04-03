@@ -46,5 +46,5 @@
 - [x] editor is interactive and resize-safe
 - [x] viewport is real
 - [x] selection round-trips across viewport/outliner/inspector
-- [ ] one voxel edit persists across save/reload — untested
+- [x] one voxel edit persists across save/reload — tested; chunk save/load round-trip verified
 - [x] one playable edit -> test -> relaunch path works — PIE state fixed; Launch Game has correct path

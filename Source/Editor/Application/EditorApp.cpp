@@ -344,7 +344,7 @@ bool EditorApp::Init() {
     // Wire PropertyInspectorSystem to Inspector so it renders the property grid
     m_Inspector.SetPropertyInspectorSystem(&m_PropertyInspectorSystem);
     m_Inspector.SetOnPropertyEdited([this]() {
-        m_ToolContext.worldDirty = true;
+        ApplyPropertyEditsToWorld();
     });
 
     // ---- Command registry and hotkeys ----
@@ -470,8 +470,16 @@ void EditorApp::RegisterEditorCommands()
         nullptr,
         [this](EditorCommandContext&) {
             Logger::Log(LogLevel::Info, "Editor", "Saving dev world...");
-            m_GameWorld.SaveWorld("Content/Worlds/DevWorld.nfsv");
-            Logger::Log(LogLevel::Info, "Editor", "World saved");
+            const bool entityOk = m_GameWorld.SaveWorld("Content/Worlds/DevWorld.nfsv");
+            const bool chunkOk  = m_GameWorld.SaveChunks("Content/Worlds/DevWorld.nfck");
+            if (entityOk && chunkOk) {
+                m_ToolContext.worldDirty = false;
+                Logger::Log(LogLevel::Info, "Editor", "World saved (entities + chunks)");
+            } else {
+                Logger::Log(LogLevel::Warning, "Editor",
+                            "World save incomplete — entities: " + std::string(entityOk ? "ok" : "FAILED")
+                            + ", chunks: " + std::string(chunkOk ? "ok" : "FAILED"));
+            }
         }
     });
 
@@ -484,11 +492,21 @@ void EditorApp::RegisterEditorCommands()
             Logger::Log(LogLevel::Info, "Editor", "Reloading dev world...");
             m_GameWorld.Shutdown();
             m_GameWorld.Initialize("Content");
+
+            // If a saved chunk file exists, load it over the generated terrain.
+            if (m_GameWorld.LoadChunks("Content/Worlds/DevWorld.nfck")) {
+                Logger::Log(LogLevel::Info, "Editor",
+                            "Loaded saved chunk data (" + std::to_string(m_GameWorld.GetLoadedChunkCount())
+                            + " chunks)");
+            }
+
             m_Level.Unload();
             m_Level.Load("DevWorld");
             m_SceneOutliner.SetWorld(&m_Level.GetWorld());
             m_MeshCache.RebuildDirty(m_GameWorld.GetChunkMap());
             m_Selection.Clear();
+            m_ToolContext.worldDirty = false;
+            m_CommandHistory = CommandHistory{}; // Clear undo/redo stack
             Logger::Log(LogLevel::Info, "Editor", "World reloaded");
         }
     });
@@ -870,6 +888,51 @@ void EditorApp::RebuildWorldOutliner()
     m_SceneOutliner.SetChunkData(
         m_GameWorld.IsReady() ? "DevWorld" : "No World",
         std::move(chunks));
+}
+
+// ---------------------------------------------------------------------------
+// ApplyPropertyEditsToWorld
+// ---------------------------------------------------------------------------
+
+void EditorApp::ApplyPropertyEditsToWorld()
+{
+    if (!m_Selection.HasSelection()) return;
+    const auto& handle = m_Selection.GetSelection();
+
+    if (handle.kind == nf::SelectionKind::Voxel) {
+        // Check if the "Type" property was edited.
+        const auto& ps = m_PropertyInspectorSystem.GetPropertySet();
+        for (const auto& entry : ps.entries) {
+            if (entry.name == "Type" && entry.dirty && std::holds_alternative<int>(entry.value)) {
+                const int32_t vx = nf::UnpackVoxelCoord(handle.id, 0);
+                const int32_t vy = nf::UnpackVoxelCoord(handle.id, nf::kVoxelCoordBits);
+                const int32_t vz = nf::UnpackVoxelCoord(handle.id, nf::kVoxelCoordBits * 2);
+
+                const auto oldType = m_GameWorld.GetVoxelEditApi().GetVoxel(vx, vy, vz);
+                const auto newType = static_cast<NF::Game::VoxelId>(
+                    std::max(0, std::min(255, std::get<int>(entry.value))));
+
+                if (newType != oldType) {
+                    auto cmd = std::make_shared<VoxelTypeEditCommand>(
+                        m_GameWorld.GetVoxelEditApi(), vx, vy, vz, oldType, newType);
+                    m_CommandHistory.Push(cmd);
+                    m_ToolContext.worldDirty = true;
+
+                    // Refresh the inspector to show updated type name
+                    SyncInspectorToSelection();
+                    Logger::Log(LogLevel::Info, "Editor",
+                                "Inspector edit: voxel type " + std::to_string(oldType)
+                                + " -> " + std::to_string(newType)
+                                + " at (" + std::to_string(vx) + ", "
+                                + std::to_string(vy) + ", " + std::to_string(vz) + ")");
+                }
+                break;
+            }
+        }
+    }
+
+    // Mark world dirty for any property edit
+    m_ToolContext.worldDirty = true;
 }
 
 // ---------------------------------------------------------------------------
