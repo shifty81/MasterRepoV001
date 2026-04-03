@@ -338,6 +338,9 @@ bool EditorApp::Init() {
     RegisterEditorCommands();
     m_HotkeyMap.BuildDefaultBindings();
 
+    // Wire command registry to toolbar so menu items and Undo/Redo can execute
+    m_Toolbar.SetCommandRegistry(&m_CommandRegistry);
+
     // Panels
     m_SceneOutliner.SetWorld(&m_Level.GetWorld());
     m_SceneOutliner.SetOnSelectionChanged([this](EntityId id) {
@@ -408,6 +411,26 @@ bool EditorApp::Init() {
 void EditorApp::RegisterEditorCommands()
 {
     using namespace nf;
+
+    // File.NewWorld
+    m_CommandRegistry.Register(nf::EditorCommand{
+        "File.NewWorld",
+        "New World",
+        nullptr,
+        [this](EditorCommandContext&) {
+            Logger::Log(LogLevel::Info, "Editor",
+                        "File.NewWorld: resetting to a blank dev world");
+            m_GameWorld.Shutdown();
+            m_GameWorld.Initialize("Content");
+            m_Level.Unload();
+            m_Level.Load("DevWorld");
+            m_SceneOutliner.SetWorld(&m_Level.GetWorld());
+            m_MeshCache.RebuildDirty(m_GameWorld.GetChunkMap());
+            m_Selection.Clear();
+            m_ToolContext.worldDirty = false;
+            Logger::Log(LogLevel::Info, "Editor", "New world ready");
+        }
+    });
 
     // File.Exit
     m_CommandRegistry.Register(nf::EditorCommand{
@@ -792,7 +815,8 @@ void EditorApp::TickFrame(float dt)
     m_Viewport.Update(dt);
     m_VoxelInspector.Update(dt);
     m_HUDPanel.Update(dt);
-    m_InteractionLoop.Tick(dt);
+    if (m_Toolbar.IsPieActive())
+        m_InteractionLoop.Tick(dt);
 
     // Toolbar strip at the top
     m_Toolbar.Draw(0.f, 0.f, static_cast<float>(m_ClientWidth), toolbarH);
@@ -803,6 +827,9 @@ void EditorApp::TickFrame(float dt)
     // Status bar at the bottom
     DrawStatusBar(0.f, static_cast<float>(m_ClientHeight) - statusH,
                   static_cast<float>(m_ClientWidth), statusH);
+
+    // Menu drop-downs drawn last so they render on top of all panels.
+    m_Toolbar.DrawDropdown();
 
     // Flush all batched UI draw calls to the GPU
     m_UIRenderer.EndFrame();

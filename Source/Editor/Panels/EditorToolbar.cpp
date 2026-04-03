@@ -12,7 +12,10 @@ namespace NF::Editor {
 // ---------------------------------------------------------------------------
 // Colour constants
 // ---------------------------------------------------------------------------
-static constexpr uint32_t kToolbarBg     = 0x252527FF; // near-black strip
+static constexpr uint32_t kToolbarBg     = 0x252527FF; // button row background
+static constexpr uint32_t kMenuBarBg     = 0x2D2D30FF; // menu bar row background
+static constexpr uint32_t kMenuOpenBg    = 0x3E3E42FF; // open menu header highlight
+static constexpr uint32_t kDropdownBg    = 0x1E1E1EFF; // drop-down panel background
 static constexpr uint32_t kBtnBg         = 0x3C3C3CFF; // normal button
 static constexpr uint32_t kBtnBgHover    = 0x505053FF; // hovered button
 static constexpr uint32_t kBtnBgActive   = 0x3B6EA5FF; // active tool highlight
@@ -22,21 +25,64 @@ static constexpr uint32_t kBtnBgLaunch   = 0x1E4B7AFF; // blue for Launch
 static constexpr uint32_t kTextColor     = 0xCCCCCCFF;
 static constexpr uint32_t kTitleColor    = 0xFFFFFFFF;
 static constexpr uint32_t kSepColor      = 0x444444FF;
+static constexpr uint32_t kDisabledColor = 0x555555FF; // dimmed text for disabled items
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Static menu definitions
+// ---------------------------------------------------------------------------
+
+struct MenuItemDef {
+    const char* label;      ///< nullptr means a separator line.
+    const char* commandId;  ///< Command to execute; nullptr = no-op / placeholder.
+};
+
+struct MenuDef {
+    const char*        name;
+    const MenuItemDef* items;
+    int                count;
+};
+
+static const MenuItemDef kFileItems[] = {
+    { "New World",    "File.NewWorld"        },
+    { "Save World",   "World.SaveDevWorld"   },
+    { "Reload World", "World.ReloadDevWorld" },
+    { nullptr,        nullptr                },  // separator
+    { "Exit",         "File.Exit"            },
+};
+
+static const MenuItemDef kEditItems[] = {
+    { "Undo", "Edit.Undo" },
+    { "Redo", "Edit.Redo" },
+};
+
+static const MenuItemDef kViewItems[] = {
+    { "Voxel Overlay (see VoxelInspector panel)", nullptr },
+};
+
+static const MenuDef kMenus[] = {
+    { "File", kFileItems, 5 },
+    { "Edit", kEditItems, 2 },
+    { "View", kViewItems, 1 },
+};
+
+static constexpr int   kMenuCount = 3;
+static constexpr float kMenuBtnW  = 52.f;  // logical width of each menu header button
+
+// ---------------------------------------------------------------------------
+// DrawButton
 // ---------------------------------------------------------------------------
 
 bool EditorToolbar::DrawButton(float x, float y, float bw, float bh,
                                 const char* label,
-                                uint32_t bgColor, uint32_t textColor)
+                                uint32_t bgColor, uint32_t textColor,
+                                bool enabled)
 {
     if (!m_Renderer) return false;
 
     bool hovered = false;
     bool clicked = false;
 
-    if (m_Input) {
+    if (m_Input && enabled) {
         const float mx = m_Input->mouseX;
         const float my = m_Input->mouseY;
         hovered = (mx >= x && mx < x + bw && my >= y && my < y + bh);
@@ -49,43 +95,72 @@ bool EditorToolbar::DrawButton(float x, float y, float bw, float bh,
     m_Renderer->DrawOutlineRect({x, y, bw, bh}, kSepColor);
 
     if (label) {
-        m_Renderer->DrawText(label, x + 6.f * dpi, y + 4.f * dpi, textColor, 2.f);
+        const uint32_t tc = enabled ? textColor : kDisabledColor;
+        m_Renderer->DrawText(label, x + 6.f * dpi, y + 4.f * dpi, tc, 2.f);
     }
 
     return clicked;
 }
 
 // ---------------------------------------------------------------------------
-// Draw
+// Draw — menu bar row + tool button row
 // ---------------------------------------------------------------------------
 
 void EditorToolbar::Draw(float x, float y, float w, float h)
 {
     if (!m_Renderer) return;
 
-    const float dpi = m_Renderer->GetDpiScale();
+    m_DrawX = x;
+    m_DrawY = y;
 
-    // Background strip
-    m_Renderer->DrawRect({x, y, w, h}, kToolbarBg);
-    // Bottom separator line
-    m_Renderer->DrawRect({x, y + h - 1.f, w, 1.f}, kSepColor);
+    const float dpi   = m_Renderer->GetDpiScale();
+    const float menuH = kMenuHeight * dpi;
+    const float btnY  = y + menuH;       // top of the button row
+    const float btnH  = h - menuH;       // height remaining for buttons
 
-    // Title label on the left
-    m_Renderer->DrawText("NovaForge", x + 8.f * dpi, y + 6.f * dpi, kTitleColor, 2.f);
+    // ---- Menu bar background ----
+    m_Renderer->DrawRect({x, y, w, menuH}, kMenuBarBg);
+    m_Renderer->DrawRect({x, y + menuH - 1.f, w, 1.f}, kSepColor);
 
-    // Buttons — right-aligned group starting from left offset after title
-    const float btnH = h - 6.f * dpi;
-    const float btnY = y + 3.f * dpi;
-    const float btnW = 80.f * dpi;
-    const float gap  = 4.f * dpi;
-    float bx = x + 160.f * dpi;
+    // ---- Title (left of File/Edit/View) ----
+    m_Renderer->DrawText("NovaForge", x + 8.f * dpi, y + 4.f * dpi, kTitleColor, 2.f);
+
+    // ---- Menu header buttons: File | Edit | View ----
+    float hx = x + 100.f * dpi;
+    const float mBtnW = kMenuBtnW * dpi;
+
+    for (int i = 0; i < kMenuCount; ++i) {
+        const bool isOpen = (m_OpenMenuIdx == i);
+        const bool hovered = m_Input &&
+            m_Input->mouseX >= hx   && m_Input->mouseX < hx + mBtnW &&
+            m_Input->mouseY >= y    && m_Input->mouseY < y  + menuH;
+
+        const uint32_t bg = isOpen ? kMenuOpenBg : (hovered ? kBtnBgHover : kMenuBarBg);
+        m_Renderer->DrawRect({hx, y, mBtnW, menuH}, bg);
+        m_Renderer->DrawText(kMenus[i].name, hx + 6.f * dpi, y + 4.f * dpi, kTextColor, 2.f);
+
+        if (hovered && m_Input->leftJustPressed) {
+            m_OpenMenuIdx = isOpen ? -1 : i;
+        }
+        hx += mBtnW;
+    }
+
+    // ---- Button row background ----
+    m_Renderer->DrawRect({x, btnY, w, btnH}, kToolbarBg);
+    m_Renderer->DrawRect({x, btnY + btnH - 1.f, w, 1.f}, kSepColor);
+
+    const float bRowH = btnH - 6.f * dpi;
+    const float bRowY = btnY + 3.f * dpi;
+    const float btnW  = 80.f * dpi;
+    const float gap   = 4.f * dpi;
+    float bx = x + 8.f * dpi;
 
     // ---- Tool mode buttons ----
     if (m_ToolContext) {
         auto toolBtn = [&](const char* label, nf::EditorToolMode mode) {
             const bool isActive = (m_ToolContext->activeMode == mode);
             const uint32_t bg = isActive ? kBtnBgActive : kBtnBg;
-            if (DrawButton(bx, btnY, btnW, btnH, label, bg, kTextColor)) {
+            if (DrawButton(bx, bRowY, btnW, bRowH, label, bg, kTextColor)) {
                 m_ToolContext->activeMode = mode;
                 Logger::Log(LogLevel::Info, "EditorToolbar",
                             std::string("Tool mode: ") + label);
@@ -98,40 +173,62 @@ void EditorToolbar::Draw(float x, float y, float w, float h)
         toolBtn("+ Voxel", nf::EditorToolMode::VoxelAdd);
         toolBtn("- Voxel", nf::EditorToolMode::VoxelRemove);
 
-        // Separator
-        m_Renderer->DrawRect({bx, btnY, 1.f, btnH}, kSepColor);
+        m_Renderer->DrawRect({bx, bRowY, 1.f, bRowH}, kSepColor);
         bx += gap * 2.f;
     }
 
-    // Play / Reset — restarts the interaction loop
-    if (DrawButton(bx, btnY, btnW, btnH, "> Play", kBtnBgPlay, kTextColor)) {
-        if (m_Loop) {
-            m_Loop->Reset();
-            Logger::Log(LogLevel::Info, "EditorToolbar", "Interaction loop reset (Play)");
+    // ---- Undo / Redo (enabled only when history allows) ----
+    {
+        const bool canUndo = m_CommandRegistry && m_CommandRegistry->CanExecute("Edit.Undo");
+        const bool canRedo = m_CommandRegistry && m_CommandRegistry->CanExecute("Edit.Redo");
+        const float udW = 56.f * dpi;
+
+        if (DrawButton(bx, bRowY, udW, bRowH, "Undo", kBtnBg, kTextColor, canUndo)) {
+            if (m_CommandRegistry) m_CommandRegistry->Execute("Edit.Undo");
+        }
+        bx += udW + gap;
+
+        if (DrawButton(bx, bRowY, udW, bRowH, "Redo", kBtnBg, kTextColor, canRedo)) {
+            if (m_CommandRegistry) m_CommandRegistry->Execute("Edit.Redo");
+        }
+        bx += udW + gap;
+
+        m_Renderer->DrawRect({bx, bRowY, 1.f, bRowH}, kSepColor);
+        bx += gap * 2.f;
+    }
+
+    // ---- Play ----
+    {
+        const uint32_t playBg = m_PieActive ? kBtnBgActive : kBtnBgPlay;
+        if (DrawButton(bx, bRowY, btnW, bRowH, "> Play", playBg, kTextColor)) {
+            if (!m_PieActive) {
+                m_PieActive = true;
+                if (m_Loop) m_Loop->Reset();
+                Logger::Log(LogLevel::Info, "EditorToolbar", "PIE started");
+            }
         }
     }
     bx += btnW + gap;
 
-    // Stop — also resets (placeholder for a future pause state)
-    if (DrawButton(bx, btnY, btnW, btnH, "[] Stop", kBtnBgStop, kTextColor)) {
-        if (m_Loop) {
-            m_Loop->Reset();
-            Logger::Log(LogLevel::Info, "EditorToolbar", "Interaction loop reset (Stop)");
+    // ---- Stop ----
+    if (DrawButton(bx, bRowY, btnW, bRowH, "[] Stop", kBtnBgStop, kTextColor)) {
+        if (m_PieActive) {
+            m_PieActive = false;
+            if (m_Loop) m_Loop->Reset();
+            Logger::Log(LogLevel::Info, "EditorToolbar", "PIE stopped");
         }
     }
     bx += btnW + gap;
 
 #ifdef _WIN32
-    // Launch standalone game client in a separate process
+    // ---- Launch standalone game ----
     const float launchW = 110.f * dpi;
-    if (DrawButton(bx, btnY, launchW, btnH, "Launch Game", kBtnBgLaunch, kTextColor)) {
+    if (DrawButton(bx, bRowY, launchW, bRowH, "Launch Game", kBtnBgLaunch, kTextColor)) {
         Logger::Log(LogLevel::Info, "EditorToolbar", "Launching NovaForgeGame...");
 
-        // Resolve the exe directory from the running editor's own path.
         wchar_t selfPath[MAX_PATH]{};
         GetModuleFileNameW(nullptr, selfPath, MAX_PATH);
 
-        // Replace the editor exe name with the game exe name.
         wchar_t* lastSlash = wcsrchr(selfPath, L'\\');
         if (lastSlash) {
             *(lastSlash + 1) = L'\0';
@@ -140,18 +237,103 @@ void EditorToolbar::Draw(float x, float y, float w, float h)
                 STARTUPINFOW si{};
                 si.cb = sizeof(si);
                 PROCESS_INFORMATION pi{};
-                if (CreateProcessW(gamePath, nullptr, nullptr, nullptr,
-                                   FALSE, 0, nullptr, nullptr, &si, &pi)) {
+                const BOOL launched = CreateProcessW(gamePath, nullptr, nullptr, nullptr,
+                                                     FALSE, 0, nullptr, nullptr, &si, &pi);
+                const DWORD lastErr = launched ? 0 : GetLastError();
+                if (launched) {
                     CloseHandle(pi.hProcess);
                     CloseHandle(pi.hThread);
                 } else {
                     Logger::Log(LogLevel::Warning, "EditorToolbar",
-                                "CreateProcess failed for NovaForgeGame.exe");
+                                "CreateProcess failed for NovaForgeGame.exe (error "
+                                + std::to_string(lastErr) + ")");
                 }
             }
         }
     }
 #endif
+}
+
+// ---------------------------------------------------------------------------
+// DrawDropdown — renders the open drop-down on top of all docking panels
+// ---------------------------------------------------------------------------
+
+void EditorToolbar::DrawDropdown()
+{
+    if (!m_Renderer || m_OpenMenuIdx < 0) return;
+
+    const float dpi   = m_Renderer->GetDpiScale();
+    const float menuH = kMenuHeight * dpi;
+
+    // X position of the open header button
+    const float hx  = m_DrawX + 100.f * dpi + static_cast<float>(m_OpenMenuIdx) * (kMenuBtnW * dpi);
+    const float ddX = hx;
+    const float ddY = m_DrawY + menuH;
+    const float ddW = 200.f * dpi;
+
+    const float itemH = 20.f * dpi;
+    const float sepH  =  6.f * dpi;
+
+    // Compute total drop-down height
+    const MenuDef& menu = kMenus[m_OpenMenuIdx];
+    float ddH = 6.f * dpi;  // top + bottom padding
+    for (int i = 0; i < menu.count; ++i)
+        ddH += menu.items[i].label ? itemH : sepH;
+
+    // Background and border
+    m_Renderer->DrawRect({ddX, ddY, ddW, ddH}, kDropdownBg);
+    m_Renderer->DrawOutlineRect({ddX, ddY, ddW, ddH}, kSepColor);
+
+    // Items
+    float iy = ddY + 3.f * dpi;
+    bool clickedItem = false;
+
+    for (int i = 0; i < menu.count; ++i) {
+        const MenuItemDef& item = menu.items[i];
+
+        if (!item.label) {
+            // Separator line
+            m_Renderer->DrawRect({ddX + 6.f * dpi, iy + 2.f * dpi,
+                                   ddW - 12.f * dpi, 1.f}, kSepColor);
+            iy += sepH;
+            continue;
+        }
+
+        // An item with commandId=nullptr is a visual placeholder (not executable)
+        const bool canExec = item.commandId &&
+                             (!m_CommandRegistry ||
+                              m_CommandRegistry->CanExecute(item.commandId));
+
+        const bool itemHov = m_Input &&
+            m_Input->mouseX >= ddX && m_Input->mouseX < ddX + ddW &&
+            m_Input->mouseY >= iy  && m_Input->mouseY < iy  + itemH;
+
+        if (itemHov && canExec)
+            m_Renderer->DrawRect({ddX, iy, ddW, itemH}, kBtnBgHover);
+
+        m_Renderer->DrawText(item.label,
+                              ddX + 14.f * dpi, iy + 2.f * dpi,
+                              canExec ? kTextColor : kDisabledColor, 2.f);
+
+        if (itemHov && canExec && m_Input && m_Input->leftJustPressed) {
+            m_CommandRegistry->Execute(item.commandId);
+            m_OpenMenuIdx = -1;
+            clickedItem   = true;
+        }
+
+        iy += itemH;
+    }
+
+    // Close menu on click outside (but not on the menu bar row itself, which
+    // already handles the toggle in Draw())
+    if (!clickedItem && m_Input && m_Input->leftJustPressed) {
+        const bool insideDrop = m_Input->mouseX >= ddX && m_Input->mouseX < ddX + ddW &&
+                                m_Input->mouseY >= ddY && m_Input->mouseY < ddY + ddH;
+        const bool onMenuBar  = m_Input->mouseY >= m_DrawY &&
+                                m_Input->mouseY <  m_DrawY + menuH;
+        if (!insideDrop && !onMenuBar)
+            m_OpenMenuIdx = -1;
+    }
 }
 
 } // namespace NF::Editor
