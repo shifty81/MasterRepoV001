@@ -403,6 +403,7 @@ bool EditorApp::Init() {
         manifest.IsValid() ? manifest.ContentRoot : "Content");
 
     // Register panels with the docking system — callbacks now forward bounds
+    m_DockingSystem.SetInputState(&m_Input);
     m_DockingSystem.RegisterPanel("SceneOutliner",
         [this](float x, float y, float w, float h) {
             m_SceneOutliner.Draw(x, y, w, h);
@@ -423,19 +424,38 @@ bool EditorApp::Init() {
         [this](float x, float y, float w, float h) {
             m_ConsolePanel.Draw(x, y, w, h);
         });
+    m_DockingSystem.RegisterPanel("VoxelInspector",
+        [this](float x, float y, float w, float h) {
+            m_VoxelInspector.Draw(x, y, w, h);
+        });
 
-    // ---- Cleaner Unreal-like layout ----
+    // ---- Unreal-like layout with tabbed regions and full-width bottom dock ----
     //
-    //   SceneOutliner (15%) | Viewport (63%) | Inspector (22%)
-    //                       | Console  (25%) |
+    //   ┌──────────────┬────────────────────────┬─────────────────┐
+    //   │SceneOutliner │      Viewport          │ Inspector       │  75%
+    //   │ (15%)        │                        │ VoxelInspector  │
+    //   │              │                        │ (tabs, ~20%)    │
+    //   ├──────────────┴────────────────────────┴─────────────────┤
+    //   │ Console | ContentBrowser  (tabs, full width)            │  25%
+    //   └─────────────────────────────────────────────────────────┘
     //
-    // Secondary panels (VoxelInspector, HUD, WorldDebug, ContentBrowser)
-    // are demoted from permanent dock space.  They can be accessed via
-    // the mode-specific context shelf or View menu in the future.
-    m_DockingSystem.SetRootSplit("SceneOutliner", "Viewport", 0.15f);
-    m_DockingSystem.SplitPanel("Viewport",  "Inspector",      SplitAxis::Horizontal, 0.74f);
-    m_DockingSystem.SplitPanel("Viewport",  "Console",        SplitAxis::Vertical,   0.75f);
-    m_DockingSystem.SplitPanel("Inspector", "ContentBrowser",  SplitAxis::Vertical,  0.55f);
+    // After splits:
+    //   SceneOutliner = 15% of top row
+    //   Viewport      = 76% of the remaining 85% ≈ 65% of top row
+    //   Inspector     = 24% of the remaining 85% ≈ 20% of top row
+    //
+    m_DockingSystem.SetRootSplit("SceneOutliner", "Console",
+                                 0.75f, SplitAxis::Vertical);
+    // Top row: SceneOutliner (15%) | rest (85%)
+    m_DockingSystem.SplitPanel("SceneOutliner", "Viewport",
+                               SplitAxis::Horizontal, 0.15f);
+    // Split rest: Viewport (76%) | Inspector (24%)
+    m_DockingSystem.SplitPanel("Viewport", "Inspector",
+                               SplitAxis::Horizontal, 0.76f);
+    // Tabs on the right: Inspector + VoxelInspector
+    m_DockingSystem.AddTab("Inspector", "VoxelInspector");
+    // Tabs on the bottom: Console + ContentBrowser
+    m_DockingSystem.AddTab("Console", "ContentBrowser");
 
     // The Viewport panel sits directly over the OpenGL 3-D render target.
     // Skip drawing an opaque 2-D background for it so the scene is visible.

@@ -9,7 +9,7 @@ namespace NF::Editor {
 // ---------------------------------------------------------------------------
 
 static constexpr float kCharWidthEstimate = 6.f;   // approx px per char at scale 1.0
-static constexpr float kShelfTextScale    = 1.5f;
+static constexpr float kShelfTextScale    = 1.8f;
 static constexpr float kLabelPadRight     = 8.f;
 static constexpr float kBtnPadInner       = 4.f;
 
@@ -64,8 +64,8 @@ void ContextToolShelf::Draw(float x, float y, float w, float h, EditorMode mode)
 
     const auto& theme = ActiveTheme();
 
-    // Background.
-    m_Renderer->DrawRect({x, y, w, h}, theme.menuBarBg);
+    // Background — distinct from both toolbar and mode tabs.
+    m_Renderer->DrawRect({x, y, w, h}, theme.shelfBg);
     m_Renderer->DrawRect({x, y + h - 1.f, w, 1.f}, theme.separator);
 
     switch (mode) {

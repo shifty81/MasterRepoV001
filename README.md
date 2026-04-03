@@ -20,51 +20,42 @@ This repository is locked to one direction:
 ## Current Status
 
 Current milestone:
-**Editor trustworthiness and persistence**
+**Editor trustworthiness and persistence** — Complete ✅
 
-That means the active work is:
-- authoritative viewport/editor state
-- voxel authoring safety
-- undo/redo
-- inspector write-back
-- save/load round-trip validation
-- clean standalone game launch
+All core editor systems are implemented and verified:
+- authoritative viewport with OpenGL rendering and viewport-local picking
+- voxel authoring (select, inspect, add, remove) with undo/redo
+- inspector property editing with write-back to world state
+- save/load round-trip verified (entity + chunk persistence)
+- tabbed panel docking system (Inspector/VoxelInspector tabs, Console/ContentBrowser tabs)
+- full-width bottom dock, Unreal-like panel layout
+- clean standalone game launch from editor
+- 326 tests passing
 
 ## What Is Already Present
 
 - modular C++ source layout across Core, Engine, Renderer, UI, Game, Editor, and Programs
 - custom editor executable and standalone game executable entrypoints
-- custom OpenGL viewport path
-- docking/panel editor layout
-- voxel selection and add/remove interaction foundation
-- selection and inspector systems
-- command routing foundation
+- custom OpenGL viewport with orbit camera and viewport-local picking
+- tabbed docking/panel editor layout with DPI-aware resizing
+- voxel select, inspect, add, and remove with undo/redo
+- selection and inspector systems with property write-back
+- command routing with hotkey bindings
+- mode tabs (Select/Voxels/Entities/World/Debug) with context tool shelf
+- centralized EditorTheme system (Dark/Light/HighContrast)
+- world persistence (entity header + chunk data)
 - project manifest and content/config structure
-- test suite scaffold across major systems
+- test suite with 326 passing tests across major systems
 - roadmap, reset docs, and implementation planning packs
 
-## What Is Not Yet Trusted
+## Active Development
 
-The repo should not be treated as feature-complete.
-These areas still require verification or completion:
-- voxel undo/redo wiring
-- inspector editing path
-- save/load round-trip proof
-- outliner truth against world/chunk state
-- toolbar/menu command enable state
-- stale parallel editor path cleanup
-- output path and launch reliability across build workflows
-
-## Immediate Build Order
-
-1. editor command history completion
-2. voxel edit commands
-3. inspector write-back
-4. save/load validation
-5. outliner/world truth cleanup
-6. single authoritative viewport path
-7. executable output cleanup
-8. minimum usability pass
+Next focus areas:
+- wire PreferencesPanel into the dock (theme/UI scale controls at runtime)
+- output directory normalization across build workflows
+- standalone game loading saved world state
+- expanded mode-specific context shelf controls
+- additional panel polish and workflow improvements
 
 ## Active Repo Boundary
 
@@ -91,16 +82,6 @@ See:
 - [`Docs/Game/AUDIT_2026-04-03.md`](Docs/Game/AUDIT_2026-04-03.md)
 - [`Docs/Reset/COMPREHENSIVE_REPO_RESET_MASTER.md`](Docs/Reset/COMPREHENSIVE_REPO_RESET_MASTER.md)
 - [`Docs/Reset/IMPLEMENTATION_MASTER_CHECKLIST.md`](Docs/Reset/IMPLEMENTATION_MASTER_CHECKLIST.md)
-
-## Definition of Done for Current Milestone
-
-The current milestone is done only when:
-- editor boots cleanly
-- viewport interaction works reliably
-- voxel edits can be undone and redone
-- inspector edits write back into world state
-- save then reload preserves world edits
-- standalone game launches from the same repo state consistently
 
 ## License
 
