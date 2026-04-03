@@ -1,6 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include "Game/World/DevWorldConfig.h"
+#include "Game/World/DevWorldSerializer.h"
+#include "Game/World/WorldFileService.h"
 #include "Game/World/WorldSaveLoad.h"
 #include "Game/World/WorldDebugOverlay.h"
 #include "Game/World/GameWorld.h"
@@ -256,4 +258,131 @@ TEST_CASE("GameWorld tick does not crash", "[GameWorld]") {
 TEST_CASE("GameWorld cannot save when not initialized", "[GameWorld]") {
     GameWorld gw;
     REQUIRE_FALSE(gw.SaveWorld(TempPath("should_not_exist.nfsv")));
+}
+
+// =============================================================================
+// DevWorldSerializer — round-trip
+// =============================================================================
+
+TEST_CASE("DevWorldSerializer loads DevWorld.json", "[DevWorldSerializer]") {
+    auto contentRoot = FindContentRoot();
+    REQUIRE(!contentRoot.empty());
+
+    nf::DevWorldSerializer serializer;
+    auto result = serializer.Load(contentRoot + "/Definitions/DevWorld.json");
+    REQUIRE(result.has_value());
+
+    const auto& data = *result;
+    REQUIRE(data.worldId == "DevWorld");
+    REQUIRE(data.displayName == "Development Sandbox");
+    REQUIRE(data.seed == 42);
+    REQUIRE_THAT(data.gravity, Catch::Matchers::WithinAbs(-9.81, 0.01));
+    REQUIRE_THAT(data.terrainSize[0], Catch::Matchers::WithinAbs(256.0, 0.1));
+    REQUIRE_THAT(data.terrainSize[1], Catch::Matchers::WithinAbs(64.0, 0.1));
+    REQUIRE_THAT(data.terrainSize[2], Catch::Matchers::WithinAbs(256.0, 0.1));
+    REQUIRE_THAT(data.spawnPosition[0], Catch::Matchers::WithinAbs(128.0, 0.1));
+    REQUIRE_THAT(data.spawnPosition[1], Catch::Matchers::WithinAbs(32.0, 0.1));
+    REQUIRE_THAT(data.spawnPosition[2], Catch::Matchers::WithinAbs(128.0, 0.1));
+    REQUIRE_THAT(data.fov, Catch::Matchers::WithinAbs(75.0, 0.1));
+    REQUIRE_THAT(data.nearClip, Catch::Matchers::WithinAbs(0.1, 0.01));
+    REQUIRE_THAT(data.farClip, Catch::Matchers::WithinAbs(1000.0, 0.1));
+}
+
+TEST_CASE("DevWorldSerializer fails gracefully on missing file", "[DevWorldSerializer]") {
+    nf::DevWorldSerializer serializer;
+    auto result = serializer.Load("nonexistent/path.json");
+    REQUIRE_FALSE(result.has_value());
+}
+
+TEST_CASE("DevWorldSerializer round-trips through file", "[DevWorldSerializer]") {
+    const std::string path = TempPath("nf_devworld_roundtrip.json");
+
+    nf::DevWorldData original;
+    original.worldId          = "TestWorld";
+    original.displayName      = "Test Sandbox";
+    original.description      = "Round-trip test world";
+    original.seed             = 99;
+    original.terrainSize      = {128.f, 32.f, 128.f};
+    original.gravity          = -10.0f;
+    original.spawnPosition    = {64.f, 16.f, 64.f};
+    original.spawnRotation    = {0.f, 0.707f, 0.f, 0.707f};
+    original.spawnLookDirection = {1.f, 0.f, 0.f};
+    original.fov              = 90.0f;
+    original.nearClip         = 0.5f;
+    original.farClip          = 500.0f;
+    original.moveSpeed        = 20.0f;
+    original.lookSensitivity  = 0.5f;
+
+    nf::DevWorldSerializer serializer;
+    REQUIRE(serializer.Save(path, original));
+
+    auto loaded = serializer.Load(path);
+    REQUIRE(loaded.has_value());
+
+    const auto& d = *loaded;
+    REQUIRE(d.worldId == original.worldId);
+    REQUIRE(d.displayName == original.displayName);
+    REQUIRE(d.description == original.description);
+    REQUIRE(d.seed == original.seed);
+    REQUIRE_THAT(d.gravity, Catch::Matchers::WithinAbs(original.gravity, 0.01));
+    REQUIRE_THAT(d.terrainSize[0], Catch::Matchers::WithinAbs(original.terrainSize[0], 0.1));
+    REQUIRE_THAT(d.terrainSize[1], Catch::Matchers::WithinAbs(original.terrainSize[1], 0.1));
+    REQUIRE_THAT(d.terrainSize[2], Catch::Matchers::WithinAbs(original.terrainSize[2], 0.1));
+    REQUIRE_THAT(d.spawnPosition[0], Catch::Matchers::WithinAbs(original.spawnPosition[0], 0.1));
+    REQUIRE_THAT(d.spawnPosition[1], Catch::Matchers::WithinAbs(original.spawnPosition[1], 0.1));
+    REQUIRE_THAT(d.spawnPosition[2], Catch::Matchers::WithinAbs(original.spawnPosition[2], 0.1));
+    REQUIRE_THAT(d.fov, Catch::Matchers::WithinAbs(original.fov, 0.1));
+    REQUIRE_THAT(d.nearClip, Catch::Matchers::WithinAbs(original.nearClip, 0.01));
+    REQUIRE_THAT(d.farClip, Catch::Matchers::WithinAbs(original.farClip, 0.1));
+    REQUIRE_THAT(d.moveSpeed, Catch::Matchers::WithinAbs(original.moveSpeed, 0.1));
+    REQUIRE_THAT(d.lookSensitivity, Catch::Matchers::WithinAbs(original.lookSensitivity, 0.01));
+
+    std::remove(path.c_str());
+}
+
+// =============================================================================
+// WorldFileService — real file I/O
+// =============================================================================
+
+TEST_CASE("WorldFileService loads DevWorld.json", "[WorldFileService]") {
+    auto contentRoot = FindContentRoot();
+    REQUIRE(!contentRoot.empty());
+
+    nf::WorldFileService svc;
+    REQUIRE(svc.LoadWorld(contentRoot + "/Definitions/DevWorld.json"));
+
+    const auto& data = svc.GetWorldData();
+    REQUIRE(data.has_value());
+    REQUIRE(data->worldId == "DevWorld");
+    REQUIRE(data->seed == 42);
+    REQUIRE_FALSE(svc.GetState().dirty);
+}
+
+TEST_CASE("WorldFileService save and reload round-trip", "[WorldFileService]") {
+    auto contentRoot = FindContentRoot();
+    REQUIRE(!contentRoot.empty());
+    const std::string savePath = TempPath("nf_wfs_roundtrip.json");
+
+    nf::WorldFileService svc;
+    REQUIRE(svc.LoadWorld(contentRoot + "/Definitions/DevWorld.json"));
+
+    // Modify and save
+    svc.GetMutableWorldData().seed = 777;
+    svc.MarkDirty();
+    REQUIRE(svc.GetState().dirty);
+    REQUIRE(svc.SaveWorldAs(savePath));
+    REQUIRE_FALSE(svc.GetState().dirty);
+
+    // Load the saved file into a new service
+    nf::WorldFileService svc2;
+    REQUIRE(svc2.LoadWorld(savePath));
+    REQUIRE(svc2.GetWorldData()->seed == 777);
+
+    std::remove(savePath.c_str());
+}
+
+TEST_CASE("WorldFileService fails on empty path", "[WorldFileService]") {
+    nf::WorldFileService svc;
+    REQUIRE_FALSE(svc.LoadWorld(""));
+    REQUIRE_FALSE(svc.SaveWorld());
 }

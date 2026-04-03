@@ -25,6 +25,60 @@ void Inspector::SetSelectedVoxel(const nf::SelectionHandle& handle,
         gameWorld.GetVoxelEditApi().GetVoxel(m_VoxelX, m_VoxelY, m_VoxelZ));
 }
 
+// ---------------------------------------------------------------------------
+// HandlePropertyClick — apply edits when user clicks on editable properties
+// ---------------------------------------------------------------------------
+
+void Inspector::HandlePropertyClick(float x, float /*y*/, float w, float rowY,
+                                     float lineH, const nf::PropertyEntry& entry,
+                                     size_t /*entryIndex*/)
+{
+    if (!m_Input || !m_PropSystem) return;
+    if (!m_Input->leftJustPressed) return;
+    if (entry.readOnly) return;
+
+    const float mx = m_Input->mouseX;
+    const float my = m_Input->mouseY;
+
+    // Check if click is within the value column of this row.
+    const float labelColW = w * 0.45f;
+    const float valX = x + labelColW;
+    if (mx < valX || mx > x + w) return;
+    if (my < rowY || my > rowY + lineH) return;
+
+    nf::PropertyValue newValue = entry.value;
+
+    if (std::holds_alternative<bool>(entry.value)) {
+        // Toggle boolean
+        newValue = !std::get<bool>(entry.value);
+    } else if (std::holds_alternative<int>(entry.value)) {
+        // Left half of value column decrements, right half increments.
+        int val = std::get<int>(entry.value);
+        if (mx < valX + (w - labelColW) * 0.5f)
+            val += 1;
+        else
+            val -= 1;
+        newValue = val;
+    } else if (std::holds_alternative<float>(entry.value)) {
+        // Left half of value column steps up, right half steps down by 0.1.
+        float val = std::get<float>(entry.value);
+        if (mx < valX + (w - labelColW) * 0.5f)
+            val += 0.1f;
+        else
+            val -= 0.1f;
+        newValue = val;
+    } else {
+        // String and Vec3 editing requires text input — skip for now
+        return;
+    }
+
+    if (m_PropSystem->ApplyEdit(entry.name, newValue)) {
+        if (m_OnPropertyEdited) {
+            m_OnPropertyEdited();
+        }
+    }
+}
+
 void Inspector::Draw(float x, float y, float w, float h) {
     if (!m_Renderer) return;
 
@@ -35,6 +89,7 @@ void Inspector::Draw(float x, float y, float w, float h) {
     static constexpr uint32_t kDirtyColor   = 0xFFAA44FF;
     static constexpr uint32_t kSepColor     = 0x444444FF;
     static constexpr uint32_t kEditableCol  = 0x78C8FFFF;
+    static constexpr uint32_t kHoverCol     = 0x90E0FFFF;
     const float dpi   = m_Renderer->GetDpiScale();
     const float lineH = 20.f * dpi;
     const float padX  = 6.f * dpi;
@@ -55,17 +110,36 @@ void Inspector::Draw(float x, float y, float w, float h) {
 
         const float labelColW = w * 0.45f;
 
-        for (const auto& entry : ps.entries) {
+        for (size_t i = 0; i < ps.entries.size(); ++i) {
+            const auto& entry = ps.entries[i];
             if (cy + lineH > y + h) break;
 
             // Property name
             const uint32_t nameCol = entry.dirty ? kDirtyColor : kLabelColor;
             m_Renderer->DrawText(entry.name + ":", x + padX, cy, nameCol, scale);
 
+            // Determine if mouse is hovering this editable row
+            bool hovered = false;
+            if (m_Input && !entry.readOnly) {
+                const float mx = m_Input->mouseX;
+                const float my = m_Input->mouseY;
+                if (mx >= x && mx <= x + w && my >= cy && my < cy + lineH) {
+                    hovered = true;
+                }
+            }
+
             // Property value
             std::string valStr = nf::PropertyInspectorSystem::ToDisplayString(entry);
-            const uint32_t valCol = entry.readOnly ? kValueColor : kEditableCol;
+            if (!entry.readOnly && std::holds_alternative<bool>(entry.value)) {
+                // Show a clickable checkbox indicator for bools
+                valStr = std::get<bool>(entry.value) ? "[x] true" : "[ ] false";
+            }
+            const uint32_t valCol = entry.readOnly ? kValueColor
+                                  : (hovered ? kHoverCol : kEditableCol);
             m_Renderer->DrawText(valStr, x + padX + labelColW, cy, valCol, scale);
+
+            // Handle click interaction
+            HandlePropertyClick(x, y, w, cy, lineH, entry, i);
 
             cy += lineH;
         }

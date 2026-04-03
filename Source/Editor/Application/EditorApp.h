@@ -23,6 +23,7 @@
 #include "Editor/Commands/EditorHotkeyMap.h"
 #include "Editor/Tools/EditorToolContext.h"
 #include "Editor/Panels/StatusBarPanel.h"
+#include "Editor/Panels/WorldDebugPanel.h"
 #include "Editor/Commands/EditorCommand.h"
 #include <cstdint>
 #include <memory>
@@ -93,6 +94,7 @@ private:
     nf::EditorHotkeyMap         m_HotkeyMap;
     nf::StatusBarPanel          m_StatusBar;
     CommandHistory              m_CommandHistory;
+    WorldDebugPanel             m_WorldDebugPanel;
 
     /// @brief Register all editor commands with the command registry.
     void RegisterEditorCommands();

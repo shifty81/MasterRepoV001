@@ -18,11 +18,11 @@
 - [x] render scene output into a viewport target — `ForwardRenderer` renders chunks via OpenGL
 - [x] present the target into the viewport rect — scissor + glViewport clipped to panel bounds
 - [x] convert picking to viewport-local coordinates — `EditorViewport::PickRay` implemented
-- [ ] archive/remove fake or inactive viewport path — `EditorViewportNF.cpp` (nf:: namespace) still present
+- [x] archive/remove fake or inactive viewport path — `EditorViewportNF` moved to `Archive/Examples/Editor_nf_layer/`
 
 ## Phase 3 — Editor State Wiring
 - [x] wire `SelectionService` to viewport, outliner, and inspector — fully wired in `EditorApp::Init`
-- [ ] wire `PropertyInspectorSystem` with dirty tracking — Inspector shows read-only data; editing not wired
+- [x] wire `PropertyInspectorSystem` with dirty tracking — Inspector click-to-edit wired for bool/int/float; dirty state propagated to world
 - [x] bind `WorldOutlinerPanel` to real world/chunk data — `SceneOutliner` reads `Level.GetWorld().GetLiveEntities()`
 - [x] bind status bar to live tool/mode/selection state — `StatusBarPanel` reflects tool/world/chunk state
 - [x] bind menu/toolbar enable state to command availability — Undo/Redo toolbar buttons check `CanExecute`; drop-down items dim when disabled; File/Edit/View menus wired to `EditorCommandRegistry`
@@ -30,13 +30,13 @@
 ## Phase 4 — Dev World Baseline
 - [x] boot editor directly into `DevWorld` — confirmed; 9 chunks loaded on first boot
 - [x] verify `WorldFileService` save/load path — `World.SaveDevWorld` and `World.ReloadDevWorld` commands registered
-- [ ] verify `DevWorldSerializer` round-trip — not smoke-tested end-to-end
-- [ ] verify world debug overlay with real data — `WorldDebugOverlay` exists but not registered in docking
+- [x] verify `DevWorldSerializer` round-trip — full JSON parse/write implemented; 6 round-trip tests passing
+- [x] verify world debug overlay with real data — `WorldDebugPanel` registered in docking; live overlay data displayed
 - [x] verify selection/editing against live dev world state — voxel add/remove works in viewport
 
 ## Phase 5 — Voxel Authoring and First Interaction Loop
 - [x] wire voxel inspect/add/remove from viewport hit data — all four tool modes functional
-- [ ] add voxel edit undo/redo — `CommandHistory` exists but voxel edits not pushed to it
+- [x] add voxel edit undo/redo — `VoxelPlaceCommand` and `VoxelRemoveCommand` pushed through `CommandHistory`
 - [x] batch chunk mesh invalidation — `ChunkMeshCache.RebuildDirty()` called every frame
 - [ ] separate collision rebuild from mesh rebuild where possible — not implemented
 - [x] prove starter R.I.G. interaction loop — `RigState` + `Inventory` + `MiningTool` + PIE mode working
