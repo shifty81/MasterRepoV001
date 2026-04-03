@@ -1,4 +1,5 @@
 #include "Editor/Panels/WorldDebugPanel.h"
+#include "Editor/Panels/EditorTheme.h"
 #include "UI/Rendering/UIRenderer.h"
 
 namespace NF::Editor {
@@ -9,9 +10,9 @@ void WorldDebugPanel::Draw(float x, float y, float w, float h)
 {
     if (!m_Renderer) return;
 
-    static constexpr uint32_t kHeaderColor = 0xCCCCCCFF;
-    static constexpr uint32_t kTextColor   = 0xA0D0A0FF;
-    static constexpr uint32_t kSepColor    = 0x444444FF;
+    const uint32_t kHeaderColor = ActiveTheme().textHeader;
+    const uint32_t kTextColor   = ActiveTheme().textConsole;
+    const uint32_t kSepColor    = ActiveTheme().separator;
 
     const float dpi   = m_Renderer->GetDpiScale();
     const float lineH = 18.f * dpi;

@@ -1,4 +1,5 @@
 #include "Editor/Panels/ContentBrowser.h"
+#include "Editor/Panels/EditorTheme.h"
 #include "UI/Rendering/UIRenderer.h"
 #include "Core/Logging/Log.h"
 #include <filesystem>
@@ -99,11 +100,12 @@ void ContentBrowser::Update(float dt)
 void ContentBrowser::Draw(float x, float y, float w, float h) {
     if (!m_Renderer) return;
 
-    static constexpr uint32_t kTextColor    = 0xB0B0B0FF;
-    static constexpr uint32_t kLabelColor   = 0x808080FF;
-    static constexpr uint32_t kHoverColor   = 0x3F3F50FF;
-    static constexpr uint32_t kSelectColor  = 0x264F78FF;
-    static constexpr uint32_t kDirColor     = 0xD0B870FF;
+    const auto& t = ActiveTheme();
+    const uint32_t kTextColor    = t.textPrimary;
+    const uint32_t kLabelColor   = t.textSecondary;
+    const uint32_t kHoverColor   = t.hoverBg;
+    const uint32_t kSelectColor  = t.selectBg;
+    const uint32_t kDirColor     = t.dirColor;
 
     const float dpi   = m_Renderer->GetDpiScale();
     const float lineH = 18.f * dpi;

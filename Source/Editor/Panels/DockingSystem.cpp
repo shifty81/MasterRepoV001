@@ -1,17 +1,11 @@
 #include "Editor/Panels/DockingSystem.h"
+#include "Editor/Panels/EditorTheme.h"
 #include "UI/Rendering/UIRenderer.h"
 #include "Core/Logging/Log.h"
 #include <algorithm>
 #include <stdexcept>
 
 namespace NF::Editor {
-
-static constexpr uint32_t kPanelBgColor       = 0x24262BFF;
-static constexpr uint32_t kTitleBarBgColor    = 0x2F343DFF;
-static constexpr uint32_t kTitleBarAccent     = 0x5E89B8FF;
-static constexpr uint32_t kTitleTextColor     = 0xD7DCE3FF;
-static constexpr uint32_t kPanelBorderColor   = 0x4B5563FF;
-static constexpr uint32_t kPanelContentShade  = 0x1A1C20AA;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -227,25 +221,25 @@ void DockingSystem::DrawNode(const DockNode& node,
 
             if (!isTransparent) {
                 // Panel background
-                m_Renderer->DrawRect({x, y, w, h}, kPanelBgColor);
+                m_Renderer->DrawRect({x, y, w, h}, ActiveTheme().panelBg);
                 // Content shade
                 if (contentH > 0.f)
-                    m_Renderer->DrawRect({x, contentY, w, contentH}, kPanelContentShade);
+                    m_Renderer->DrawRect({x, contentY, w, contentH}, ActiveTheme().contentShade);
             }
 
             // Title bar (always drawn — even for transparent panels)
-            m_Renderer->DrawRect({x, y, w, titleBarH}, kTitleBarBgColor);
-            m_Renderer->DrawRect({x, y, w, 2.f * dpi}, kTitleBarAccent);
+            m_Renderer->DrawRect({x, y, w, titleBarH}, ActiveTheme().titleBarBg);
+            m_Renderer->DrawRect({x, y, w, 2.f * dpi}, ActiveTheme().titleBarAccent);
 
             // Title text — scale 2 at 96 DPI; UIRenderer multiplies by DPI.
             if (!node.panelName.empty()) {
                 m_Renderer->DrawText(node.panelName,
                                      x + 6.f * dpi, y + 4.f * dpi,
-                                     kTitleTextColor, 2.f);
+                                     ActiveTheme().textTitle, 2.f);
             }
 
             // Panel border
-            m_Renderer->DrawOutlineRect({x, y, w, h}, kPanelBorderColor);
+            m_Renderer->DrawOutlineRect({x, y, w, h}, ActiveTheme().panelBorder);
         }
 
         // Call the panel's content draw callback with the content area

@@ -1,4 +1,5 @@
 #include "Editor/Panels/MaterialEditorPanel.h"
+#include "Editor/Panels/EditorTheme.h"
 #include "Editor/Application/EditorInputState.h"
 #include "UI/Rendering/UIRenderer.h"
 #include "Core/Logging/Log.h"
@@ -40,12 +41,13 @@ static MaterialPin MakeInputPin(uint32_t& nextId,
 
 static uint32_t PinTypeColor(PinType type)
 {
+    const auto& t = ActiveTheme();
     switch (type) {
-    case PinType::Float:   return 0x88CC88FF;
-    case PinType::Vec3:    return 0xCC88CCFF;
-    case PinType::Color:   return 0xFFCC44FF;
-    case PinType::Texture: return 0x4488CCFF;
-    case PinType::Bool:    return 0xCC4444FF;
+    case PinType::Float:   return t.pinFloat;
+    case PinType::Vec3:    return t.pinVec3;
+    case PinType::Color:   return t.pinColor;
+    case PinType::Texture: return t.pinTexture;
+    case PinType::Bool:    return t.pinBool;
     }
     return 0xAAAAAAAA;
 }
@@ -156,15 +158,16 @@ void MaterialEditorPanel::Draw(float x, float y, float w, float h)
     if (!m_Open) return;
     if (!m_Renderer) return;
 
-    static constexpr uint32_t kBgColor      = 0x1A1A1AFF;
-    static constexpr uint32_t kGridColor    = 0x252525FF;
-    static constexpr uint32_t kNodeBg       = 0x2D2D30FF;
-    static constexpr uint32_t kNodeHeader   = 0x3B6EA5FF;
-    static constexpr uint32_t kNodeBorder   = 0x555555FF;
-    static constexpr uint32_t kTextColor    = 0xCCCCCCFF;
-    static constexpr uint32_t kHeaderText   = 0xFFFFFFFF;
-    static constexpr uint32_t kLinkColor    = 0x888888FF;
-    static constexpr uint32_t kTitleColor   = 0xCCCCCCFF;
+    const auto& t = ActiveTheme();
+    const uint32_t kBgColor      = t.graphBg;
+    const uint32_t kGridColor    = t.graphGrid;
+    const uint32_t kNodeBg       = t.nodeBg;
+    const uint32_t kNodeHeader   = t.nodeHeader;
+    const uint32_t kNodeBorder   = t.nodeBorder;
+    const uint32_t kTextColor    = t.textHeader;
+    const uint32_t kHeaderText   = 0xFFFFFFFF;
+    const uint32_t kLinkColor    = t.nodeLink;
+    const uint32_t kTitleColor   = t.textHeader;
 
     const float dpi   = m_Renderer->GetDpiScale();
     const float scale = 2.f;

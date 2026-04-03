@@ -1,4 +1,5 @@
 #include "Editor/Panels/ConsolePanel.h"
+#include "Editor/Panels/EditorTheme.h"
 #include "UI/Rendering/UIRenderer.h"
 #include <algorithm>
 
@@ -14,8 +15,8 @@ void ConsolePanel::Update([[maybe_unused]] float dt) {
 void ConsolePanel::Draw(float x, float y, float w, float h) {
     if (!m_Renderer) return;
 
-    static constexpr uint32_t kTextColor  = 0x9CDCFEFF; // light cyan
-    static constexpr uint32_t kLabelColor = 0x808080FF;
+    const uint32_t kTextColor  = ActiveTheme().textConsole;
+    const uint32_t kLabelColor = ActiveTheme().textSecondary;
 
     const float dpi   = m_Renderer->GetDpiScale();
     const float lineH = 18.f * dpi;

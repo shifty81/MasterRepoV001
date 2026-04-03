@@ -1,4 +1,5 @@
 #include "Editor/Panels/PreferencesPanel.h"
+#include "Editor/Panels/EditorTheme.h"
 #include "Editor/Application/EditorInputState.h"
 #include "UI/Rendering/UIRenderer.h"
 #include "Core/Logging/Log.h"
@@ -93,16 +94,17 @@ void PreferencesPanel::Draw(float x, float y, float w, float h)
     if (!m_Open) return;
     if (!m_Renderer) return;
 
-    static constexpr uint32_t kHeaderColor  = 0xCCCCCCFF;
-    static constexpr uint32_t kLabelColor   = 0xA0A0A0FF;
-    static constexpr uint32_t kValueColor   = 0xD0D0D0FF;
-    static constexpr uint32_t kBoolOnColor  = 0x44CC66FF;
-    static constexpr uint32_t kBoolOffColor = 0x666666FF;
-    static constexpr uint32_t kSepColor     = 0x444444FF;
-    static constexpr uint32_t kBtnBg        = 0x3C3C3CFF;
-    static constexpr uint32_t kBtnHover     = 0x505053FF;
-    static constexpr uint32_t kDirtyColor   = 0xFFAA44FF;
-    static constexpr uint32_t kPanelBg      = 0x1E1E1EEE;
+    const auto& t = ActiveTheme();
+    const uint32_t kHeaderColor  = t.textHeader;
+    const uint32_t kLabelColor   = t.textSecondary;
+    const uint32_t kValueColor   = t.textValue;
+    const uint32_t kBoolOnColor  = t.boolOn;
+    const uint32_t kBoolOffColor = t.boolOff;
+    const uint32_t kSepColor     = t.separator;
+    const uint32_t kBtnBg        = t.buttonBg;
+    const uint32_t kBtnHover     = t.buttonHover;
+    const uint32_t kDirtyColor   = t.dirty;
+    const uint32_t kPanelBg      = t.panelBg;
 
     const float dpi   = m_Renderer->GetDpiScale();
     const float lineH = 22.f * dpi;

@@ -1,4 +1,5 @@
 #include "Editor/Application/EditorApp.h"
+#include "Editor/Panels/EditorTheme.h"
 #include "Core/Config/ProjectManifest.h"
 #include "Core/Logging/Log.h"
 #include "Game/Voxel/VoxelType.h"
@@ -174,6 +175,9 @@ void EditorApp::DispatchOsEvent(unsigned msg, uintptr_t wParam, intptr_t lParam)
 #endif
 
 bool EditorApp::Init() {
+    // Initialise the global editor colour theme before any panel draws.
+    SetTheme(EditorTheme::Dark);
+
     Logger::Log(LogLevel::Info, "Editor", "[1/6] EditorApp — loading project manifest");
 
     // Step 1 — load project manifest
@@ -654,11 +658,11 @@ void EditorApp::UpdateStatusBar()
 
 void EditorApp::DrawStatusBar(float x, float y, float w, float h)
 {
-    static constexpr uint32_t kStatusBg   = 0x1E1E2EFF;
-    static constexpr uint32_t kStatusText = 0xA0A0B0FF;
+    const uint32_t kStatusBg   = ActiveTheme().statusBarBg;
+    const uint32_t kStatusText = ActiveTheme().textPrimary;
 
     m_UIRenderer.DrawRect({x, y, w, h}, kStatusBg);
-    m_UIRenderer.DrawRect({x, y, w, 1.f}, 0x444444FF); // top separator
+    m_UIRenderer.DrawRect({x, y, w, 1.f}, ActiveTheme().separator); // top separator
 
     const float dpi = m_UIRenderer.GetDpiScale();
     std::string status = m_StatusBar.BuildDisplayString();

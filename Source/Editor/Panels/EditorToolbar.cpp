@@ -1,4 +1,5 @@
 #include "Editor/Panels/EditorToolbar.h"
+#include "Editor/Panels/EditorTheme.h"
 #include "Core/Logging/Log.h"
 
 #ifdef _WIN32
@@ -10,22 +11,24 @@
 namespace NF::Editor {
 
 // ---------------------------------------------------------------------------
-// Colour constants
+// Colour aliases — resolved from the active EditorTheme at draw time.
+// These macros keep the rest of this file readable while eliminating
+// hard-coded colour constants.
 // ---------------------------------------------------------------------------
-static constexpr uint32_t kToolbarBg     = 0x252527FF; // button row background
-static constexpr uint32_t kMenuBarBg     = 0x2D2D30FF; // menu bar row background
-static constexpr uint32_t kMenuOpenBg    = 0x3E3E42FF; // open menu header highlight
-static constexpr uint32_t kDropdownBg    = 0x1E1E1EFF; // drop-down panel background
-static constexpr uint32_t kBtnBg         = 0x3C3C3CFF; // normal button
-static constexpr uint32_t kBtnBgHover    = 0x505053FF; // hovered button
-static constexpr uint32_t kBtnBgActive   = 0x3B6EA5FF; // active tool highlight
-static constexpr uint32_t kBtnBgPlay     = 0x2D6A2DFF; // green for Play
-static constexpr uint32_t kBtnBgStop     = 0x6A2D2DFF; // red for Stop
-static constexpr uint32_t kBtnBgLaunch   = 0x1E4B7AFF; // blue for Launch
-static constexpr uint32_t kTextColor     = 0xCCCCCCFF;
-static constexpr uint32_t kTitleColor    = 0xFFFFFFFF;
-static constexpr uint32_t kSepColor      = 0x444444FF;
-static constexpr uint32_t kDisabledColor = 0x555555FF; // dimmed text for disabled items
+#define kToolbarBg     ActiveTheme().toolbarBg
+#define kMenuBarBg     ActiveTheme().menuBarBg
+#define kMenuOpenBg    ActiveTheme().menuOpenBg
+#define kDropdownBg    ActiveTheme().dropdownBg
+#define kBtnBg         ActiveTheme().buttonBg
+#define kBtnBgHover    ActiveTheme().buttonHover
+#define kBtnBgActive   ActiveTheme().buttonActive
+#define kBtnBgPlay     ActiveTheme().buttonPlay
+#define kBtnBgStop     ActiveTheme().buttonStop
+#define kBtnBgLaunch   ActiveTheme().buttonLaunch
+#define kTextColor     ActiveTheme().textHeader
+#define kTitleColor    ActiveTheme().textTitle
+#define kSepColor      ActiveTheme().separator
+#define kDisabledColor ActiveTheme().textDisabled
 
 // ---------------------------------------------------------------------------
 // Static menu definitions
