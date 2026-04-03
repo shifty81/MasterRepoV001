@@ -306,7 +306,7 @@ TEST_CASE("VoxelSerializer: single chunk round-trip", "[VoxelSerializer]") {
     REQUIRE(VoxelSerializer::DeserializeChunk(bytes.data(), bytes.size(), loaded));
     REQUIRE(loaded.GetVoxel(5,  5,  5)  == static_cast<VoxelId>(VoxelType::Stone));
     REQUIRE(loaded.GetVoxel(10, 10, 10) == static_cast<VoxelId>(VoxelType::Ore));
-    REQUIRE(!loaded.IsDirty()); // ClearDirty called during load
+    REQUIRE(loaded.IsDirty()); // Stays dirty so RebuildDirty() regenerates mesh
 }
 
 TEST_CASE("VoxelSerializer: chunk map round-trip in memory", "[VoxelSerializer]") {
