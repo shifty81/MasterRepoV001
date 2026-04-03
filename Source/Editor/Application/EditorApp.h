@@ -17,8 +17,15 @@
 #include "Editor/Panels/HUDPanel.h"
 #include "Editor/Panels/EditorToolbar.h"
 #include "Editor/Viewport/EditorViewport.h"
+#include "Editor/Selection/SelectionService.h"
+#include "Editor/Commands/EditorCommandRegistry.h"
+#include "Editor/Commands/EditorHotkeyMap.h"
+#include "Editor/Tools/EditorToolContext.h"
+#include "Editor/Panels/StatusBarPanel.h"
+#include "Editor/Commands/EditorCommand.h"
 #include <cstdint>
 #include <memory>
+#include <string>
 
 namespace NF::Editor {
 
@@ -76,6 +83,35 @@ private:
     VoxelInspector m_VoxelInspector;
     HUDPanel       m_HUDPanel;
     EditorToolbar  m_Toolbar;
+
+    // ---- Editor state systems (reset integration) ----
+    nf::SelectionService       m_Selection;
+    nf::EditorToolContext      m_ToolContext;
+    nf::EditorCommandRegistry  m_CommandRegistry;
+    nf::EditorHotkeyMap        m_HotkeyMap;
+    nf::StatusBarPanel         m_StatusBar;
+    CommandHistory             m_CommandHistory;
+
+    /// @brief Register all editor commands with the command registry.
+    void RegisterEditorCommands();
+
+    /// @brief Process hotkey presses against the hotkey map.
+    void ProcessHotkeys();
+
+    /// @brief Update the status bar from current editor state.
+    void UpdateStatusBar();
+
+    /// @brief Handle viewport left-click for selection and tool actions.
+    void HandleViewportInteraction();
+
+    /// @brief Draw the status bar at the bottom of the window.
+    void DrawStatusBar(float x, float y, float w, float h);
+
+    /// @brief Apply the current selection to the inspector panel.
+    void SyncInspectorToSelection();
+
+    /// @brief Active tool mode display name.
+    [[nodiscard]] static const char* ToolModeName(nf::EditorToolMode mode) noexcept;
 };
 
 } // namespace NF::Editor

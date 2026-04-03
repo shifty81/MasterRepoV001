@@ -27,12 +27,7 @@ void EditorViewport::Resize(int width, int height) {
 void EditorViewport::Update([[maybe_unused]] float dt) {
     if (!m_Input || m_BoundsW <= 0.f || m_BoundsH <= 0.f) return;
 
-    // Only respond when the cursor is inside the viewport panel.
-    const bool inViewport =
-        m_Input->mouseX >= m_BoundsX && m_Input->mouseX < m_BoundsX + m_BoundsW &&
-        m_Input->mouseY >= m_BoundsY && m_Input->mouseY < m_BoundsY + m_BoundsH;
-
-    if (!inViewport) return;
+    if (!IsMouseInside()) return;
 
     const float dx = m_Input->mouseDeltaX;
     const float dy = m_Input->mouseDeltaY;
@@ -67,6 +62,12 @@ void EditorViewport::Update([[maybe_unused]] float dt) {
     }
 }
 
+bool EditorViewport::IsMouseInside() const noexcept {
+    if (!m_Input || m_BoundsW <= 0.f || m_BoundsH <= 0.f) return false;
+    return m_Input->mouseX >= m_BoundsX && m_Input->mouseX < m_BoundsX + m_BoundsW &&
+           m_Input->mouseY >= m_BoundsY && m_Input->mouseY < m_BoundsY + m_BoundsH;
+}
+
 void EditorViewport::Draw(float x, float y, float w, float h) {
     // Cache bounds so Update() can do mouse-in-viewport testing.
     m_BoundsX = x;
@@ -76,31 +77,31 @@ void EditorViewport::Draw(float x, float y, float w, float h) {
 
     if (!m_Renderer) return;
 
-    static constexpr uint32_t kViewportBg    = 0x1E1E1EFF;
-    static constexpr uint32_t kGridLineColor = 0x333333FF;
-    static constexpr uint32_t kLabelColor    = 0x606060FF;
-    static constexpr uint32_t kCamInfoColor  = 0x808080FF;
+    const float dpi = m_Renderer->GetDpiScale();
 
-    m_Renderer->DrawRect({x, y, w, h}, kViewportBg);
+    if (!m_SceneRendered) {
+        // Fallback: draw placeholder grid when no 3D scene is being rendered.
+        static constexpr uint32_t kViewportBg    = 0x1E1E1EFF;
+        static constexpr uint32_t kGridLineColor = 0x333333FF;
+        static constexpr uint32_t kLabelColor    = 0x606060FF;
 
-    // Grid overlay — scale grid spacing with DPI.
-    const float dpi         = m_Renderer->GetDpiScale();
-    const float gridSpacing = 40.f * dpi;
-    for (float gx = x + gridSpacing; gx < x + w; gx += gridSpacing)
-        m_Renderer->DrawRect({gx, y, 1.f, h}, kGridLineColor);
-    for (float gy = y + gridSpacing; gy < y + h; gy += gridSpacing)
-        m_Renderer->DrawRect({x, gy, w, 1.f}, kGridLineColor);
+        m_Renderer->DrawRect({x, y, w, h}, kViewportBg);
 
-    // Center label
-    m_Renderer->DrawText("3D Viewport",
-                         x + w * 0.5f - 44.f * dpi,
-                         y + h * 0.5f - 7.f  * dpi,
-                         kLabelColor, 2.f);
+        const float gridSpacing = 40.f * dpi;
+        for (float gx = x + gridSpacing; gx < x + w; gx += gridSpacing)
+            m_Renderer->DrawRect({gx, y, 1.f, h}, kGridLineColor);
+        for (float gy = y + gridSpacing; gy < y + h; gy += gridSpacing)
+            m_Renderer->DrawRect({x, gy, w, 1.f}, kGridLineColor);
+
+        m_Renderer->DrawText("3D Viewport",
+                             x + w * 0.5f - 44.f * dpi,
+                             y + h * 0.5f - 7.f  * dpi,
+                             kLabelColor, 2.f);
+    }
 
     // Camera info overlay (bottom-left corner of viewport).
-    // Converts pitch/yaw to degrees for readability.
+    static constexpr uint32_t kCamInfoColor  = 0x808080FF;
     const float padX = 6.f * dpi;
-    const float padY = 6.f * dpi;
 
     auto toDeg = [](float rad) -> int {
         return static_cast<int>(rad * (180.f / std::numbers::pi_v<float>));
@@ -112,6 +113,60 @@ void EditorViewport::Draw(float x, float y, float w, float h) {
                          x + padX,
                          y + h - 18.f * dpi,
                          kCamInfoColor, 1.5f);
+
+    // Controls hint (bottom-right)
+    static constexpr uint32_t kHintColor = 0x505050FF;
+    m_Renderer->DrawText("RMB: Orbit  MMB: Pan  Wheel: Zoom",
+                         x + w - 280.f * dpi,
+                         y + h - 18.f * dpi,
+                         kHintColor, 1.5f);
+}
+
+bool EditorViewport::PickRay(float mouseX, float mouseY,
+                              Vector3& outOrigin, Vector3& outDirection) const noexcept {
+    if (m_BoundsW <= 0.f || m_BoundsH <= 0.f) return false;
+
+    // Check if mouse is in viewport bounds.
+    if (mouseX < m_BoundsX || mouseX >= m_BoundsX + m_BoundsW ||
+        mouseY < m_BoundsY || mouseY >= m_BoundsY + m_BoundsH)
+        return false;
+
+    // Convert to viewport-local coordinates [0, width) and [0, height).
+    const float localX = mouseX - m_BoundsX;
+    const float localY = mouseY - m_BoundsY;
+
+    // Convert to NDC [-1, 1].
+    const float ndcX = (localX / m_BoundsW) * 2.f - 1.f;
+    const float ndcY = 1.f - (localY / m_BoundsH) * 2.f; // Y flipped
+
+    // Get inverse projection to convert from clip space to view space.
+    Matrix4x4 proj = GetProjectionMatrix();
+    // For a standard perspective projection:
+    //   clip.x = proj[0][0] * view.x
+    //   clip.y = proj[1][1] * view.y
+    //   clip.z/w encodes depth
+    // So view-space ray direction at NDC (ndcX, ndcY, -1) is:
+    const float viewX = ndcX / proj.M[0][0];
+    const float viewY = ndcY / proj.M[1][1];
+    Vector3 viewDir = Vector3{viewX, viewY, -1.f}.Normalized();
+
+    // Build camera basis from orbit parameters.
+    const float cp = std::cos(m_Pitch), sp = std::sin(m_Pitch);
+    const float cy = std::cos(m_Yaw),  sy = std::sin(m_Yaw);
+
+    Vector3 eye{
+        m_Target.X + m_Zoom * cp * sy,
+        m_Target.Y + m_Zoom * sp,
+        m_Target.Z + m_Zoom * cp * cy
+    };
+    Vector3 forward = (m_Target - eye).Normalized();
+    Vector3 right   = forward.Cross({0.f, 1.f, 0.f}).Normalized();
+    Vector3 up      = right.Cross(forward);
+
+    // Transform view-space direction to world space.
+    outDirection = (right * viewDir.X + up * viewDir.Y - forward * viewDir.Z).Normalized();
+    outOrigin    = eye;
+    return true;
 }
 
 Matrix4x4 EditorViewport::GetViewMatrix() const noexcept {
@@ -138,9 +193,11 @@ Matrix4x4 EditorViewport::GetViewMatrix() const noexcept {
 }
 
 Matrix4x4 EditorViewport::GetProjectionMatrix() const noexcept {
-    // Perspective projection (45° FOV, near=0.1, far=1000).
-    const float aspect = (m_Height > 0)
-        ? static_cast<float>(m_Width) / static_cast<float>(m_Height) : 1.f;
+    // Use viewport panel bounds for aspect ratio when available,
+    // otherwise fall back to m_Width/m_Height.
+    const float vpW = (m_BoundsW > 0.f) ? m_BoundsW : static_cast<float>(m_Width);
+    const float vpH = (m_BoundsH > 0.f) ? m_BoundsH : static_cast<float>(m_Height);
+    const float aspect = (vpH > 0.f) ? vpW / vpH : 1.f;
     const float fovY  = 0.7854f; // ~45 degrees in radians
     const float nearZ = 0.1f, farZ = 1000.f;
     const float f     = 1.f / std::tan(fovY * 0.5f);

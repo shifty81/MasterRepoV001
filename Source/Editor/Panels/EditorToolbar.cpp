@@ -15,6 +15,7 @@ namespace NF::Editor {
 static constexpr uint32_t kToolbarBg     = 0x252527FF; // near-black strip
 static constexpr uint32_t kBtnBg         = 0x3C3C3CFF; // normal button
 static constexpr uint32_t kBtnBgHover    = 0x505053FF; // hovered button
+static constexpr uint32_t kBtnBgActive   = 0x3B6EA5FF; // active tool highlight
 static constexpr uint32_t kBtnBgPlay     = 0x2D6A2DFF; // green for Play
 static constexpr uint32_t kBtnBgStop     = 0x6A2D2DFF; // red for Stop
 static constexpr uint32_t kBtnBgLaunch   = 0x1E4B7AFF; // blue for Launch
@@ -78,6 +79,29 @@ void EditorToolbar::Draw(float x, float y, float w, float h)
     const float btnW = 80.f * dpi;
     const float gap  = 4.f * dpi;
     float bx = x + 160.f * dpi;
+
+    // ---- Tool mode buttons ----
+    if (m_ToolContext) {
+        auto toolBtn = [&](const char* label, nf::EditorToolMode mode) {
+            const bool isActive = (m_ToolContext->activeMode == mode);
+            const uint32_t bg = isActive ? kBtnBgActive : kBtnBg;
+            if (DrawButton(bx, btnY, btnW, btnH, label, bg, kTextColor)) {
+                m_ToolContext->activeMode = mode;
+                Logger::Log(LogLevel::Info, "EditorToolbar",
+                            std::string("Tool mode: ") + label);
+            }
+            bx += btnW + gap;
+        };
+
+        toolBtn("Select",  nf::EditorToolMode::Select);
+        toolBtn("Inspect", nf::EditorToolMode::VoxelInspect);
+        toolBtn("+ Voxel", nf::EditorToolMode::VoxelAdd);
+        toolBtn("- Voxel", nf::EditorToolMode::VoxelRemove);
+
+        // Separator
+        m_Renderer->DrawRect({bx, btnY, 1.f, btnH}, kSepColor);
+        bx += gap * 2.f;
+    }
 
     // Play / Reset — restarts the interaction loop
     if (DrawButton(bx, btnY, btnW, btnH, "> Play", kBtnBgPlay, kTextColor)) {

@@ -40,6 +40,27 @@ public:
     /// @brief Return the current projection matrix.
     [[nodiscard]] Matrix4x4 GetProjectionMatrix() const noexcept;
 
+    /// @brief Compute a world-space pick ray from viewport-local mouse coords.
+    /// @param mouseX  Mouse X in window coordinates.
+    /// @param mouseY  Mouse Y in window coordinates.
+    /// @param outOrigin    Ray origin (camera eye).
+    /// @param outDirection Ray direction (normalised).
+    /// @return True if the mouse is inside the viewport bounds.
+    [[nodiscard]] bool PickRay(float mouseX, float mouseY,
+                               Vector3& outOrigin, Vector3& outDirection) const noexcept;
+
+    /// @brief Whether the mouse cursor is currently inside the viewport.
+    [[nodiscard]] bool IsMouseInside() const noexcept;
+
+    /// @brief Mark the viewport as having real 3D scene content rendered.
+    void SetSceneRendered(bool rendered) noexcept { m_SceneRendered = rendered; }
+
+    /// @brief Cached viewport panel bounds (set each Draw call).
+    [[nodiscard]] float GetBoundsX() const noexcept { return m_BoundsX; }
+    [[nodiscard]] float GetBoundsY() const noexcept { return m_BoundsY; }
+    [[nodiscard]] float GetBoundsW() const noexcept { return m_BoundsW; }
+    [[nodiscard]] float GetBoundsH() const noexcept { return m_BoundsH; }
+
 private:
     RenderDevice*           m_Device{nullptr};
     UIRenderer*             m_Renderer{nullptr};
@@ -59,6 +80,8 @@ private:
     float m_BoundsY{0.f};
     float m_BoundsW{0.f};
     float m_BoundsH{0.f};
+
+    bool  m_SceneRendered{false}; ///< True when real 3D content has been rendered.
 };
 
 } // namespace NF::Editor
