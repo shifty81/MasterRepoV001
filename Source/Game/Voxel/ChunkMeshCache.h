@@ -6,6 +6,7 @@
 #include "Game/Voxel/ChunkMap.h"
 #include "Game/Voxel/VoxelMesher.h"
 #include "Core/Math/Matrix.h"
+#include "Core/Math/Vector.h"
 #include <unordered_map>
 #include <memory>
 
@@ -51,6 +52,11 @@ public:
     ///
     /// Call between @c ForwardRenderer::BeginScene() and @c EndScene().
     void Render();
+
+    /// @brief Update the camera position used for specular lighting.
+    ///
+    /// Call once per frame before @c Render() with the current camera eye.
+    void SetCameraPosition(const Vector3& pos) noexcept;
 
     /// @brief Remove the cached mesh for a chunk that has been unloaded.
     void Evict(const ChunkCoord& coord);

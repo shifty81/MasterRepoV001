@@ -272,6 +272,22 @@ bool EditorApp::Init() {
     m_Viewport.Init(m_RenderDevice.get());
     m_Viewport.Resize(m_ClientWidth, m_ClientHeight);
 
+    // Point the orbit camera at the actual terrain generated around the spawn.
+    // Spawn defaults to (128, 32, 128); terrain fills y=0..12 in that area.
+    {
+        const auto& sp = m_GameWorld.GetSpawnPoint();
+        // Terrain surface is roughly at y=10 (see GameWorld::Initialize terrain loop).
+        // Place the orbit pivot at the surface so the camera looks down at it.
+        m_Viewport.SetCameraTarget({sp.Position.X, 10.f, sp.Position.Z});
+        // Zoom out to show all 9 chunks (3×32 = 96 unit span).
+        m_Viewport.SetCameraZoom(80.f);
+        // Tilt ~35° down for a clear overview.
+        m_Viewport.SetCameraPitch(0.6f);
+        Logger::Log(LogLevel::Info, "Editor",
+            "Viewport camera centred on spawn (" + std::to_string(sp.Position.X)
+            + ", " + std::to_string(sp.Position.Z) + ")");
+    }
+
     // Set initial OpenGL viewport to match the window client area.
     m_RenderDevice->Resize(m_ClientWidth, m_ClientHeight);
 
@@ -732,6 +748,7 @@ void EditorApp::TickFrame(float dt)
         Matrix4x4 view = m_Viewport.GetViewMatrix();
         Matrix4x4 proj = m_Viewport.GetProjectionMatrix();
         m_ForwardRenderer.BeginScene(view, proj);
+        m_MeshCache.SetCameraPosition(m_Viewport.GetCameraEye());
         m_MeshCache.Render();
         m_ForwardRenderer.EndScene();
 
@@ -745,6 +762,7 @@ void EditorApp::TickFrame(float dt)
         Matrix4x4 view = m_Viewport.GetViewMatrix();
         Matrix4x4 proj = m_Viewport.GetProjectionMatrix();
         m_ForwardRenderer.BeginScene(view, proj);
+        m_MeshCache.SetCameraPosition(m_Viewport.GetCameraEye());
         m_MeshCache.Render();
         m_ForwardRenderer.EndScene();
 
