@@ -5,7 +5,11 @@
 #include <string>
 #include <vector>
 
+namespace NF { class UIRenderer; }
+
 namespace NF::Editor {
+
+struct EditorInputState;
 
 /// @brief Type of value produced or consumed by a node pin.
 enum class PinType { Float, Vec3, Color, Texture, Bool };
@@ -66,8 +70,14 @@ public:
     /// @return Shared pointer to the compiled material, or nullptr on error.
     [[nodiscard]] std::shared_ptr<Material> Compile() const;
 
-    /// @brief Draw the node-graph panel.
-    void Draw();
+    /// @brief Set the UIRenderer used for drawing.
+    void SetUIRenderer(UIRenderer* r) noexcept { m_Renderer = r; }
+
+    /// @brief Provide the current per-frame OS input state.
+    void SetInputState(const EditorInputState* input) noexcept { m_Input = input; }
+
+    /// @brief Draw the node-graph panel within the given region.
+    void Draw(float x, float y, float w, float h);
 
     /// @brief Returns true while the panel should be visible.
     [[nodiscard]] bool IsOpen() const noexcept { return m_Open; }
@@ -80,6 +90,8 @@ private:
     std::vector<MaterialLink> m_Links;
     uint32_t                  m_NextId{1};
     bool                      m_Open{true};
+    UIRenderer*               m_Renderer{nullptr};
+    const EditorInputState*   m_Input{nullptr};
 
     uint32_t    AllocId() noexcept { return m_NextId++; }
     MaterialNode* FindNode(uint32_t id);

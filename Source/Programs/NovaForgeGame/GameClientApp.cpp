@@ -5,6 +5,7 @@
 #include "Game/Interaction/RigState.h"
 #include "Game/Interaction/Inventory.h"
 #include "Game/Interaction/ResourceItem.h"
+#include "Game/Voxel/VoxelType.h"
 #include <chrono>
 #include <algorithm>
 #include <cmath>
@@ -36,6 +37,11 @@ static constexpr uint32_t kTextColor    = 0xCCCCCCFF;
 static constexpr uint32_t kTitleColor   = 0xFFFFFFFF;
 static constexpr uint32_t kSepColor     = 0x444444FF;
 static constexpr uint32_t kItemColor    = 0xA87A3BFF; // amber inventory
+static constexpr uint32_t kCrosshairCol = 0xCCCCCC99; // translucent crosshair
+static constexpr uint32_t kMenuBg       = 0x0A0A0ADD; // dark semi-transparent overlay
+static constexpr uint32_t kBtnBg        = 0x3C3C3CFF;
+static constexpr uint32_t kBtnHover     = 0x505053FF;
+static constexpr uint32_t kFlashColor   = 0xFFDD44FF; // mine feedback flash
 
 #ifdef _WIN32
 
@@ -286,6 +292,8 @@ void GameClientApp::Run()
     // Headless loop for CI / non-Windows platforms — run 120 frames
     // (approximately 2 seconds at 60 FPS) to exercise all game systems
     // then exit so automated tests can validate correctness.
+    // Skip main menu in headless mode so we actually exercise gameplay.
+    m_State = GameAppState::Playing;
     constexpr int kHeadlessFrames = 120;
     for (int frame = 0; frame < kHeadlessFrames && m_Running; ++frame)
     {
@@ -328,47 +336,99 @@ void GameClientApp::TickFrame(float dt)
     m_RenderDevice->BeginFrame();
     m_RenderDevice->Clear(0.10f, 0.10f, 0.12f, 1.f);
 
-    // --- Phase 5: read input and feed to PlayerMovement ---
-    {
-        auto& pm = m_Orchestrator.GetPlayerMovement();
-
-        // WASD movement (Win32 VK codes: W=0x57, A=0x41, S=0x53, D=0x44)
-        float forward = 0.f, right = 0.f;
-        if (m_Keys[0x57]) forward += 1.f; // W
-        if (m_Keys[0x53]) forward -= 1.f; // S
-        if (m_Keys[0x44]) right   += 1.f; // D
-        if (m_Keys[0x41]) right   -= 1.f; // A
-
-        const bool jump   = m_KeysJustPressed[0x20]; // Space
-        const bool sprint = m_Keys[0x10];             // Shift
-
-        pm.SetMoveInput(forward, right, jump, sprint);
-
-        // Mouse look: apply accumulated delta while RMB held (or always).
-        if (m_RightDown && (m_MouseDeltaX != 0.f || m_MouseDeltaY != 0.f))
-            pm.ApplyMouseLook(m_MouseDeltaX, m_MouseDeltaY);
+    // --- Handle Escape key for state transitions ---
+    if (m_KeysJustPressed[0x1B]) { // VK_ESCAPE = 0x1B
+        switch (m_State) {
+        case GameAppState::MainMenu:
+            // Escape on main menu = exit
+            m_Running = false;
+            break;
+        case GameAppState::Playing:
+            m_State = GameAppState::Paused;
+            break;
+        case GameAppState::Paused:
+            m_State = GameAppState::Playing;
+            break;
+        }
     }
 
-    m_Orchestrator.Tick(dt);
-
-    // ---- Phase 4: render voxel chunk meshes ----
-    m_MeshCache.RebuildDirty(m_Orchestrator.GetGameWorld().GetChunkMap());
-    {
-        NF::Matrix4x4 view = GetViewMatrix();
-        NF::Matrix4x4 proj = GetProjectionMatrix();
-        m_ForwardRenderer.BeginScene(view, proj);
-        m_MeshCache.SetCameraPosition(m_Orchestrator.GetPlayerMovement().GetEyePosition());
-        m_MeshCache.Render();
-        m_ForwardRenderer.EndScene();
-    }
-
-    // ---- 2-D HUD overlay ----
+    // --- Update UI renderer viewport ---
     m_UIRenderer.SetViewportSize(static_cast<float>(m_ClientWidth),
                                   static_cast<float>(m_ClientHeight));
     m_UIRenderer.BeginFrame();
-    DrawHUD();
-    m_UIRenderer.EndFrame();
 
+    switch (m_State) {
+    case GameAppState::MainMenu:
+        DrawMainMenu();
+        break;
+
+    case GameAppState::Playing:
+    {
+        // --- Phase 5: read input and feed to PlayerMovement ---
+        {
+            auto& pm = m_Orchestrator.GetPlayerMovement();
+            float forward = 0.f, right = 0.f;
+            if (m_Keys[0x57]) forward += 1.f; // W
+            if (m_Keys[0x53]) forward -= 1.f; // S
+            if (m_Keys[0x44]) right   += 1.f; // D
+            if (m_Keys[0x41]) right   -= 1.f; // A
+
+            const bool jump   = m_KeysJustPressed[0x20]; // Space
+            const bool sprint = m_Keys[0x10];             // Shift
+
+            pm.SetMoveInput(forward, right, jump, sprint);
+
+            if (m_RightDown && (m_MouseDeltaX != 0.f || m_MouseDeltaY != 0.f))
+                pm.ApplyMouseLook(m_MouseDeltaX, m_MouseDeltaY);
+        }
+
+        m_Orchestrator.Tick(dt);
+
+        // Handle mining on left click
+        HandleMining();
+
+        // Update mine flash timer
+        if (m_MineFlashTimer > 0.f)
+            m_MineFlashTimer -= dt;
+
+        // ---- Phase 4: render voxel chunk meshes ----
+        m_MeshCache.RebuildDirty(m_Orchestrator.GetGameWorld().GetChunkMap());
+        {
+            NF::Matrix4x4 view = GetViewMatrix();
+            NF::Matrix4x4 proj = GetProjectionMatrix();
+            m_ForwardRenderer.BeginScene(view, proj);
+            m_MeshCache.SetCameraPosition(m_Orchestrator.GetPlayerMovement().GetEyePosition());
+            m_MeshCache.Render();
+            m_ForwardRenderer.EndScene();
+        }
+
+        // ---- 2-D overlays ----
+        DrawCrosshair();
+        DrawHUD();
+        break;
+    }
+
+    case GameAppState::Paused:
+    {
+        // Render world behind the pause overlay (frozen)
+        m_MeshCache.RebuildDirty(m_Orchestrator.GetGameWorld().GetChunkMap());
+        {
+            NF::Matrix4x4 view = GetViewMatrix();
+            NF::Matrix4x4 proj = GetProjectionMatrix();
+            m_ForwardRenderer.BeginScene(view, proj);
+            m_MeshCache.SetCameraPosition(m_Orchestrator.GetPlayerMovement().GetEyePosition());
+            m_MeshCache.Render();
+            m_ForwardRenderer.EndScene();
+        }
+
+        DrawCrosshair();
+        DrawHUD();
+        DrawPauseMenu();
+        break;
+    }
+    }
+
+    m_UIRenderer.EndFrame();
     m_RenderDevice->EndFrame();
 }
 
@@ -453,6 +513,179 @@ void GameClientApp::DrawHUD()
                                    + ", " + std::to_string(static_cast<int>(pos.Z))
                                    + (pm.IsGrounded() ? " [GND]" : " [AIR]");
         m_UIRenderer.DrawText(posLabel.c_str(), hudX, cy, kTextColor, scale);
+        cy += lineH;
+    }
+
+    // Mining feedback flash
+    if (m_MineFlashTimer > 0.f) {
+        const float alpha = std::min(1.f, m_MineFlashTimer / 0.4f);
+        const uint32_t flashAlpha = static_cast<uint32_t>(alpha * 255.f);
+        const uint32_t flashCol = (kFlashColor & 0xFFFFFF00u) | flashAlpha;
+        m_UIRenderer.DrawText("MINED!", hudX, cy, flashCol, scale);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// DrawCrosshair — simple + shaped crosshair at screen centre
+// ---------------------------------------------------------------------------
+
+void GameClientApp::DrawCrosshair()
+{
+    const float cx = static_cast<float>(m_ClientWidth)  * 0.5f;
+    const float cy = static_cast<float>(m_ClientHeight) * 0.5f;
+    const float dpi = m_UIRenderer.GetDpiScale();
+    const float len = 10.f * dpi;
+    const float th  = 2.f * dpi;
+
+    // Horizontal line
+    m_UIRenderer.DrawRect({cx - len, cy - th * 0.5f, len * 2.f, th}, kCrosshairCol);
+    // Vertical line
+    m_UIRenderer.DrawRect({cx - th * 0.5f, cy - len, th, len * 2.f}, kCrosshairCol);
+}
+
+// ---------------------------------------------------------------------------
+// DrawMainMenu — title screen with Play and Exit buttons
+// ---------------------------------------------------------------------------
+
+void GameClientApp::DrawMainMenu()
+{
+    const float w = static_cast<float>(m_ClientWidth);
+    const float h = static_cast<float>(m_ClientHeight);
+    const float dpi = m_UIRenderer.GetDpiScale();
+    const float scale = 2.f;
+
+    // Full-screen dark background
+    m_UIRenderer.DrawRect({0.f, 0.f, w, h}, kMenuBg);
+
+    // Title
+    const float titleX = w * 0.5f - 80.f * dpi;
+    const float titleY = h * 0.3f;
+    m_UIRenderer.DrawText("NovaForge", titleX, titleY, kTitleColor, 3.f);
+    m_UIRenderer.DrawText("Development Build", titleX + 10.f * dpi, titleY + 30.f * dpi, kSepColor, scale);
+
+    // Buttons
+    const float btnW = 160.f * dpi;
+    const float btnH = 32.f  * dpi;
+    const float btnX = w * 0.5f - btnW * 0.5f;
+    const float gap  = 12.f * dpi;
+
+    // Play button
+    {
+        const float by = h * 0.5f;
+        const bool hov = m_MouseX >= btnX && m_MouseX < btnX + btnW &&
+                         m_MouseY >= by   && m_MouseY < by + btnH;
+        m_UIRenderer.DrawRect({btnX, by, btnW, btnH}, hov ? kBtnHover : kBtnBg);
+        m_UIRenderer.DrawOutlineRect({btnX, by, btnW, btnH}, kSepColor);
+        m_UIRenderer.DrawText("> Play", btnX + 48.f * dpi, by + 8.f * dpi, kTitleColor, scale);
+        if (hov && m_LeftJustPressed) {
+            m_State = GameAppState::Playing;
+            NF::Logger::Log(NF::LogLevel::Info, "GameClient", "Starting game...");
+        }
+    }
+
+    // Exit button
+    {
+        const float by = h * 0.5f + btnH + gap;
+        const bool hov = m_MouseX >= btnX && m_MouseX < btnX + btnW &&
+                         m_MouseY >= by   && m_MouseY < by + btnH;
+        m_UIRenderer.DrawRect({btnX, by, btnW, btnH}, hov ? kBtnHover : kBtnBg);
+        m_UIRenderer.DrawOutlineRect({btnX, by, btnW, btnH}, kSepColor);
+        m_UIRenderer.DrawText("Exit", btnX + 54.f * dpi, by + 8.f * dpi, kTextColor, scale);
+        if (hov && m_LeftJustPressed) {
+            m_Running = false;
+        }
+    }
+
+    // Controls hint
+    m_UIRenderer.DrawText("WASD: Move | Space: Jump | Shift: Sprint | RMB: Look | LMB: Mine | Esc: Pause",
+                          20.f * dpi, h - 30.f * dpi, kSepColor, 1.5f);
+}
+
+// ---------------------------------------------------------------------------
+// DrawPauseMenu — semi-transparent overlay with Resume and Exit buttons
+// ---------------------------------------------------------------------------
+
+void GameClientApp::DrawPauseMenu()
+{
+    const float w = static_cast<float>(m_ClientWidth);
+    const float h = static_cast<float>(m_ClientHeight);
+    const float dpi = m_UIRenderer.GetDpiScale();
+    const float scale = 2.f;
+
+    // Semi-transparent overlay
+    m_UIRenderer.DrawRect({0.f, 0.f, w, h}, 0x00000099);
+
+    // "PAUSED" title
+    const float titleX = w * 0.5f - 50.f * dpi;
+    const float titleY = h * 0.35f;
+    m_UIRenderer.DrawText("PAUSED", titleX, titleY, kTitleColor, 3.f);
+
+    const float btnW = 160.f * dpi;
+    const float btnH = 32.f  * dpi;
+    const float btnX = w * 0.5f - btnW * 0.5f;
+    const float gap  = 12.f * dpi;
+
+    // Resume button
+    {
+        const float by = h * 0.48f;
+        const bool hov = m_MouseX >= btnX && m_MouseX < btnX + btnW &&
+                         m_MouseY >= by   && m_MouseY < by + btnH;
+        m_UIRenderer.DrawRect({btnX, by, btnW, btnH}, hov ? kBtnHover : kBtnBg);
+        m_UIRenderer.DrawOutlineRect({btnX, by, btnW, btnH}, kSepColor);
+        m_UIRenderer.DrawText("Resume", btnX + 44.f * dpi, by + 8.f * dpi, kTitleColor, scale);
+        if (hov && m_LeftJustPressed) {
+            m_State = GameAppState::Playing;
+        }
+    }
+
+    // Main Menu button
+    {
+        const float by = h * 0.48f + btnH + gap;
+        const bool hov = m_MouseX >= btnX && m_MouseX < btnX + btnW &&
+                         m_MouseY >= by   && m_MouseY < by + btnH;
+        m_UIRenderer.DrawRect({btnX, by, btnW, btnH}, hov ? kBtnHover : kBtnBg);
+        m_UIRenderer.DrawOutlineRect({btnX, by, btnW, btnH}, kSepColor);
+        m_UIRenderer.DrawText("Main Menu", btnX + 34.f * dpi, by + 8.f * dpi, kTextColor, scale);
+        if (hov && m_LeftJustPressed) {
+            m_State = GameAppState::MainMenu;
+        }
+    }
+
+    // Exit button
+    {
+        const float by = h * 0.48f + (btnH + gap) * 2.f;
+        const bool hov = m_MouseX >= btnX && m_MouseX < btnX + btnW &&
+                         m_MouseY >= by   && m_MouseY < by + btnH;
+        m_UIRenderer.DrawRect({btnX, by, btnW, btnH}, hov ? kBtnHover : kBtnBg);
+        m_UIRenderer.DrawOutlineRect({btnX, by, btnW, btnH}, kSepColor);
+        m_UIRenderer.DrawText("Exit Game", btnX + 38.f * dpi, by + 8.f * dpi, kTextColor, scale);
+        if (hov && m_LeftJustPressed) {
+            m_Running = false;
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// HandleMining — left-click raycast mining with HUD feedback
+// ---------------------------------------------------------------------------
+
+void GameClientApp::HandleMining()
+{
+    if (!m_LeftJustPressed) return;
+
+    auto& pm = m_Orchestrator.GetPlayerMovement();
+    const NF::Vector3 eye = pm.GetEyePosition();
+    const NF::Vector3 dir = pm.GetViewDirection();
+
+    auto hit = m_Orchestrator.GetGameWorld().GetChunkMap().RaycastVoxel(
+        eye.X, eye.Y, eye.Z,
+        dir.X, dir.Y, dir.Z,
+        8.f); // mining reach = 8 voxels
+
+    if (hit.hit) {
+        auto& loop = m_Orchestrator.GetInteractionLoop();
+        loop.Mine(hit.x, hit.y, hit.z);
+        m_MineFlashTimer = 0.4f; // show "mined!" flash for 0.4s
     }
 }
 

@@ -9,6 +9,13 @@
 
 namespace NF::Game {
 
+/// @brief Application state controlling what the client is currently doing.
+enum class GameAppState {
+    MainMenu,   ///< Title screen — not in-game yet.
+    Playing,    ///< Active gameplay.
+    Paused,     ///< In-game pause overlay.
+};
+
 /// @brief Standalone game client application.
 ///
 /// Creates a platform window, an OpenGL rendering context, and runs the full
@@ -54,6 +61,8 @@ private:
     int   m_ClientHeight{720};
     float m_DpiScale{1.f};
 
+    GameAppState m_State{GameAppState::MainMenu};
+
     // Minimal input state (Win32 VK-indexed)
     bool m_Keys[256]{};
     bool m_KeysJustPressed[256]{};
@@ -68,11 +77,26 @@ private:
     bool  m_RightDown{false};
     bool  m_MouseTracking{false}; ///< True once we have a valid previous mouse pos.
 
+    // Mining feedback
+    float m_MineFlashTimer{0.f};  ///< Countdown for "mined!" HUD flash.
+
     /// @brief Advance simulation and render one frame.
     void TickFrame(float dt);
 
     /// @brief Draw the in-game HUD (health, energy, tool, inventory).
     void DrawHUD();
+
+    /// @brief Draw a small crosshair at screen centre.
+    void DrawCrosshair();
+
+    /// @brief Draw the main menu screen.
+    void DrawMainMenu();
+
+    /// @brief Draw the pause overlay.
+    void DrawPauseMenu();
+
+    /// @brief Handle mining interaction on left click.
+    void HandleMining();
 
     // Flush per-frame edge-triggered flags after all systems have read them.
     void FlushFrameInput() noexcept;
