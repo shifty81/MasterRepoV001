@@ -3,6 +3,7 @@
 #include "Core/Logging/Log.h"
 #include "Game/Voxel/VoxelType.h"
 #include "Game/Voxel/Chunk.h"
+#include "Editor/Commands/VoxelEditCommands.h"
 #include <chrono>
 
 #ifdef _WIN32
@@ -663,31 +664,32 @@ void EditorApp::HandleViewportInteraction()
     case nf::EditorToolMode::VoxelAdd:
     {
         if (hit.hit) {
-            // Place a voxel at the adjacent (air) position.
-            auto result = m_GameWorld.GetVoxelEditApi().SetVoxel(
+            // Place a voxel at the adjacent (air) position using an undoable command.
+            auto cmd = std::make_shared<VoxelPlaceCommand>(
+                m_GameWorld.GetVoxelEditApi(),
                 hit.prevX, hit.prevY, hit.prevZ,
                 static_cast<NF::Game::VoxelId>(m_ToolContext.selectedVoxelType));
-            if (result == NF::Game::SetResult::Success) {
-                m_ToolContext.worldDirty = true;
-                Logger::Log(LogLevel::Debug, "Editor",
-                            "Placed voxel at (" + std::to_string(hit.prevX)
-                            + ", " + std::to_string(hit.prevY)
-                            + ", " + std::to_string(hit.prevZ) + ")");
-            }
+            m_CommandHistory.Push(cmd);
+            m_ToolContext.worldDirty = true;
+            Logger::Log(LogLevel::Debug, "Editor",
+                        "Placed voxel at (" + std::to_string(hit.prevX)
+                        + ", " + std::to_string(hit.prevY)
+                        + ", " + std::to_string(hit.prevZ) + ")");
         }
         break;
     }
     case nf::EditorToolMode::VoxelRemove:
     {
         if (hit.hit) {
-            auto report = m_GameWorld.GetVoxelEditApi().Mine(hit.x, hit.y, hit.z, 0);
-            if (report.result == NF::Game::MineResult::Success) {
-                m_ToolContext.worldDirty = true;
-                Logger::Log(LogLevel::Debug, "Editor",
-                            "Removed voxel at (" + std::to_string(hit.x)
-                            + ", " + std::to_string(hit.y)
-                            + ", " + std::to_string(hit.z) + ")");
-            }
+            auto cmd = std::make_shared<VoxelRemoveCommand>(
+                m_GameWorld.GetVoxelEditApi(),
+                hit.x, hit.y, hit.z);
+            m_CommandHistory.Push(cmd);
+            m_ToolContext.worldDirty = true;
+            Logger::Log(LogLevel::Debug, "Editor",
+                        "Removed voxel at (" + std::to_string(hit.x)
+                        + ", " + std::to_string(hit.y)
+                        + ", " + std::to_string(hit.z) + ")");
         }
         break;
     }

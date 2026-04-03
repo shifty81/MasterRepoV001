@@ -2,7 +2,11 @@
 #include <cstdint>
 #include <string>
 
+namespace NF { class UIRenderer; }
+
 namespace NF::Editor {
+
+struct EditorInputState;
 
 /// @brief Editor colour theme.
 enum class EditorTheme { Dark, Light, HighContrast };
@@ -44,8 +48,14 @@ public:
     /// @brief Advance panel state (handles autosave timer).
     void Update(float dt);
 
-    /// @brief Draw the preferences panel UI.
-    void Draw();
+    /// @brief Set the UIRenderer used for drawing.
+    void SetUIRenderer(UIRenderer* r) noexcept { m_Renderer = r; }
+
+    /// @brief Provide the current per-frame OS input state.
+    void SetInputState(const EditorInputState* input) noexcept { m_Input = input; }
+
+    /// @brief Draw the preferences panel UI within the given region.
+    void Draw(float x, float y, float w, float h);
 
     /// @brief Returns true while the panel should be visible.
     [[nodiscard]] bool IsOpen() const noexcept { return m_Open; }
@@ -58,6 +68,8 @@ private:
     bool           m_Open{false};
     float          m_AutosaveTimer{0.f};
     bool           m_Dirty{false};       ///< True when unsaved changes exist.
+    UIRenderer*    m_Renderer{nullptr};
+    const EditorInputState* m_Input{nullptr};
 };
 
 } // namespace NF::Editor
