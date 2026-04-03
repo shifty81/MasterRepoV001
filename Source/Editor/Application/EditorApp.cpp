@@ -1,6 +1,7 @@
 #include "Editor/Application/EditorApp.h"
 #include "Core/Config/ProjectManifest.h"
 #include "Core/Logging/Log.h"
+#include "Game/Voxel/VoxelType.h"
 #include <chrono>
 
 #ifdef _WIN32
@@ -13,11 +14,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <windowsx.h>  // GET_X_LPARAM, GET_Y_LPARAM
-// Windows defines DrawText as a macro (DrawTextA/DrawTextW).  Undefine it so
-// calls to NF::UIRenderer::DrawText are not silently rewritten to DrawTextA.
-#ifdef DrawText
-#  undef DrawText
-#endif
 #endif
 
 namespace NF::Editor {
@@ -319,29 +315,20 @@ bool EditorApp::Init() {
     m_Toolbar.SetUIRenderer(&m_UIRenderer);
     m_Toolbar.SetInteractionLoop(&m_InteractionLoop);
     m_Toolbar.SetInputState(&m_Input);
+    m_Toolbar.SetToolContext(&m_ToolContext);
 
-    // Initialize command registry and menu bar
-    {
-        nf::EditorCommandContext cmdContext;
-        cmdContext.app = nullptr;  // We don't have an nf::EditorApp, so use nullptr for now
-        // Note: The nf:: command context expects nf:: namespace panels, but we have NF::Editor:: panels
-        // For now, we'll leave these nullptr and not pass the panel references
-        cmdContext.console = nullptr;
-        cmdContext.contentBrowser = nullptr;
-        cmdContext.inspector = nullptr;
-        m_CommandRegistry.SetContext(cmdContext);
-
-        // Register core commands
-        RegisterEditorCommands();
-
-        // Build menus
-        m_MenuBar.SetCommandRegistry(&m_CommandRegistry);
-        m_MenuBar.BuildDefaultMenus();
-    }
+    // ---- Command registry and hotkeys ----
+    RegisterEditorCommands();
+    m_HotkeyMap.BuildDefaultBindings();
 
     // Panels
     m_SceneOutliner.SetWorld(&m_Level.GetWorld());
     m_SceneOutliner.SetOnSelectionChanged([this](EntityId id) {
+        nf::SelectionHandle handle;
+        handle.kind  = nf::SelectionKind::WorldObject;
+        handle.id    = static_cast<uint64_t>(id);
+        handle.label = "Entity " + std::to_string(id);
+        m_Selection.Select(handle);
         m_Inspector.SetSelectedEntity(id, &m_Level.GetWorld());
     });
 
@@ -389,19 +376,23 @@ bool EditorApp::Init() {
     m_DockingSystem.SplitPanel("Viewport",  "Console",         SplitAxis::Vertical,  0.75f);
 
     m_Running = true;
-    Logger::Log(LogLevel::Info, "Editor", "EditorApp::Init complete");
+    Logger::Log(LogLevel::Info, "Editor", "EditorApp::Init complete -- editor-first boot to DevWorld");
     return true;
 }
+
+// ---------------------------------------------------------------------------
+// RegisterEditorCommands
+// ---------------------------------------------------------------------------
 
 void EditorApp::RegisterEditorCommands()
 {
     using namespace nf;
 
     // File.Exit
-    m_CommandRegistry.Register(EditorCommand{
+    m_CommandRegistry.Register(nf::EditorCommand{
         "File.Exit",
         "Exit",
-        nullptr,  // always can execute
+        nullptr,
         [this](EditorCommandContext&) {
             Logger::Log(LogLevel::Info, "Editor", "File.Exit command triggered");
             m_Running = false;
@@ -409,7 +400,7 @@ void EditorApp::RegisterEditorCommands()
     });
 
     // World.SaveDevWorld
-    m_CommandRegistry.Register(EditorCommand{
+    m_CommandRegistry.Register(nf::EditorCommand{
         "World.SaveDevWorld",
         "Save World",
         nullptr,
@@ -420,297 +411,284 @@ void EditorApp::RegisterEditorCommands()
         }
     });
 
-    // World.LoadDevWorld
-    m_CommandRegistry.Register(EditorCommand{
-        "World.LoadDevWorld",
-        "Load World",
-        nullptr,
-        [this](EditorCommandContext&) {
-            Logger::Log(LogLevel::Info, "Editor", "Loading dev world...");
-            m_GameWorld.LoadWorld("Content/Worlds/DevWorld.nfsv");
-            m_MeshCache.RebuildDirty(m_GameWorld.GetChunkMap());
-            Logger::Log(LogLevel::Info, "Editor", "World loaded");
-        }
-    });
-
-    // View.ToggleConsole
-    m_CommandRegistry.Register(EditorCommand{
-        "View.ToggleConsole",
-        "Toggle Console",
-        nullptr,
-        [](EditorCommandContext& ctx) {
-            Logger::Log(LogLevel::Info, "Editor", "Toggle console (placeholder)");
-            // TODO: implement panel visibility toggle
-        }
-    });
-
-    // Help.About
-    m_CommandRegistry.Register(EditorCommand{
-        "Help.About",
-        "About",
-        nullptr,
-        [](EditorCommandContext& ctx) {
-            Logger::Log(LogLevel::Info, "Editor", "NovaForge Editor - Phase 9 Complete (Build with consolidated editor)");
-        }
-    });
-
-    // World.SaveDevWorldAs
-    m_CommandRegistry.Register(EditorCommand{
-        "World.SaveDevWorldAs",
-        "Save World As...",
-        nullptr,
-        [this](EditorCommandContext&) {
-            Logger::Log(LogLevel::Info, "Editor", "Save World As (placeholder - would open file dialog)");
-        }
-    });
-
-    // File.NewWorld
-    m_CommandRegistry.Register(EditorCommand{
-        "File.NewWorld",
-        "New World",
-        nullptr,
-        [this](EditorCommandContext&) {
-            Logger::Log(LogLevel::Info, "Editor", "New World (placeholder - would create new world)");
-        }
-    });
-
-    // File.OpenWorld
-    m_CommandRegistry.Register(EditorCommand{
-        "File.OpenWorld",
-        "Open World...",
-        nullptr,
-        [this](EditorCommandContext&) {
-            Logger::Log(LogLevel::Info, "Editor", "Open World (placeholder - would open file dialog)");
-        }
-    });
-
     // World.ReloadDevWorld
-    m_CommandRegistry.Register(EditorCommand{
+    m_CommandRegistry.Register(nf::EditorCommand{
         "World.ReloadDevWorld",
         "Reload World",
         nullptr,
         [this](EditorCommandContext&) {
             Logger::Log(LogLevel::Info, "Editor", "Reloading dev world...");
-            m_GameWorld.LoadWorld("Content/Worlds/DevWorld.nfsv");
+            m_GameWorld.Shutdown();
+            m_GameWorld.Initialize("Content");
+            m_Level.Unload();
+            m_Level.Load("DevWorld");
+            m_SceneOutliner.SetWorld(&m_Level.GetWorld());
             m_MeshCache.RebuildDirty(m_GameWorld.GetChunkMap());
+            m_Selection.Clear();
             Logger::Log(LogLevel::Info, "Editor", "World reloaded");
         }
     });
 
-    // World.ValidateState
-    m_CommandRegistry.Register(EditorCommand{
-        "World.ValidateState",
-        "Validate World State",
-        nullptr,
-        [](EditorCommandContext&) {
-            Logger::Log(LogLevel::Info, "Editor", "World validation (placeholder)");
+    // Tools.SelectMode
+    m_CommandRegistry.Register(nf::EditorCommand{
+        "Tools.SelectMode", "Select Mode", nullptr,
+        [this](EditorCommandContext&) {
+            m_ToolContext.activeMode = EditorToolMode::Select;
+            Logger::Log(LogLevel::Info, "Editor", "Tool mode: Select");
         }
     });
 
-    // Tool commands (placeholders for now)
-    m_CommandRegistry.Register(EditorCommand{
-        "Tools.SelectMode",
-        "Select Mode",
-        nullptr,
-        [](EditorCommandContext&) {
-            Logger::Log(LogLevel::Info, "Editor", "Switched to Select mode");
+    // Tools.VoxelInspectMode
+    m_CommandRegistry.Register(nf::EditorCommand{
+        "Tools.VoxelInspectMode", "Voxel Inspect", nullptr,
+        [this](EditorCommandContext&) {
+            m_ToolContext.activeMode = EditorToolMode::VoxelInspect;
+            Logger::Log(LogLevel::Info, "Editor", "Tool mode: VoxelInspect");
         }
     });
 
-    m_CommandRegistry.Register(EditorCommand{
-        "Tools.VoxelInspectMode",
-        "Voxel Inspect Mode",
-        nullptr,
-        [](EditorCommandContext&) {
-            Logger::Log(LogLevel::Info, "Editor", "Switched to Voxel Inspect mode");
+    // Tools.VoxelAddMode
+    m_CommandRegistry.Register(nf::EditorCommand{
+        "Tools.VoxelAddMode", "Voxel Add", nullptr,
+        [this](EditorCommandContext&) {
+            m_ToolContext.activeMode = EditorToolMode::VoxelAdd;
+            Logger::Log(LogLevel::Info, "Editor", "Tool mode: VoxelAdd");
         }
     });
 
-    m_CommandRegistry.Register(EditorCommand{
-        "Tools.VoxelAddMode",
-        "Voxel Add Mode",
-        nullptr,
-        [](EditorCommandContext&) {
-            Logger::Log(LogLevel::Info, "Editor", "Switched to Voxel Add mode");
+    // Tools.VoxelRemoveMode
+    m_CommandRegistry.Register(nf::EditorCommand{
+        "Tools.VoxelRemoveMode", "Voxel Remove", nullptr,
+        [this](EditorCommandContext&) {
+            m_ToolContext.activeMode = EditorToolMode::VoxelRemove;
+            Logger::Log(LogLevel::Info, "Editor", "Tool mode: VoxelRemove");
         }
     });
 
-    m_CommandRegistry.Register(EditorCommand{
-        "Tools.VoxelRemoveMode",
-        "Voxel Remove Mode",
-        nullptr,
-        [](EditorCommandContext&) {
-            Logger::Log(LogLevel::Info, "Editor", "Switched to Voxel Remove mode");
+    // Edit.Undo
+    m_CommandRegistry.Register(nf::EditorCommand{
+        "Edit.Undo", "Undo",
+        [this](const EditorCommandContext&) { return m_CommandHistory.CanUndo(); },
+        [this](EditorCommandContext&) {
+            m_CommandHistory.Undo();
+            Logger::Log(LogLevel::Info, "Editor", "Undo");
         }
     });
 
-    // Help.Controls
-    m_CommandRegistry.Register(EditorCommand{
-        "Help.Controls",
-        "Editor Controls",
-        nullptr,
-        [](EditorCommandContext&) {
-            Logger::Log(LogLevel::Info, "Editor", "=== Editor Controls ===");
-            Logger::Log(LogLevel::Info, "Editor", "Viewport: RMB=Rotate, MMB=Pan, Wheel=Zoom");
-            Logger::Log(LogLevel::Info, "Editor", "Toolbar: Play=Reset interaction, Launch Game=Open standalone client");
+    // Edit.Redo
+    m_CommandRegistry.Register(nf::EditorCommand{
+        "Edit.Redo", "Redo",
+        [this](const EditorCommandContext&) { return m_CommandHistory.CanRedo(); },
+        [this](EditorCommandContext&) {
+            m_CommandHistory.Redo();
+            Logger::Log(LogLevel::Info, "Editor", "Redo");
         }
     });
 
-    // Edit commands (placeholders)
-    m_CommandRegistry.Register(EditorCommand{
-        "Edit.Undo",
-        "Undo",
-        nullptr,
-        [](EditorCommandContext&) {
-            Logger::Log(LogLevel::Info, "Editor", "Undo (not yet implemented)");
-        }
-    });
-
-    m_CommandRegistry.Register(EditorCommand{
-        "Edit.Redo",
-        "Redo",
-        nullptr,
-        [](EditorCommandContext&) {
-            Logger::Log(LogLevel::Info, "Editor", "Redo (not yet implemented)");
-        }
-    });
-
-    // View commands (placeholders)
-    m_CommandRegistry.Register(EditorCommand{
-        "View.ResetLayout",
-        "Reset Layout",
-        nullptr,
-        [](EditorCommandContext&) {
-            Logger::Log(LogLevel::Info, "Editor", "Reset layout (placeholder)");
-        }
-    });
-
-    m_CommandRegistry.Register(EditorCommand{
-        "View.ToggleContentBrowser",
-        "Toggle Content Browser",
-        nullptr,
-        [](EditorCommandContext&) {
-            Logger::Log(LogLevel::Info, "Editor", "Toggle content browser (placeholder)");
-        }
-    });
-
-    m_CommandRegistry.Register(EditorCommand{
-        "View.ToggleInspector",
-        "Toggle Inspector",
-        nullptr,
-        [](EditorCommandContext&) {
-            Logger::Log(LogLevel::Info, "Editor", "Toggle inspector (placeholder)");
-        }
-    });
-
-    m_CommandRegistry.Register(EditorCommand{
-        "View.ToggleWorldDebug",
-        "Toggle World Debug",
-        nullptr,
-        [](EditorCommandContext&) {
-            Logger::Log(LogLevel::Info, "Editor", "Toggle world debug (placeholder)");
-        }
-    });
-
-    Logger::Log(LogLevel::Info, "Editor", "Registered editor commands");
+    Logger::Log(LogLevel::Info, "Editor",
+                "Registered " + std::to_string(m_CommandRegistry.GetRegisteredCommandIds().size())
+                + " editor commands");
 }
 
-void EditorApp::DrawMenuBar(float x, float y, float w, float h)
-{
-    // Draw menu bar background
-    static constexpr uint32_t kMenuBarBg = 0x2D2D30FF;
-    static constexpr uint32_t kMenuBg    = 0x1B1B1CFF;
-    static constexpr uint32_t kMenuHover = 0x3E3E40FF;
-    static constexpr uint32_t kTextColor = 0xFFFFFFFF;
-    static constexpr uint32_t kSepColor  = 0x444444FF;
+// ---------------------------------------------------------------------------
+// ProcessHotkeys
+// ---------------------------------------------------------------------------
 
-    m_UIRenderer.DrawRect({x, y, w, h}, kMenuBarBg);
-    m_UIRenderer.DrawRect({x, y + h - 1.f, w, 1.f}, kSepColor);  // Bottom border
+void EditorApp::ProcessHotkeys()
+{
+#ifdef _WIN32
+    // Check modifier states.
+    const bool ctrl  = m_Input.keysDown[VK_CONTROL];
+    const bool shift = m_Input.keysDown[VK_SHIFT];
+    const bool alt   = m_Input.keysDown[VK_MENU];
+
+    // Scan all just-pressed keys.
+    for (int vk = 0; vk < 256; ++vk) {
+        if (!m_Input.keysJustPressed[vk]) continue;
+
+        // Skip modifier keys themselves.
+        if (vk == VK_CONTROL || vk == VK_SHIFT || vk == VK_MENU ||
+            vk == VK_LCONTROL || vk == VK_RCONTROL ||
+            vk == VK_LSHIFT || vk == VK_RSHIFT ||
+            vk == VK_LMENU || vk == VK_RMENU)
+            continue;
+
+        // Convert VK to a string key name for hotkey lookup.
+        std::string keyName;
+        if (vk >= 'A' && vk <= 'Z') {
+            keyName = static_cast<char>(vk);
+        } else if (vk >= '0' && vk <= '9') {
+            keyName = static_cast<char>(vk);
+        } else if (vk == VK_OEM_3) {
+            keyName = "`";
+        } else if (vk == VK_F1) { keyName = "F1"; }
+        else if (vk == VK_F2)   { keyName = "F2"; }
+        else if (vk == VK_ESCAPE) { keyName = "Escape"; }
+
+        if (keyName.empty()) continue;
+
+        nf::HotkeyChord chord{ctrl, shift, alt, keyName};
+        if (const std::string* cmdId = m_HotkeyMap.Find(chord)) {
+            m_CommandRegistry.Execute(*cmdId);
+        }
+    }
+#endif
+}
+
+// ---------------------------------------------------------------------------
+// UpdateStatusBar
+// ---------------------------------------------------------------------------
+
+void EditorApp::UpdateStatusBar()
+{
+    nf::StatusBarState state;
+    state.activeWorld     = m_GameWorld.IsReady() ? "DevWorld" : "No World";
+    state.activeTool      = ToolModeName(m_ToolContext.activeMode);
+    state.selectionSummary = m_Selection.GetSelectionLabel();
+    state.worldReadiness  = m_GameWorld.IsReady() ? "Ready" : "Not Ready";
+    state.dirty           = m_ToolContext.worldDirty;
+    state.loadedChunkCount = m_GameWorld.GetLoadedChunkCount();
+    m_StatusBar.SetState(std::move(state));
+}
+
+// ---------------------------------------------------------------------------
+// DrawStatusBar
+// ---------------------------------------------------------------------------
+
+void EditorApp::DrawStatusBar(float x, float y, float w, float h)
+{
+    static constexpr uint32_t kStatusBg   = 0x1E1E2EFF;
+    static constexpr uint32_t kStatusText = 0xA0A0B0FF;
+
+    m_UIRenderer.DrawRect({x, y, w, h}, kStatusBg);
+    m_UIRenderer.DrawRect({x, y, w, 1.f}, 0x444444FF); // top separator
 
     const float dpi = m_UIRenderer.GetDpiScale();
-    float menuX = x + 8.f * dpi;
-    const float menuY = y + 4.f * dpi;
-    const float menuItemW = 70.f * dpi;
-    const float menuItemH = h - 8.f * dpi;
+    std::string status = m_StatusBar.BuildDisplayString();
+    m_UIRenderer.DrawText(status, x + 8.f * dpi, y + 3.f * dpi, kStatusText, 1.5f);
+}
 
-    // Track which menu is open (if any)
-    static int openMenuIndex = -1;
-    static bool menuWasJustOpened = false;
+// ---------------------------------------------------------------------------
+// HandleViewportInteraction
+// ---------------------------------------------------------------------------
 
-    const auto& menus = m_MenuBar.GetMenus();
+void EditorApp::HandleViewportInteraction()
+{
+    if (!m_Input.leftJustPressed) return;
+    if (!m_Viewport.IsMouseInside()) return;
+    // Don't interact when right or middle button is held (camera navigation).
+    if (m_Input.rightDown || m_Input.middleDown) return;
 
-    // Draw each top-level menu item
-    for (size_t i = 0; i < menus.size(); ++i) {
-        const auto& menu = menus[i];
-        const bool isHovered = m_Input.mouseX >= menuX && m_Input.mouseX < menuX + menuItemW &&
-                               m_Input.mouseY >= menuY && m_Input.mouseY < menuY + menuItemH;
+    Vector3 origin, direction;
+    if (!m_Viewport.PickRay(m_Input.mouseX, m_Input.mouseY, origin, direction))
+        return;
 
-        // Draw menu button
-        if (isHovered || static_cast<int>(i) == openMenuIndex) {
-            m_UIRenderer.DrawRect({menuX, menuY, menuItemW, menuItemH}, kMenuHover);
+    // Raycast into the chunk map.
+    auto hit = m_GameWorld.GetChunkMap().RaycastVoxel(
+        origin.X, origin.Y, origin.Z,
+        direction.X, direction.Y, direction.Z,
+        64.f);
+
+    switch (m_ToolContext.activeMode) {
+    case nf::EditorToolMode::Select:
+    case nf::EditorToolMode::VoxelInspect:
+    {
+        if (hit.hit) {
+            nf::SelectionHandle handle;
+            handle.kind  = nf::SelectionKind::Voxel;
+            handle.id    = nf::PackVoxelCoord(hit.x, hit.y, hit.z);
+            handle.label = "Voxel (" + std::to_string(hit.x) + ", "
+                         + std::to_string(hit.y) + ", "
+                         + std::to_string(hit.z) + ")";
+            m_Selection.Select(handle);
+            SyncInspectorToSelection();
+            Logger::Log(LogLevel::Debug, "Editor",
+                        "Picked voxel at " + handle.label);
+        } else {
+            m_Selection.Clear();
+            SyncInspectorToSelection();
         }
-        m_UIRenderer.DrawText(menu.label, menuX + 6.f * dpi, menuY + 2.f * dpi, kTextColor, 1.5f);
-
-        // Handle click
-        if (isHovered && m_Input.leftJustPressed && !menuWasJustOpened) {
-            if (openMenuIndex == static_cast<int>(i)) {
-                openMenuIndex = -1;  // Close if clicking the same menu
-            } else {
-                openMenuIndex = static_cast<int>(i);
-                menuWasJustOpened = true;
-            }
-        }
-
-        // Draw dropdown if this menu is open
-        if (openMenuIndex == static_cast<int>(i)) {
-            const float dropdownX = menuX;
-            const float dropdownY = y + h;
-            const float dropdownW = 180.f * dpi;
-            const float itemH = 24.f * dpi;
-            const float dropdownH = static_cast<float>(menu.items.size()) * itemH;
-
-            // Draw dropdown background
-            m_UIRenderer.DrawRect({dropdownX, dropdownY, dropdownW, dropdownH}, kMenuBg);
-            m_UIRenderer.DrawOutlineRect({dropdownX, dropdownY, dropdownW, dropdownH}, kSepColor);
-
-            float itemY = dropdownY;
-            for (const auto& item : menu.items) {
-                const bool itemHovered = m_Input.mouseX >= dropdownX && m_Input.mouseX < dropdownX + dropdownW &&
-                                        m_Input.mouseY >= itemY && m_Input.mouseY < itemY + itemH;
-
-                if (itemHovered) {
-                    m_UIRenderer.DrawRect({dropdownX, itemY, dropdownW, itemH}, kMenuHover);
-                }
-
-                m_UIRenderer.DrawText(item.label, dropdownX + 8.f * dpi, itemY + 4.f * dpi, kTextColor, 1.5f);
-
-                // Handle item click
-                if (itemHovered && m_Input.leftJustPressed) {
-                    m_MenuBar.Trigger(item.commandId);
-                    openMenuIndex = -1;
-                }
-
-                itemY += itemH;
-            }
-
-            // Close menu if clicking outside
-            if (m_Input.leftJustPressed && !menuWasJustOpened) {
-                const bool clickedInside = m_Input.mouseX >= dropdownX && m_Input.mouseX < dropdownX + dropdownW &&
-                                          m_Input.mouseY >= dropdownY && m_Input.mouseY < dropdownY + dropdownH;
-                if (!clickedInside) {
-                    openMenuIndex = -1;
-                }
-            }
-        }
-
-        menuX += menuItemW + 4.f * dpi;
+        break;
     }
-
-    // Reset the "just opened" flag after one frame
-    if (menuWasJustOpened && !m_Input.leftDown) {
-        menuWasJustOpened = false;
+    case nf::EditorToolMode::VoxelAdd:
+    {
+        if (hit.hit) {
+            // Place a voxel at the adjacent (air) position.
+            auto result = m_GameWorld.GetVoxelEditApi().SetVoxel(
+                hit.prevX, hit.prevY, hit.prevZ,
+                static_cast<NF::Game::VoxelId>(m_ToolContext.selectedVoxelType));
+            if (result == NF::Game::SetResult::Success) {
+                m_ToolContext.worldDirty = true;
+                Logger::Log(LogLevel::Debug, "Editor",
+                            "Placed voxel at (" + std::to_string(hit.prevX)
+                            + ", " + std::to_string(hit.prevY)
+                            + ", " + std::to_string(hit.prevZ) + ")");
+            }
+        }
+        break;
+    }
+    case nf::EditorToolMode::VoxelRemove:
+    {
+        if (hit.hit) {
+            auto report = m_GameWorld.GetVoxelEditApi().Mine(hit.x, hit.y, hit.z, 0);
+            if (report.result == NF::Game::MineResult::Success) {
+                m_ToolContext.worldDirty = true;
+                Logger::Log(LogLevel::Debug, "Editor",
+                            "Removed voxel at (" + std::to_string(hit.x)
+                            + ", " + std::to_string(hit.y)
+                            + ", " + std::to_string(hit.z) + ")");
+            }
+        }
+        break;
+    }
     }
 }
+
+// ---------------------------------------------------------------------------
+// SyncInspectorToSelection
+// ---------------------------------------------------------------------------
+
+void EditorApp::SyncInspectorToSelection()
+{
+    if (!m_Selection.HasSelection()) {
+        m_Inspector.SetSelectedEntity(NullEntity, nullptr);
+        return;
+    }
+
+    const auto& handle = m_Selection.GetSelection();
+    switch (handle.kind) {
+    case nf::SelectionKind::WorldObject:
+        m_Inspector.SetSelectedEntity(
+            static_cast<EntityId>(handle.id), &m_Level.GetWorld());
+        break;
+    case nf::SelectionKind::Voxel:
+        // Decode packed voxel world position.
+        m_Inspector.SetSelectedVoxel(handle, m_GameWorld);
+        break;
+    default:
+        m_Inspector.SetSelectedEntity(NullEntity, nullptr);
+        break;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// ToolModeName
+// ---------------------------------------------------------------------------
+
+const char* EditorApp::ToolModeName(nf::EditorToolMode mode) noexcept
+{
+    switch (mode) {
+    case nf::EditorToolMode::Select:       return "Select";
+    case nf::EditorToolMode::VoxelInspect: return "VoxelInspect";
+    case nf::EditorToolMode::VoxelAdd:     return "VoxelAdd";
+    case nf::EditorToolMode::VoxelRemove:  return "VoxelRemove";
+    }
+    return "Unknown";
+}
+
+// ---------------------------------------------------------------------------
+// TickFrame
+// ---------------------------------------------------------------------------
 
 void EditorApp::TickFrame(float dt)
 {
@@ -718,15 +696,65 @@ void EditorApp::TickFrame(float dt)
     m_RenderDevice->Clear(0.18f, 0.18f, 0.18f, 1.f);
     m_Level.Update(dt);
 
-    // ---- Phase 4: render voxel chunk meshes via ForwardRenderer ----
+    // Process hotkeys before anything else.
+    ProcessHotkeys();
+
+    // Compute docking layout FIRST so we know viewport bounds before the 3D pass.
+    const float toolbarH  = m_Toolbar.GetHeight() * m_DpiScale;
+    const float statusH   = 22.f * m_DpiScale;
+    const float dockY     = toolbarH;
+    const float dockW     = static_cast<float>(m_ClientWidth);
+    const float dockH     = static_cast<float>(m_ClientHeight) - toolbarH - statusH;
+
+    m_DockingSystem.BuildLayout(0.f, dockY, dockW, dockH);
+
+    // Query viewport panel bounds for 3D scene rendering.
+    float vpX = 0.f, vpY = 0.f, vpW = 0.f, vpH = 0.f;
+    const bool hasViewport = m_DockingSystem.GetPanelRect("Viewport", vpX, vpY, vpW, vpH);
+
+    // ---- Render 3D scene into viewport region ----
     m_MeshCache.RebuildDirty(m_GameWorld.GetChunkMap());
-    {
+    if (hasViewport && vpW > 0.f && vpH > 0.f) {
+        // OpenGL uses a bottom-left origin for glViewport/glScissor while the
+        // UI coordinate system has Y=0 at the top of the window. Flip Y so
+        // that the GL viewport region matches the UI panel position.
+        const int glX = static_cast<int>(vpX);
+        const int glY = m_ClientHeight - static_cast<int>(vpY + vpH);
+        const int glW = static_cast<int>(vpW);
+        const int glH = static_cast<int>(vpH);
+
+        m_RenderDevice->SetViewport(glX, glY, glW, glH);
+        m_RenderDevice->EnableScissor(true);
+        m_RenderDevice->SetScissorRect(glX, glY, glW, glH);
+        m_RenderDevice->Clear(0.12f, 0.12f, 0.14f, 1.f);
+
         Matrix4x4 view = m_Viewport.GetViewMatrix();
         Matrix4x4 proj = m_Viewport.GetProjectionMatrix();
         m_ForwardRenderer.BeginScene(view, proj);
         m_MeshCache.Render();
         m_ForwardRenderer.EndScene();
+
+        // Restore full-window viewport for UI pass.
+        m_RenderDevice->EnableScissor(false);
+        m_RenderDevice->SetViewport(0, 0, m_ClientWidth, m_ClientHeight);
+
+        m_Viewport.SetSceneRendered(true);
+    } else {
+        // No viewport panel visible — render full scene as fallback.
+        Matrix4x4 view = m_Viewport.GetViewMatrix();
+        Matrix4x4 proj = m_Viewport.GetProjectionMatrix();
+        m_ForwardRenderer.BeginScene(view, proj);
+        m_MeshCache.Render();
+        m_ForwardRenderer.EndScene();
+
+        m_Viewport.SetSceneRendered(false);
     }
+
+    // ---- Handle viewport interaction (pick / tool) ----
+    HandleViewportInteraction();
+
+    // ---- Update editor state ----
+    UpdateStatusBar();
 
     // Begin UI rendering pass (2-D overlay on top of the 3-D scene)
     m_UIRenderer.SetViewportSize(static_cast<float>(m_ClientWidth),
@@ -743,17 +771,15 @@ void EditorApp::TickFrame(float dt)
     m_HUDPanel.Update(dt);
     m_InteractionLoop.Tick(dt);
 
-    // Menu bar at the very top
-    const float menuBarH = 24.f * m_DpiScale;
-    DrawMenuBar(0.f, 0.f, static_cast<float>(m_ClientWidth), menuBarH);
+    // Toolbar strip at the top
+    m_Toolbar.Draw(0.f, 0.f, static_cast<float>(m_ClientWidth), toolbarH);
 
-    // Toolbar strip below menu bar; docking fills the remaining area below.
-    const float toolbarH = m_Toolbar.GetHeight() * m_DpiScale;
-    const float topBarH = menuBarH + toolbarH;
-    m_Toolbar.Draw(0.f, menuBarH, static_cast<float>(m_ClientWidth), toolbarH);
-    m_DockingSystem.Draw(0.f, topBarH,
-                         static_cast<float>(m_ClientWidth),
-                         static_cast<float>(m_ClientHeight) - topBarH);
+    // Docking panels fill the area between toolbar and status bar.
+    m_DockingSystem.Draw(0.f, dockY, dockW, dockH);
+
+    // Status bar at the bottom
+    DrawStatusBar(0.f, static_cast<float>(m_ClientHeight) - statusH,
+                  static_cast<float>(m_ClientWidth), statusH);
 
     // Flush all batched UI draw calls to the GPU
     m_UIRenderer.EndFrame();

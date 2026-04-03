@@ -1,105 +1,50 @@
 # NovaForge Game — Reset Task List
 
-## Phase 0 — Bootstrap
-- [x] add `Config/novaforge.project.json`
-- [x] verify clean configure/build from fresh checkout
-- [x] verify editor executable is produced
-- [x] verify game executable is produced
-- [x] verify project context resolves correctly
-- [x] add startup smoke-test checklist
+## Phase 0 — Freeze and Archive
+- [ ] create pre-reset tag or branch
+- [ ] create local archive zip of the current repo
+- [ ] record archive notes for deprecated editor paths
+- [x] add reset doc pack to the repo
 
-## Phase 1 — Dev World Only
-- [x] define single dev world target
-- [x] lock spawn path
-- [x] wire editor load path into dev world
-- [x] wire runtime load path into dev world
-- [x] add basic save/load hooks
-- [x] add world debug overlay
+## Phase 1 — Editor Reality Pass
+- [ ] verify the editor window is fully interactive
+- [ ] fix font/theme defaults
+- [ ] fix DPI-aware resize/maximize behavior
+- [ ] verify dock layout remains stable
+- [ ] bind menu and toolbar actions to real commands
 
-## Phase 2 — Voxel Runtime Only
-- [x] implement chunk schema
-- [x] implement voxel storage/indexing
-- [x] implement edit API
-- [x] implement serialization
-- [x] implement voxel debug validation
-- [x] add editor voxel inspection path
+## Phase 2 — Real Viewport Integration
+- [ ] make the viewport own panel bounds and render size
+- [ ] render scene output into a viewport target
+- [ ] present the target into the viewport rect
+- [ ] convert picking to viewport-local coordinates
+- [ ] archive/remove fake or inactive viewport path
 
-## Phase 3 — First Interaction Loop Only
-- [x] add starter R.I.G. state
-- [x] add first usable mining or interaction tool
-- [x] add first resource type and pickup path
-- [x] add simple inventory baseline
-- [x] add place or repair action
-- [x] add minimal HUD/status display
-- [x] validate loop in editor and standalone client
+## Phase 3 — Editor State Wiring
+- [ ] wire `SelectionService` to viewport, outliner, and inspector
+- [ ] wire `PropertyInspectorSystem` with dirty tracking
+- [ ] bind `WorldOutlinerPanel` to real world/chunk data
+- [ ] bind status bar to live tool/mode/selection state
+- [ ] bind menu/toolbar enable state to command availability
 
-## Phase 4 — Voxel Mesh Rendering
-- [x] implement VoxelMesher (culled-face generation with normals + type palette)
-- [x] implement ChunkMeshCache (GPU mesh per chunk, dirty rebuild)
-- [x] create voxel GLSL shader (Phong lighting, per-type colour palette)
-- [x] wire ForwardRenderer into EditorViewport
-- [x] wire ForwardRenderer into GameClientApp
-- [x] generate starter terrain (9 chunks) in GameWorld::Initialize
-- [x] add VoxelMesh unit tests (10 tests)
+## Phase 4 — Dev World Baseline
+- [ ] boot editor directly into `DevWorld`
+- [ ] verify `WorldFileService` save/load path
+- [ ] verify `DevWorldSerializer` round-trip
+- [ ] verify world debug overlay with real data
+- [ ] verify selection/editing against live dev world state
 
-## Phase 5 — Movement & FPS Camera
-- [x] add ChunkMap::IsSolidAt() voxel solidity query
-- [x] add ChunkMap::RaycastVoxel() DDA voxel raycast
-- [x] implement PlayerMovement (WASD, mouse look, jump, sprint, gravity)
-- [x] implement voxel-aware AABB collision resolution
-- [x] wire PlayerMovement into Orchestrator tick loop
-- [x] wire FPS camera into GameClientApp (eye locked to player position)
-- [x] wire mouse look (RMB) and WASD input into GameClientApp
-- [x] add HUD position/grounded display
-- [x] add Phase 5 unit tests (21 tests: IsSolidAt, raycast, movement, collision)
+## Phase 5 — Voxel Authoring and First Interaction Loop
+- [ ] wire voxel inspect/add/remove from viewport hit data
+- [ ] add voxel edit undo/redo
+- [ ] batch chunk mesh invalidation
+- [ ] separate collision rebuild from mesh rebuild where possible
+- [ ] prove starter R.I.G. interaction loop
+- [ ] launch standalone client from editor workflow
 
-## Phase 6 — Multiplayer Foundation
-- [x] implement NetMessage protocol (typed packets, header, serialize/deserialize)
-- [x] implement NetChannel (framed reliable message delivery over Socket)
-- [x] implement NetReplicator (snapshot build, serialize/deserialize, apply)
-- [x] implement GameServer (authoritative host, accepts local clients, ticks world)
-- [x] implement GameClient (connect, send input, receive snapshots)
-- [x] define NetPlayerState, NetVoxelEdit, NetWorldSnapshot, NetClientInput structs
-- [x] wire server-side authoritative PlayerMovement per client
-- [x] add Phase 6 unit tests (30 tests: protocol, channel, replicator, server, client)
-
-## Phase 7 — Platform Networking & Orchestrator Integration
-- [x] implement platform Socket (Win32 Winsock2 / POSIX)
-- [x] add Orchestrator net-mode enum (Solo, ListenServer, Dedicated, Client)
-- [x] wire GameServer + GameClient lifecycle into Orchestrator
-- [x] add local loopback integration test (server + client in-process)
-- [x] implement listen-server mode (host plays while serving)
-- [x] implement connection handshake end-to-end over real socket
-- [x] add Phase 7 unit + integration tests (18 tests)
-
-## Phase 8 — Chunk Streaming & LOD
-- [x] implement ChunkStreamer (load/unload within radius)
-- [x] add background-thread chunk generation from seed
-- [x] implement distance-based mesh LOD
-- [x] add memory budget / chunk eviction policy
-- [x] add save-on-unload for modified chunks
-- [x] add Phase 8 unit tests (22 tests)
-
-## Phase 9 — Audio Foundation
-- [x] implement platform audio backend (WASAPI / stub)
-- [x] wire real AudioDevice init with hardware
-- [x] add sound asset loading (WAV/OGG)
-- [x] implement AudioMixer channels with volume/pan
-- [x] implement SpatialAudio 3D positioning + attenuation
-- [x] add placeholder sounds for mining/interaction/ambient
-- [x] add Phase 9 unit tests (33 tests)
-
-## Phase 10 — Advanced Gameplay Systems
-- [x] implement MiningSystem (full mining progression)
-- [x] implement BuilderSystem (voxel construction)
-- [x] implement ProgressionSystem (XP, unlocks, skills)
-- [x] implement InventorySystem + StorageSystem (containers, transfer)
-- [x] implement CombatSystem (damage, health, death/respawn)
-- [x] add Phase 10 unit tests
-
-## Phase 11 — Economy & Trade
-- [x] implement ResourceRegistry (resource definitions, base prices, mass, tradeable/craftable flags)
-- [x] implement TradeMarket (buy/sell with supply/demand dynamic pricing)
-- [x] implement ManufacturingQueue (recipe-based crafting, ingredient deduction, progress/collect)
-- [x] implement StationServices (docking, repair, refuel, trade + manufacturing at station)
-- [x] add Phase 11 unit tests
+## Definition of Done
+- [ ] editor is interactive and resize-safe
+- [ ] viewport is real
+- [ ] selection round-trips across viewport/outliner/inspector
+- [ ] one voxel edit persists across save/reload
+- [ ] one playable edit -> test -> relaunch path works

@@ -2,13 +2,13 @@
 #include "Editor/Application/EditorInputState.h"
 #include "UI/Rendering/UIRenderer.h"
 #include "Game/Interaction/InteractionLoop.h"
+#include "Editor/Tools/EditorToolContext.h"
 
 namespace NF::Editor {
 
 /// @brief Horizontal toolbar strip rendered above the docking panel region.
 ///
-/// Provides a Play/Reset button that restarts the in-editor interaction loop
-/// and, on Windows, a Launch Game button that spawns the standalone client.
+/// Provides Play/Reset, tool mode selection, and Launch Game buttons.
 class EditorToolbar {
 public:
     /// @brief Height of the toolbar strip in logical pixels.
@@ -17,6 +17,7 @@ public:
     void SetUIRenderer(UIRenderer* r)            noexcept { m_Renderer = r; }
     void SetInteractionLoop(NF::Game::InteractionLoop* loop) noexcept { m_Loop = loop; }
     void SetInputState(EditorInputState* input)  noexcept { m_Input = input; }
+    void SetToolContext(nf::EditorToolContext* ctx) noexcept { m_ToolContext = ctx; }
 
     /// @brief Draw the toolbar into the given rectangle.
     void Draw(float x, float y, float w, float h);
@@ -28,6 +29,7 @@ private:
     UIRenderer*                m_Renderer{nullptr};
     NF::Game::InteractionLoop* m_Loop{nullptr};
     EditorInputState*          m_Input{nullptr};
+    nf::EditorToolContext*     m_ToolContext{nullptr};
 
     /// @brief Draw a labelled button; returns true when clicked this frame.
     bool DrawButton(float x, float y, float w, float h, const char* label,
