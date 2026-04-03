@@ -273,18 +273,9 @@ bool EditorApp::Init() {
             manifest.IsValid() ? manifest.ContentRoot : "Content";
         const std::string worldName =
             manifest.IsValid() ? manifest.DefaultWorld : "DevWorld";
+        m_WorldSession.Init(m_GameWorld, m_Level, contentRoot, worldName);
         m_GameWorld.Initialize(contentRoot);
-
-        // If a saved chunk file exists, load it over the generated terrain so
-        // that previously saved edits are visible on startup (not only after
-        // File → Reload World).
-        const std::string chunkPath = contentRoot + "/Worlds/" + worldName + ".nfck";
-        if (m_GameWorld.LoadChunks(chunkPath)) {
-            Logger::Log(LogLevel::Info, "Editor",
-                        "Loaded saved chunk data on startup ("
-                        + std::to_string(m_GameWorld.GetLoadedChunkCount())
-                        + " chunks)");
-        }
+        m_WorldSession.LoadSavedChunks();
     }
     m_Level.Load(manifest.IsValid() ? manifest.DefaultWorld : "DevWorld");
 
@@ -457,17 +448,11 @@ void EditorApp::RegisterEditorCommands()
         "New World",
         nullptr,
         [this](EditorCommandContext&) {
-            Logger::Log(LogLevel::Info, "Editor",
-                        "File.NewWorld: resetting to a blank dev world");
-            m_GameWorld.Shutdown();
-            m_GameWorld.Initialize("Content");
-            m_Level.Unload();
-            m_Level.Load("DevWorld");
+            m_WorldSession.NewWorld();
             m_SceneOutliner.SetWorld(&m_Level.GetWorld());
             m_MeshCache.RebuildDirty(m_GameWorld.GetChunkMap());
             m_Selection.Clear();
             m_ToolContext.worldDirty = false;
-            Logger::Log(LogLevel::Info, "Editor", "New world ready");
         }
     });
 
@@ -488,17 +473,8 @@ void EditorApp::RegisterEditorCommands()
         "Save World",
         nullptr,
         [this](EditorCommandContext&) {
-            Logger::Log(LogLevel::Info, "Editor", "Saving dev world...");
-            const bool entityOk = m_GameWorld.SaveWorld("Content/Worlds/DevWorld.nfsv");
-            const bool chunkOk  = m_GameWorld.SaveChunks("Content/Worlds/DevWorld.nfck");
-            if (entityOk && chunkOk) {
+            if (m_WorldSession.Save())
                 m_ToolContext.worldDirty = false;
-                Logger::Log(LogLevel::Info, "Editor", "World saved (entities + chunks)");
-            } else {
-                Logger::Log(LogLevel::Warning, "Editor",
-                            "World save incomplete — entities: " + std::string(entityOk ? "ok" : "FAILED")
-                            + ", chunks: " + std::string(chunkOk ? "ok" : "FAILED"));
-            }
         }
     });
 
@@ -508,25 +484,12 @@ void EditorApp::RegisterEditorCommands()
         "Reload World",
         nullptr,
         [this](EditorCommandContext&) {
-            Logger::Log(LogLevel::Info, "Editor", "Reloading dev world...");
-            m_GameWorld.Shutdown();
-            m_GameWorld.Initialize("Content");
-
-            // If a saved chunk file exists, load it over the generated terrain.
-            if (m_GameWorld.LoadChunks("Content/Worlds/DevWorld.nfck")) {
-                Logger::Log(LogLevel::Info, "Editor",
-                            "Loaded saved chunk data (" + std::to_string(m_GameWorld.GetLoadedChunkCount())
-                            + " chunks)");
-            }
-
-            m_Level.Unload();
-            m_Level.Load("DevWorld");
+            m_WorldSession.Reload();
             m_SceneOutliner.SetWorld(&m_Level.GetWorld());
             m_MeshCache.RebuildDirty(m_GameWorld.GetChunkMap());
             m_Selection.Clear();
             m_ToolContext.worldDirty = false;
             m_CommandHistory = CommandHistory{}; // Clear undo/redo stack
-            Logger::Log(LogLevel::Info, "Editor", "World reloaded");
         }
     });
 

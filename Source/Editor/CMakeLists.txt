@@ -1,5 +1,6 @@
 add_library(NFEditor STATIC
     Application/EditorApp.cpp
+    Application/EditorWorldSession.cpp
     Viewport/EditorViewport.cpp
     Viewport/TransformGizmo.cpp
     Panels/EditorTheme.cpp
