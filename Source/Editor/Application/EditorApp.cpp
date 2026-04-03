@@ -315,6 +315,10 @@ bool EditorApp::Init() {
     m_VoxelInspector.SetUIRenderer(&m_UIRenderer);
     m_HUDPanel.SetUIRenderer(&m_UIRenderer);
 
+    // Wire WorldDebugPanel
+    m_WorldDebugPanel.SetUIRenderer(&m_UIRenderer);
+    m_WorldDebugPanel.SetOverlay(&m_GameWorld.GetDebugOverlay());
+
     // Wire input state to interactive panels
     m_SceneOutliner.SetInputState(&m_Input);
     m_ConsolePanel.SetInputState(&m_Input);
@@ -322,6 +326,7 @@ bool EditorApp::Init() {
     m_Viewport.SetInputState(&m_Input);
     m_VoxelInspector.SetInputState(&m_Input);
     m_HUDPanel.SetInputState(&m_Input);
+    m_Inspector.SetInputState(&m_Input);
 
     // Wire voxel layer
     m_VoxelInspector.SetChunkMap(&m_GameWorld.GetChunkMap());
@@ -338,6 +343,9 @@ bool EditorApp::Init() {
 
     // Wire PropertyInspectorSystem to Inspector so it renders the property grid
     m_Inspector.SetPropertyInspectorSystem(&m_PropertyInspectorSystem);
+    m_Inspector.SetOnPropertyEdited([this]() {
+        m_ToolContext.worldDirty = true;
+    });
 
     // ---- Command registry and hotkeys ----
     RegisterEditorCommands();
@@ -392,6 +400,10 @@ bool EditorApp::Init() {
         [this](float x, float y, float w, float h) {
             m_HUDPanel.Draw(x, y, w, h);
         });
+    m_DockingSystem.RegisterPanel("WorldDebug",
+        [this](float x, float y, float w, float h) {
+            m_WorldDebugPanel.Draw(x, y, w, h);
+        });
 
     // Default layout:
     //   SceneOutliner (20%) | Viewport+Console (56%) | Inspector+ContentBrowser+VoxelInspector (24%)
@@ -400,6 +412,7 @@ bool EditorApp::Init() {
     m_DockingSystem.SplitPanel("Inspector", "ContentBrowser",  SplitAxis::Vertical,  0.40f);
     m_DockingSystem.SplitPanel("ContentBrowser", "VoxelInspector", SplitAxis::Vertical, 0.50f);
     m_DockingSystem.SplitPanel("VoxelInspector", "HUD",            SplitAxis::Vertical, 0.50f);
+    m_DockingSystem.SplitPanel("HUD",           "WorldDebug",     SplitAxis::Vertical, 0.50f);
     m_DockingSystem.SplitPanel("Viewport",  "Console",         SplitAxis::Vertical,  0.75f);
 
     // The Viewport panel sits directly over the OpenGL 3-D render target.
@@ -947,6 +960,12 @@ void EditorApp::TickFrame(float dt)
     UpdateStatusBar();
     RebuildWorldOutliner();
 
+    // Update the debug overlay with latest world data.
+    m_GameWorld.GetDebugOverlay().Update(
+        m_GameWorld.GetConfig(),
+        m_GameWorld.IsReady() ? &m_Level.GetWorld() : nullptr,
+        m_GameWorld.GetPlayerEntity());
+
     // Begin UI rendering pass (2-D overlay on top of the 3-D scene)
     m_UIRenderer.SetViewportSize(static_cast<float>(m_ClientWidth),
                                   static_cast<float>(m_ClientHeight));
@@ -960,6 +979,7 @@ void EditorApp::TickFrame(float dt)
     m_Viewport.Update(dt);
     m_VoxelInspector.Update(dt);
     m_HUDPanel.Update(dt);
+    m_WorldDebugPanel.Update(dt);
     if (m_Toolbar.IsPieActive())
         m_InteractionLoop.Tick(dt);
 

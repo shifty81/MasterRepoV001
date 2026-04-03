@@ -15,6 +15,7 @@ add_library(NFEditor STATIC
     Panels/EditorToolbar.cpp
     Panels/MenuBarPanel.cpp
     Panels/StatusBarPanel.cpp
+    Panels/WorldDebugPanel.cpp
     Commands/EditorCommand.cpp
     Commands/EditorCommandRegistry.cpp
     Commands/EditorHotkeyMap.cpp
