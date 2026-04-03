@@ -25,6 +25,12 @@ static const std::string& ActivePanelName(const DockNode& node) noexcept
     return node.panelName;
 }
 
+/// Approximate width of a single character at scale 1.0 for tab width estimation.
+static constexpr float kTabCharWidth = 6.f;
+
+/// Maximum width of a single tab header (pre-DPI).
+static constexpr float kMaxTabWidth = 120.f;
+
 uint32_t DockingSystem::AllocNode()
 {
     DockNode node{};
@@ -285,14 +291,14 @@ void DockingSystem::DrawNode(DockNode& node,
                 const float tabH    = titleBarH - 2.f * dpi; // leave 2px for top accent
                 const float tabY    = y + 2.f * dpi;
                 float       tabX    = x + tabPad;
-                const float maxTabW = 120.f * dpi;
+                const float maxTabW = kMaxTabWidth * dpi;
 
                 for (int ti = 0; ti < tabCount; ++ti) {
                     const auto& tabName = node.tabNames[static_cast<size_t>(ti)];
                     const bool  isActive = (ti == node.activeTabIdx);
 
                     // Measure approximate tab width from label length.
-                    const float labelW = static_cast<float>(tabName.size()) * 6.f * dpi * 1.8f;
+                    const float labelW = static_cast<float>(tabName.size()) * kTabCharWidth * dpi * 1.8f;
                     const float tabW   = std::min(labelW + 16.f * dpi, maxTabW);
 
                     // Hit test
