@@ -7,7 +7,7 @@
       "name": "base",
       "hidden": true,
       "binaryDir": "${sourceDir}/Builds/${presetName}",
-      "installDir": "${sourceDir}/Builds/${presetName}/install",
+      "installDir": "${sourceDir}/Nova_0.1.0/install",
       "cacheVariables": {
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }

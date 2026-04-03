@@ -3,6 +3,7 @@ Builds/
 build/
 cmake-build-*/
 out/
+Nova_*/
 
 # IDE
 .vscode/
