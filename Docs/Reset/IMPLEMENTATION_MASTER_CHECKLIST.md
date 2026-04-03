@@ -31,7 +31,7 @@
 - [x] dirty state updates after edit — m_ToolContext.worldDirty set on edit
 
 ## Persistence
-- [ ] EditorWorldSession created or hardened
+- [x] EditorWorldSession created or hardened
 - [x] save command writes dev world — saves entities + chunks to Content/Worlds/
 - [x] reload command reloads same dev world — loads saved chunk data after re-init
 - [x] round-trip smoke test added — 2 persistence tests (326 total)
@@ -49,7 +49,7 @@
 - [x] game boots cleanly from normal build output
 - [x] Launch Game path documented and stabilized — CreateProcess logs error code
 - [x] project paths resolved through one service — ProjectPathService
-- [ ] output directory structure normalized
+- [x] output directory structure normalized
 
 ## Minimum Usability
 - [x] docking persistence works — DockingSystem confirmed stable
@@ -66,4 +66,4 @@
 - [x] redo works
 - [x] save works — saves entities + chunks; dirty flag resets
 - [x] reload works — loads saved chunk data; verified in round-trip test
-- [ ] standalone game reflects saved state
+- [x] standalone game reflects saved state

@@ -45,6 +45,12 @@ public:
     /// @brief Collect pointers to all dirty chunks (does not clear dirty flags).
     [[nodiscard]] std::vector<Chunk*> GetDirtyChunks();
 
+    /// @brief Collect pointers to chunks whose mesh data needs rebuilding.
+    [[nodiscard]] std::vector<Chunk*> GetMeshDirtyChunks();
+
+    /// @brief Collect pointers to chunks whose collision data needs rebuilding.
+    [[nodiscard]] std::vector<Chunk*> GetCollisionDirtyChunks();
+
     /// @brief Collect all loaded chunk coords.
     [[nodiscard]] std::vector<ChunkCoord> GetLoadedCoords() const;
 

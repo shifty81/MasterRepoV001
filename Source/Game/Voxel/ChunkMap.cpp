@@ -63,6 +63,26 @@ std::vector<Chunk*> ChunkMap::GetDirtyChunks()
     return result;
 }
 
+std::vector<Chunk*> ChunkMap::GetMeshDirtyChunks()
+{
+    std::vector<Chunk*> result;
+    for (auto& [coord, chunk] : m_Chunks) {
+        if (chunk->IsMeshDirty())
+            result.push_back(chunk.get());
+    }
+    return result;
+}
+
+std::vector<Chunk*> ChunkMap::GetCollisionDirtyChunks()
+{
+    std::vector<Chunk*> result;
+    for (auto& [coord, chunk] : m_Chunks) {
+        if (chunk->IsCollisionDirty())
+            result.push_back(chunk.get());
+    }
+    return result;
+}
+
 std::vector<ChunkCoord> ChunkMap::GetLoadedCoords() const
 {
     std::vector<ChunkCoord> coords;

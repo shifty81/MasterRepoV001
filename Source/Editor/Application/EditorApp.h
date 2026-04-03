@@ -25,6 +25,9 @@
 #include "Editor/Panels/StatusBarPanel.h"
 #include "Editor/Panels/WorldDebugPanel.h"
 #include "Editor/Commands/EditorCommand.h"
+#include "Editor/Application/EditorWorldSession.h"
+#include "Editor/Application/EditorModeManager.h"
+#include "Editor/Application/ContextToolShelf.h"
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -95,6 +98,9 @@ private:
     nf::StatusBarPanel          m_StatusBar;
     CommandHistory              m_CommandHistory;
     WorldDebugPanel             m_WorldDebugPanel;
+    EditorWorldSession          m_WorldSession;
+    EditorModeManager           m_ModeManager;
+    ContextToolShelf            m_ContextShelf;
 
     /// @brief Register all editor commands with the command registry.
     void RegisterEditorCommands();

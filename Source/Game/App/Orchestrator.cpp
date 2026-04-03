@@ -32,6 +32,11 @@ bool Orchestrator::Init(RenderDevice* renderDevice, const NetParams& params)
     if (m_NetMode != NetMode::Client)
     {
         m_GameWorld.Initialize("Content");
+
+        // Load any previously saved chunk data so the game reflects the
+        // same world state that was last saved in the editor.
+        m_GameWorld.LoadChunks("Content/Worlds/DevWorld.nfck");
+
         m_Level.Load("DevWorld");
         m_InteractionLoop.Init(&m_GameWorld.GetVoxelEditApi());
 
