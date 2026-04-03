@@ -1,6 +1,7 @@
 #include "Game/Voxel/VoxelSerializer.h"
 #include "Core/Logging/Log.h"
 #include "Core/Serialization/Archive.h"
+#include <filesystem>
 #include <fstream>
 
 namespace NF::Game {
@@ -184,6 +185,13 @@ bool VoxelSerializer::DeserializeMap(ChunkMap& map,
 bool VoxelSerializer::SaveMap(const ChunkMap& map, const std::string& filePath)
 {
     auto bytes = SerializeMap(map);
+
+    // Ensure parent directory exists.
+    std::filesystem::path p(filePath);
+    if (p.has_parent_path()) {
+        std::error_code ec;
+        std::filesystem::create_directories(p.parent_path(), ec);
+    }
 
     std::ofstream file(filePath, std::ios::binary);
     if (!file.is_open()) {

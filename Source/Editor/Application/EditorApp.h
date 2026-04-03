@@ -124,6 +124,9 @@ private:
     /// @brief Rebuild SceneOutliner chunk tree from the live GameWorld.
     void RebuildWorldOutliner();
 
+    /// @brief Apply property edits from the inspector back into world state.
+    void ApplyPropertyEditsToWorld();
+
     /// @brief Active tool mode display name.
     [[nodiscard]] static const char* ToolModeName(nf::EditorToolMode mode) noexcept;
 };

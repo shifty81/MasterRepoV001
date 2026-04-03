@@ -67,4 +67,36 @@ private:
     NF::Game::VoxelId       m_OldType;
 };
 
+/// @brief Undoable command that changes a voxel's type via inspector editing.
+///
+/// Execute() sets the new type; Undo() restores the old type.
+class VoxelTypeEditCommand : public EditorCommand {
+public:
+    /// @param api       Reference to the voxel edit API.
+    /// @param wx,wy,wz  World-space coordinates of the target voxel.
+    /// @param oldType   The previous voxel type (for undo).
+    /// @param newType   The new voxel type to apply.
+    VoxelTypeEditCommand(NF::Game::VoxelEditApi& api,
+                         int32_t wx, int32_t wy, int32_t wz,
+                         NF::Game::VoxelId oldType,
+                         NF::Game::VoxelId newType)
+        : m_Api(api), m_X(wx), m_Y(wy), m_Z(wz)
+        , m_OldType(oldType), m_NewType(newType)
+    {}
+
+    void Execute() override {
+        m_Api.SetVoxel(m_X, m_Y, m_Z, m_NewType);
+    }
+
+    void Undo() override {
+        m_Api.SetVoxel(m_X, m_Y, m_Z, m_OldType);
+    }
+
+private:
+    NF::Game::VoxelEditApi& m_Api;
+    int32_t                 m_X, m_Y, m_Z;
+    NF::Game::VoxelId       m_OldType;
+    NF::Game::VoxelId       m_NewType;
+};
+
 } // namespace NF::Editor
