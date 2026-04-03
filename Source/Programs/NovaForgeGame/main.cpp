@@ -2,6 +2,12 @@
 #include "GameClientApp.h"
 #include "Core/Logging/Log.h"
 
+#ifdef _WIN32
+// Build as a WIN32 (windowed) application but keep using main() as entry point
+// so we do not need to change to WinMain.
+#pragma comment(linker, "/subsystem:windows /entry:mainCRTStartup")
+#endif
+
 int main(int /*argc*/, char* /*argv*/[])
 {
     NF::Logger::Log(NF::LogLevel::Info, "Game", "Starting NovaForge Game");

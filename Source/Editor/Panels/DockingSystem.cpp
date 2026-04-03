@@ -58,6 +58,13 @@ void DockingSystem::RegisterPanel(const std::string& name, DrawFn drawFn)
                 "Registered panel: " + name);
 }
 
+void DockingSystem::SetPanelTransparent(const std::string& name)
+{
+    for (const auto& n : m_TransparentPanels)
+        if (n == name) return;
+    m_TransparentPanels.push_back(name);
+}
+
 void DockingSystem::SetRootSplit(const std::string& leftPanel,
                                   const std::string& rightPanel,
                                   float ratio)
@@ -212,14 +219,23 @@ void DockingSystem::DrawNode(const DockNode& node,
             const float contentY  = y + titleBarH;
             const float contentH  = h - titleBarH;
 
-            // Panel background
-            m_Renderer->DrawRect({x, y, w, h}, kPanelBgColor);
+            // Check whether this panel has opted out of opaque backgrounds
+            // (e.g. the 3-D Viewport, where OpenGL renders directly behind).
+            bool isTransparent = false;
+            for (const auto& n : m_TransparentPanels)
+                if (n == node.panelName) { isTransparent = true; break; }
 
-            // Title bar
+            if (!isTransparent) {
+                // Panel background
+                m_Renderer->DrawRect({x, y, w, h}, kPanelBgColor);
+                // Content shade
+                if (contentH > 0.f)
+                    m_Renderer->DrawRect({x, contentY, w, contentH}, kPanelContentShade);
+            }
+
+            // Title bar (always drawn — even for transparent panels)
             m_Renderer->DrawRect({x, y, w, titleBarH}, kTitleBarBgColor);
             m_Renderer->DrawRect({x, y, w, 2.f * dpi}, kTitleBarAccent);
-            if (contentH > 0.f)
-                m_Renderer->DrawRect({x, contentY, w, contentH}, kPanelContentShade);
 
             // Title text — scale 2 at 96 DPI; UIRenderer multiplies by DPI.
             if (!node.panelName.empty()) {

@@ -392,6 +392,10 @@ bool EditorApp::Init() {
     m_DockingSystem.SplitPanel("VoxelInspector", "HUD",            SplitAxis::Vertical, 0.50f);
     m_DockingSystem.SplitPanel("Viewport",  "Console",         SplitAxis::Vertical,  0.75f);
 
+    // The Viewport panel sits directly over the OpenGL 3-D render target.
+    // Skip drawing an opaque 2-D background for it so the scene is visible.
+    m_DockingSystem.SetPanelTransparent("Viewport");
+
     m_Running = true;
     Logger::Log(LogLevel::Info, "Editor", "EditorApp::Init complete -- editor-first boot to DevWorld");
     return true;
