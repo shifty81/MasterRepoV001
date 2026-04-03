@@ -1,0 +1,175 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 20, "patch": 0 },
+
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/Builds/${presetName}",
+      "installDir": "${sourceDir}/Builds/${presetName}/install",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+
+    {
+      "name": "debug",
+      "displayName": "Debug (Windows native)",
+      "description": "Debug build for local Windows development",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_TESTS": "ON"
+      }
+    },
+
+    {
+      "name": "release",
+      "displayName": "Release (Windows native)",
+      "description": "Optimised Windows release build",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+
+    {
+      "name": "release-with-debug",
+      "displayName": "RelWithDebInfo (Windows native)",
+      "description": "Optimised Windows build with debug symbols",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+
+    {
+      "name": "windows-x64",
+      "displayName": "Windows x86-64 Release",
+      "description": "Windows 10/11 (64-bit) release build. GLFW is auto-downloaded via FetchContent if not found.",
+      "inherits": "base",
+      "generator": "Visual Studio 17 2022",
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_SYSTEM_NAME": "Windows"
+      }
+    },
+
+    {
+      "name": "windows-x64-debug",
+      "displayName": "Windows x86-64 Debug",
+      "description": "Windows Debug build for local development. GLFW auto-downloaded if not found.",
+      "inherits": "base",
+      "generator": "Visual Studio 17 2022",
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_SYSTEM_NAME": "Windows",
+        "NF_BUILD_EDITOR": "ON",
+        "NF_BUILD_GAME": "ON"
+      }
+    },
+
+    {
+      "name": "windows-x64-debug-tests",
+      "displayName": "Windows x86-64 Debug + Tests",
+      "description": "Windows Debug build with test suite enabled.",
+      "inherits": "base",
+      "generator": "Visual Studio 17 2022",
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_SYSTEM_NAME": "Windows",
+        "NF_BUILD_EDITOR": "ON",
+        "NF_BUILD_GAME": "ON",
+        "NF_BUILD_TESTS": "ON"
+      }
+    },
+
+    {
+      "name": "ci-debug",
+      "displayName": "CI Debug (Windows)",
+      "description": "Used by ci_pipeline.sh — debug + tests",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_TESTS": "ON",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+
+    {
+      "name": "ci-release",
+      "displayName": "CI Release (Windows)",
+      "description": "Used by ci_pipeline.sh — release package",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ],
+
+  "buildPresets": [
+    {
+      "name": "debug",
+      "configurePreset": "debug",
+      "jobs": 0
+    },
+    {
+      "name": "release",
+      "configurePreset": "release",
+      "jobs": 0
+    },
+    {
+      "name": "windows-x64",
+      "configurePreset": "windows-x64",
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-x64-debug",
+      "configurePreset": "windows-x64-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "windows-x64-debug-tests",
+      "configurePreset": "windows-x64-debug-tests",
+      "configuration": "Debug"
+    },
+    {
+      "name": "ci-debug",
+      "configurePreset": "ci-debug",
+      "jobs": 0
+    },
+    {
+      "name": "ci-release",
+      "configurePreset": "ci-release",
+      "jobs": 0
+    }
+  ],
+
+  "testPresets": [
+    {
+      "name": "debug",
+      "configurePreset": "debug",
+      "output": { "outputOnFailure": true },
+      "execution": { "jobs": 4 }
+    },
+    {
+      "name": "ci-debug",
+      "configurePreset": "ci-debug",
+      "output": { "outputOnFailure": true },
+      "execution": { "jobs": 4 }
+    }
+  ]
+}
