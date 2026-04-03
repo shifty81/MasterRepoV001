@@ -1,8 +1,10 @@
 #include "Editor/Panels/DockingSystem.h"
+#include "Editor/Application/EditorInputState.h"
 #include "Editor/Panels/EditorTheme.h"
 #include "UI/Rendering/UIRenderer.h"
 #include "Core/Logging/Log.h"
 #include <algorithm>
+#include <cstring>
 #include <stdexcept>
 
 namespace NF::Editor {
@@ -59,9 +61,10 @@ void DockingSystem::SetPanelTransparent(const std::string& name)
     m_TransparentPanels.push_back(name);
 }
 
-void DockingSystem::SetRootSplit(const std::string& leftPanel,
-                                  const std::string& rightPanel,
-                                  float ratio)
+void DockingSystem::SetRootSplit(const std::string& firstPanel,
+                                  const std::string& secondPanel,
+                                  float ratio,
+                                  SplitAxis axis)
 {
     m_Nodes.clear();
     m_NextId = 1;
@@ -70,21 +73,21 @@ void DockingSystem::SetRootSplit(const std::string& leftPanel,
     DockNode root{};
     root.id         = m_NextId++;
     root.isLeaf     = false;
-    root.axis       = SplitAxis::Horizontal;
+    root.axis       = axis;
     root.splitRatio = std::clamp(ratio, 0.05f, 0.95f);
     root.firstChild = m_NextId;      // will be set after
 
-    // Left leaf
+    // Left/first leaf
     DockNode left{};
     left.id        = m_NextId++;
     left.isLeaf    = true;
-    left.panelName = leftPanel;
+    left.panelName = firstPanel;
 
-    // Right leaf
+    // Right/second leaf
     DockNode right{};
     right.id        = m_NextId++;
     right.isLeaf    = true;
-    right.panelName = rightPanel;
+    right.panelName = secondPanel;
 
     root.firstChild  = left.id;
     root.secondChild = right.id;
@@ -94,7 +97,7 @@ void DockingSystem::SetRootSplit(const std::string& leftPanel,
     m_Nodes.push_back(right);
 
     Logger::Log(LogLevel::Info, "DockingSystem",
-                "Root split: " + leftPanel + " | " + rightPanel);
+                "Root split: " + firstPanel + " | " + secondPanel);
 }
 
 void DockingSystem::SplitPanel(const std::string& parentName,
@@ -140,6 +143,29 @@ void DockingSystem::SplitPanel(const std::string& parentName,
 
 void DockingSystem::Update(float /*dt*/) {}
 
+// ---------------------------------------------------------------------------
+// AddTab
+// ---------------------------------------------------------------------------
+
+void DockingSystem::AddTab(const std::string& existingPanel,
+                           const std::string& newPanel)
+{
+    DockNode* leaf = FindLeaf(existingPanel);
+    if (!leaf) {
+        Logger::Log(LogLevel::Warning, "DockingSystem",
+                    "AddTab: panel not found: " + existingPanel);
+        return;
+    }
+
+    // Initialise the tab list the first time we add a tab.
+    if (leaf->tabNames.empty())
+        leaf->tabNames.push_back(leaf->panelName);
+
+    leaf->tabNames.push_back(newPanel);
+    Logger::Log(LogLevel::Info, "DockingSystem",
+                "Tab added: '" + newPanel + "' to '" + existingPanel + "'");
+}
+
 void DockingSystem::CachePanelRect(const std::string& name,
                                     float x, float y, float w, float h)
 {
@@ -161,6 +187,12 @@ void DockingSystem::LayoutNode(const DockNode& node,
         const float contentY  = y + titleBarH;
         const float contentH  = h - titleBarH;
         CachePanelRect(node.panelName, x, contentY, w, contentH);
+
+        // For tabbed nodes, cache the rect for every tab (they share bounds).
+        for (const auto& tabName : node.tabNames) {
+            if (tabName != node.panelName)
+                CachePanelRect(tabName, x, contentY, w, contentH);
+        }
         return;
     }
 
@@ -202,7 +234,7 @@ bool DockingSystem::GetPanelRect(const std::string& name,
     return false;
 }
 
-void DockingSystem::DrawNode(const DockNode& node,
+void DockingSystem::DrawNode(DockNode& node,
                               float x, float y, float w, float h)
 {
     if (node.isLeaf) {
@@ -212,39 +244,100 @@ void DockingSystem::DrawNode(const DockNode& node,
             const float titleBarH = kPanelTitleBarHeight * dpi;
             const float contentY  = y + titleBarH;
             const float contentH  = h - titleBarH;
+            const auto& theme     = ActiveTheme();
 
-            // Check whether this panel has opted out of opaque backgrounds
-            // (e.g. the 3-D Viewport, where OpenGL renders directly behind).
+            // Determine which panel name to draw (active tab or the only panel).
+            const bool hasTabs   = !node.tabNames.empty();
+            const int  tabCount  = hasTabs ? static_cast<int>(node.tabNames.size()) : 0;
+            const std::string& activePanelName =
+                hasTabs ? node.tabNames[static_cast<size_t>(
+                              std::clamp(node.activeTabIdx, 0, tabCount - 1))]
+                        : node.panelName;
+
+            // Check whether the active panel has opted out of opaque backgrounds
             bool isTransparent = false;
             for (const auto& n : m_TransparentPanels)
-                if (n == node.panelName) { isTransparent = true; break; }
+                if (n == activePanelName) { isTransparent = true; break; }
 
             if (!isTransparent) {
                 // Panel background
-                m_Renderer->DrawRect({x, y, w, h}, ActiveTheme().panelBg);
+                m_Renderer->DrawRect({x, y, w, h}, theme.panelBg);
                 // Content shade
                 if (contentH > 0.f)
-                    m_Renderer->DrawRect({x, contentY, w, contentH}, ActiveTheme().contentShade);
+                    m_Renderer->DrawRect({x, contentY, w, contentH}, theme.contentShade);
             }
 
-            // Title bar (always drawn — even for transparent panels)
-            m_Renderer->DrawRect({x, y, w, titleBarH}, ActiveTheme().titleBarBg);
-            m_Renderer->DrawRect({x, y, w, 2.f * dpi}, ActiveTheme().titleBarAccent);
+            // ---- Title bar / tab bar ----
+            m_Renderer->DrawRect({x, y, w, titleBarH}, theme.titleBarBg);
 
-            // Title text — scale 2 at 96 DPI; UIRenderer multiplies by DPI.
-            if (!node.panelName.empty()) {
-                m_Renderer->DrawText(node.panelName,
-                                     x + 6.f * dpi, y + 4.f * dpi,
-                                     ActiveTheme().textTitle, 2.f);
+            if (hasTabs) {
+                // Draw clickable tab headers.
+                const float tabPad  = 4.f * dpi;
+                const float tabH    = titleBarH - 2.f * dpi; // leave 2px for top accent
+                const float tabY    = y + 2.f * dpi;
+                float       tabX    = x + tabPad;
+                const float maxTabW = 120.f * dpi;
+
+                for (int ti = 0; ti < tabCount; ++ti) {
+                    const auto& tabName = node.tabNames[static_cast<size_t>(ti)];
+                    const bool  isActive = (ti == node.activeTabIdx);
+
+                    // Measure approximate tab width from label length.
+                    const float labelW = static_cast<float>(tabName.size()) * 6.f * dpi * 1.8f;
+                    const float tabW   = std::min(labelW + 16.f * dpi, maxTabW);
+
+                    // Hit test
+                    const bool hovered = m_Input &&
+                        m_Input->mouseX >= tabX       && m_Input->mouseX < tabX + tabW &&
+                        m_Input->mouseY >= tabY       && m_Input->mouseY < tabY + tabH;
+                    if (hovered && m_Input && m_Input->leftJustPressed)
+                        node.activeTabIdx = ti;
+
+                    // Tab background
+                    uint32_t tabBg = isActive ? theme.panelBg
+                                  : hovered  ? theme.hoverBg
+                                             : theme.titleBarBg;
+                    m_Renderer->DrawRect({tabX, tabY, tabW, tabH}, tabBg);
+
+                    // Active accent bar at the top of the tab
+                    if (isActive)
+                        m_Renderer->DrawRect({tabX, y, tabW, 2.f * dpi}, theme.worldAccent);
+
+                    // Tab label
+                    const uint32_t textCol = isActive ? theme.textTitle : theme.textSecondary;
+                    m_Renderer->DrawText(tabName, tabX + 6.f * dpi, tabY + 3.f * dpi,
+                                         textCol, 1.8f);
+
+                    // Thin separator between tabs
+                    if (ti < tabCount - 1)
+                        m_Renderer->DrawRect({tabX + tabW, tabY + 2.f * dpi,
+                                              1.f, tabH - 4.f * dpi}, theme.separator);
+
+                    tabX += tabW + 2.f * dpi;
+                }
+            } else {
+                // Single-panel title bar (original behaviour).
+                m_Renderer->DrawRect({x, y, w, 2.f * dpi}, theme.titleBarAccent);
+                if (!node.panelName.empty()) {
+                    m_Renderer->DrawText(node.panelName,
+                                         x + 6.f * dpi, y + 4.f * dpi,
+                                         theme.textTitle, 2.f);
+                }
             }
 
             // Panel border
-            m_Renderer->DrawOutlineRect({x, y, w, h}, ActiveTheme().panelBorder);
+            m_Renderer->DrawOutlineRect({x, y, w, h}, theme.panelBorder);
         }
 
-        // Call the panel's content draw callback with the content area
-        // (below the title bar).
-        if (DrawFn* fn = FindDrawFn(node.panelName)) {
+        // Call the active panel's content draw callback.
+        const bool hasTabs  = !node.tabNames.empty();
+        const int  tabCount = hasTabs ? static_cast<int>(node.tabNames.size()) : 0;
+        const std::string& drawName =
+            hasTabs ? node.tabNames[static_cast<size_t>(
+                          std::clamp(node.activeTabIdx, 0, tabCount - 1))]
+                    : node.panelName;
+
+        if (DrawFn* fn = FindDrawFn(drawName)) {
             const float dpi       = m_Renderer ? m_Renderer->GetDpiScale() : 1.f;
             const float titleBarH = kPanelTitleBarHeight * dpi;
             const float contentY  = y + titleBarH;

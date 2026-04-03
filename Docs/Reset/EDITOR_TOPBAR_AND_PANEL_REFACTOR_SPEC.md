@@ -30,12 +30,12 @@ discoverability, and shifts the editor toward a more Unreal-like workflow.
 
 ## Implementation Phases
 
-### Phase 1 — Structural Cleanup (this PR)
-- Add mode tab strip below toolbar.
-- Add context tool shelf below mode tabs (content changes with mode).
-- Consolidate right-side panels into a single tabbed region.
-- Consolidate bottom panels into a single tabbed region.
-- Remove low-value permanent panels.
+### Phase 1 — Structural Cleanup ✅
+- [x] Add mode tab strip below toolbar (EditorModeManager).
+- [x] Add context tool shelf below mode tabs (ContextToolShelf, content changes with mode).
+- [x] Consolidate right-side panels into a single tabbed region (Inspector + VoxelInspector tabs).
+- [x] Consolidate bottom panels into a single tabbed region (Console + ContentBrowser tabs).
+- [x] Remove low-value permanent panels (HUD/WorldDebug demoted from default layout).
 
 ### Phase 2 — Mode Awareness (future)
 - Full EditorModeManager driving context shelf content.
