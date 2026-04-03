@@ -30,7 +30,7 @@ namespace nf
         [[nodiscard]] const std::optional<DevWorldData>& GetWorldData() const noexcept;
 
         /// @brief Returns a mutable reference to the loaded world data.
-        ///        Only valid when GetWorldData().has_value().
+        /// @pre GetWorldData().has_value() must be true.
         [[nodiscard]] DevWorldData& GetMutableWorldData() noexcept;
 
     private:

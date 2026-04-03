@@ -52,20 +52,20 @@ void Inspector::HandlePropertyClick(float x, float /*y*/, float w, float rowY,
         // Toggle boolean
         newValue = !std::get<bool>(entry.value);
     } else if (std::holds_alternative<int>(entry.value)) {
-        // Increment integer by 1 (left-click in the right half decrements)
+        // Left half of value column decrements, right half increments.
         int val = std::get<int>(entry.value);
         if (mx < valX + (w - labelColW) * 0.5f)
-            val -= 1;
-        else
             val += 1;
+        else
+            val -= 1;
         newValue = val;
     } else if (std::holds_alternative<float>(entry.value)) {
-        // Step float by 0.1
+        // Left half of value column steps up, right half steps down by 0.1.
         float val = std::get<float>(entry.value);
         if (mx < valX + (w - labelColW) * 0.5f)
-            val -= 0.1f;
-        else
             val += 0.1f;
+        else
+            val -= 0.1f;
         newValue = val;
     } else {
         // String and Vec3 editing requires text input — skip for now

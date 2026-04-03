@@ -104,6 +104,7 @@ namespace nf
 
     DevWorldData& WorldFileService::GetMutableWorldData() noexcept
     {
+        // Caller must ensure GetWorldData().has_value() before calling.
         return *m_worldData;
     }
 }

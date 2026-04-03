@@ -70,10 +70,7 @@ void WriteFloatArray(std::ostream& out, const float* values, size_t count) {
     out << "[";
     for (size_t i = 0; i < count; ++i) {
         if (i > 0) out << ", ";
-        // Use a fixed precision that preserves round-trip fidelity.
-        std::ostringstream oss;
-        oss << values[i];
-        out << oss.str();
+        out << values[i];
     }
     out << "]";
 }
