@@ -1,75 +1,108 @@
-# NovaForge Game — Reset Roadmap
+# NovaForge Roadmap
 
 ## Repo Identity
-NovaForge is a standalone repo for the game, engine, and game-specific editor.
+NovaForge is a standalone native C++ repo for the game, engine, renderer, and game-specific editor.
 The editor exists to build NovaForge.
 The editor does not ship with the game.
-This repo does not own Atlas Suite or generic workspace tooling.
+This repo does not own Atlas Suite, WPF shell work, or generalized tooling ambitions.
 
-## Reset Order
+## Direction Lock
+The project is now locked to an editor-first, voxel-first implementation path.
+The current goal is not feature expansion. The current goal is editor trustworthiness.
 
-### Phase 0 — Freeze and Archive
-Goal: preserve the current repo before destructive refactor.
+## Phase 0 — Bootstrap and Reset Baseline
+Status: Done
 
-Deliverables:
-- pre-reset archive zip
-- pre-reset tag or branch
-- archive notes for deprecated editor paths
-- reset doc pack committed into the repo
+Goal:
+- clean repo structure
+- build system
+- editor and game program entrypoints
+- content/config/docs/test layout
 
-### Phase 1 — Editor Reality Pass
-Goal: make the editor shell usable before adding more systems.
+## Phase 1 — Editor Core Trust Layer
+Status: Current Active Phase
 
-Deliverables:
-- clickable editor window
-- readable theme and font defaults
-- DPI-aware resize and maximize behavior
-- stable dock layout
-- real command routing for menu and toolbar actions
+Goal:
+Make the editor a trustworthy tool instead of a promising shell.
 
-### Phase 2 — Real Viewport Integration
-Goal: make the center panel authoritative.
+Required outputs:
+- authoritative selection service
+- property inspector with read and write support
+- editor command history
+- voxel add/remove commands routed through undo/redo
+- toolbar and menu state derived from command availability
+- stable docking, input routing, and panel resize behavior
 
-Deliverables:
-- viewport owns panel bounds and render size
-- real render target presented into viewport rect
-- camera motion changes real rendered output
-- viewport-local pick-ray generation
-- fake or inactive viewport path archived or removed
+Done when:
+- click voxel -> select
+- edit voxel/property -> change applies
+- undo -> change reverts
+- redo -> change reapplies
 
-### Phase 3 — Editor State Wiring
-Goal: synchronize viewport, outliner, inspector, and command state.
+## Phase 2 — Persistence and Dev World Round-Trip
+Status: Next
 
-Deliverables:
-- selection service fully wired
-- world outliner backed by real world state
-- property inspector with dirty tracking
-- status bar bound to real mode/state
-- toolbar/menu enable state derived from command availability
+Goal:
+Prove that edits survive save and reload.
 
-### Phase 4 — Dev World Baseline
-Goal: use one stable world as the early source of truth.
+Required outputs:
+- editor world session management
+- save/load pipeline for dev world
+- dirty state tracking
+- project/path resolution cleanup
+- smoke-tested save/reload round-trip
 
-Deliverables:
-- editor boots directly into the dev world
-- save/load through world file services
-- world debug overlay
-- selection and property editing against real dev world entities/chunks/voxels
+Done when:
+- edit world -> save -> reload -> same result
+- standalone game can load the same saved state
 
-### Phase 5 — Voxel Authoring and First Interaction Loop
-Goal: prove real authoring and minimal gameplay through the editor.
+## Phase 3 — Viewport and World Truth
+Status: Next
 
-Deliverables:
-- voxel inspect/add/remove in viewport
-- undo/redo command path for edits
-- chunk rebuild batching and refresh
-- starter R.I.G. + minimal mining/build/repair loop
-- play-in-editor and standalone relaunch path
+Goal:
+Make viewport, outliner, inspector, and actual world state reflect the same truth.
 
-## Deferred Until After Phase 5
-- low-poly wrapper implementation
-- fleet gameplay
-- broad galaxy simulation
-- advanced multiplayer expansion
-- non-critical editor luxury panels
-- Atlas-linked workspace features
+Required outputs:
+- single authoritative viewport path
+- viewport-local picking
+- chunk/entity/voxel world representation cleanup
+- outliner backed by real world data
+- stale parallel viewport/editor paths archived or removed
+
+Done when:
+- visible world, selected world, and saved world all match
+
+## Phase 4 — Dev World Interaction Loop
+Status: Deferred until phases 1-3 pass
+
+Goal:
+Use one stable dev world to prove the first game-authoring loop.
+
+Required outputs:
+- starter R.I.G. state
+- mining/place/repair loop through editor and standalone game
+- basic HUD and loop validation
+- play/relaunch flow from editor
+
+## Phase 5 — Runtime Expansion
+Status: Deferred
+
+Goal:
+Only after editor trust and persistence are solid.
+
+Potential outputs later:
+- broader gameplay systems
+- low-poly wrapper layer
+- fleet and galaxy systems
+- expanded content pipeline
+- broader multiplayer foundations
+
+## Explicitly Deferred
+Do not prioritize these until earlier phases are complete:
+- visual scripting
+- generalized IDE/tool suite work
+- Atlas Suite concepts
+- WPF shell concepts
+- advanced AI systems
+- broad server/admin platform work
+- luxury editor panels not tied to core authoring loop
