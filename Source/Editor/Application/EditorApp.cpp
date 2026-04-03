@@ -267,7 +267,20 @@ bool EditorApp::Init() {
     {
         const std::string contentRoot =
             manifest.IsValid() ? manifest.ContentRoot : "Content";
+        const std::string worldName =
+            manifest.IsValid() ? manifest.DefaultWorld : "DevWorld";
         m_GameWorld.Initialize(contentRoot);
+
+        // If a saved chunk file exists, load it over the generated terrain so
+        // that previously saved edits are visible on startup (not only after
+        // File → Reload World).
+        const std::string chunkPath = contentRoot + "/Worlds/" + worldName + ".nfck";
+        if (m_GameWorld.LoadChunks(chunkPath)) {
+            Logger::Log(LogLevel::Info, "Editor",
+                        "Loaded saved chunk data on startup ("
+                        + std::to_string(m_GameWorld.GetLoadedChunkCount())
+                        + " chunks)");
+        }
     }
     m_Level.Load(manifest.IsValid() ? manifest.DefaultWorld : "DevWorld");
 
