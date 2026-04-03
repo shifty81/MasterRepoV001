@@ -135,9 +135,10 @@ bool EditorViewport::PickRay(float mouseX, float mouseY,
     const float localX = mouseX - m_BoundsX;
     const float localY = mouseY - m_BoundsY;
 
-    // Convert to NDC [-1, 1].
+    // Convert to NDC [-1, 1].  Y is flipped because UI coordinates have
+    // Y=0 at the top of the window while NDC has Y=+1 at the top.
     const float ndcX = (localX / m_BoundsW) * 2.f - 1.f;
-    const float ndcY = 1.f - (localY / m_BoundsH) * 2.f; // Y flipped
+    const float ndcY = 1.f - (localY / m_BoundsH) * 2.f;
 
     // Get inverse projection to convert from clip space to view space.
     Matrix4x4 proj = GetProjectionMatrix();

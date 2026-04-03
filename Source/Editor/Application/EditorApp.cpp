@@ -376,7 +376,7 @@ bool EditorApp::Init() {
     m_DockingSystem.SplitPanel("Viewport",  "Console",         SplitAxis::Vertical,  0.75f);
 
     m_Running = true;
-    Logger::Log(LogLevel::Info, "Editor", "EditorApp::Init complete — editor-first boot to DevWorld");
+    Logger::Log(LogLevel::Info, "Editor", "EditorApp::Init complete -- editor-first boot to DevWorld");
     return true;
 }
 
@@ -596,10 +596,7 @@ void EditorApp::HandleViewportInteraction()
         if (hit.hit) {
             nf::SelectionHandle handle;
             handle.kind  = nf::SelectionKind::Voxel;
-            handle.id    = static_cast<uint64_t>(
-                (static_cast<int64_t>(hit.x) & 0xFFFFF) |
-                ((static_cast<int64_t>(hit.y) & 0xFFFFF) << 20) |
-                ((static_cast<int64_t>(hit.z) & 0xFFFFF) << 40));
+            handle.id    = nf::PackVoxelCoord(hit.x, hit.y, hit.z);
             handle.label = "Voxel (" + std::to_string(hit.x) + ", "
                          + std::to_string(hit.y) + ", "
                          + std::to_string(hit.z) + ")";
@@ -718,7 +715,9 @@ void EditorApp::TickFrame(float dt)
     // ---- Render 3D scene into viewport region ----
     m_MeshCache.RebuildDirty(m_GameWorld.GetChunkMap());
     if (hasViewport && vpW > 0.f && vpH > 0.f) {
-        // OpenGL viewport: Y=0 is bottom, UI Y=0 is top. Flip Y.
+        // OpenGL uses a bottom-left origin for glViewport/glScissor while the
+        // UI coordinate system has Y=0 at the top of the window. Flip Y so
+        // that the GL viewport region matches the UI panel position.
         const int glX = static_cast<int>(vpX);
         const int glY = m_ClientHeight - static_cast<int>(vpY + vpH);
         const int glW = static_cast<int>(vpW);

@@ -16,15 +16,9 @@ void Inspector::SetSelectedVoxel(const nf::SelectionHandle& handle,
     m_VoxelSelected  = true;
     m_VoxelLabel     = handle.label;
 
-    // Decode packed position from handle.id.
-    auto unpack = [](uint64_t packed, int shift) -> int32_t {
-        int32_t val = static_cast<int32_t>((packed >> shift) & 0xFFFFF);
-        if (val & 0x80000) val |= ~0xFFFFF; // sign-extend
-        return val;
-    };
-    m_VoxelX = unpack(handle.id, 0);
-    m_VoxelY = unpack(handle.id, 20);
-    m_VoxelZ = unpack(handle.id, 40);
+    m_VoxelX = nf::UnpackVoxelCoord(handle.id, 0);
+    m_VoxelY = nf::UnpackVoxelCoord(handle.id, nf::kVoxelCoordBits);
+    m_VoxelZ = nf::UnpackVoxelCoord(handle.id, nf::kVoxelCoordBits * 2);
 
     m_VoxelType = static_cast<int>(
         gameWorld.GetVoxelEditApi().GetVoxel(m_VoxelX, m_VoxelY, m_VoxelZ));
