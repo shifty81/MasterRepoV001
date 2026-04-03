@@ -1,30 +1,27 @@
 # MasterRepo Reset — Action Matrix
 
 ## Keep
-- core engine/editor/game folder split
-- compile-safe bootstrap scaffolds already present
-- project-local docs under `Docs/Game/`
-- separate `NovaForgeEditor` and `NovaForgeGame` executables
+- standalone game/engine/editor repo boundary
+- dev world as the early test target
+- voxel-first direction
+- existing world, voxel, selection, outliner, inspector, and command scaffolds where they map to the reset plan
 
 ## Rewrite
-- roadmap to the new phase order
-- task list to match the new phase order
-- project rules to enforce standalone repo boundaries
-- any docs that still imply Suite ownership or generic tooling ownership
+- roadmap and task docs to reflect actual status
+- viewport render ownership and presentation path
+- shell-to-editor command binding
+- selection synchronization path
+- editor boot flow toward editor-first dev world boot
 
-## Add
-- `PHASE_0_BOOTSTRAP.md`
-- `PHASE_1_DEV_WORLD.md`
-- `PHASE_2_VOXEL_RUNTIME.md`
-- `PHASE_3_FIRST_INTERACTION_LOOP.md`
-- `GAP_MATRIX.md`
-- `DEFINITION_OF_DONE.md`
-- `Config/novaforge.project.json`
+## Archive
+- the current repo state before refactor
+- deprecated viewport paths
+- shell-only or duplicate panel implementations that are replaced by real behavior
+- outdated docs that conflict with the reset order
 
-## Defer
-- low-poly wrapper implementation
-- advanced fleet systems
-- broad PCG galaxy scope
-- advanced settlement systems
-- nonessential UI polish
-- tooling layers that belong in another repo
+## Next
+1. archive current repo
+2. make the editor window trustworthy
+3. make the viewport real
+4. wire selection and property editing
+5. harden the dev world and voxel edit loop
