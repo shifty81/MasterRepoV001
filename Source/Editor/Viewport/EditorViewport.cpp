@@ -193,6 +193,16 @@ Matrix4x4 EditorViewport::GetViewMatrix() const noexcept {
     return v;
 }
 
+Vector3 EditorViewport::GetCameraEye() const noexcept {
+    const float cp = std::cos(m_Pitch), sp = std::sin(m_Pitch);
+    const float cy = std::cos(m_Yaw),  sy = std::sin(m_Yaw);
+    return {
+        m_Target.X + m_Zoom * cp * sy,
+        m_Target.Y + m_Zoom * sp,
+        m_Target.Z + m_Zoom * cp * cy
+    };
+}
+
 Matrix4x4 EditorViewport::GetProjectionMatrix() const noexcept {
     // Use viewport panel bounds for aspect ratio when available,
     // otherwise fall back to m_Width/m_Height.

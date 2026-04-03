@@ -156,6 +156,11 @@ void ChunkMeshCache::Render()
     }
 }
 
+void ChunkMeshCache::SetCameraPosition(const Vector3& pos) noexcept
+{
+    m_Material.SetVec3("uViewPos", pos);
+}
+
 void ChunkMeshCache::Evict(const ChunkCoord& coord)
 {
     m_Meshes.erase(coord);

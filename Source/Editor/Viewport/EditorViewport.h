@@ -55,6 +55,26 @@ public:
     /// @brief Mark the viewport as having real 3D scene content rendered.
     void SetSceneRendered(bool rendered) noexcept { m_SceneRendered = rendered; }
 
+    // ---- Camera control -------------------------------------------------
+
+    /// @brief Set the orbit pivot (look-at target) in world space.
+    void SetCameraTarget(const Vector3& target) noexcept { m_Target = target; }
+
+    /// @brief Set the orbit distance (zoom) from the target.
+    void SetCameraZoom(float zoom) noexcept { m_Zoom = zoom; }
+
+    /// @brief Set the vertical orbit angle in radians.
+    void SetCameraPitch(float pitch) noexcept { m_Pitch = pitch; }
+
+    /// @brief Set the horizontal orbit angle in radians.
+    void SetCameraYaw(float yaw) noexcept { m_Yaw = yaw; }
+
+    /// @brief Return the current camera eye position in world space.
+    [[nodiscard]] Vector3 GetCameraEye() const noexcept;
+
+    /// @brief Return the current camera target (orbit pivot).
+    [[nodiscard]] const Vector3& GetCameraTarget() const noexcept { return m_Target; }
+
     /// @brief Cached viewport panel bounds (set each Draw call).
     [[nodiscard]] float GetBoundsX() const noexcept { return m_BoundsX; }
     [[nodiscard]] float GetBoundsY() const noexcept { return m_BoundsY; }
@@ -70,9 +90,9 @@ private:
     int   m_Height{720};
 
     // Orbit camera state
-    float   m_Pitch{0.3f};   ///< Vertical angle (radians, clamped).
+    float   m_Pitch{0.6f};   ///< Vertical angle (radians, clamped).
     float   m_Yaw{0.f};      ///< Horizontal angle (radians).
-    float   m_Zoom{5.f};     ///< Distance from target.
+    float   m_Zoom{100.f};   ///< Distance from target.
     Vector3 m_Target{};      ///< Orbit pivot point.
 
     // Cached viewport bounds (set each Draw call, read in Update).

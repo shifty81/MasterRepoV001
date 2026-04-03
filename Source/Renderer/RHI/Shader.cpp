@@ -18,7 +18,31 @@ bool Shader::LoadFromSource(const std::string& vertSrc, const std::string& fragS
     };
 
     GLuint vert = compile(GL_VERTEX_SHADER,   vertSrc);
+    GLint  vertOk = GL_FALSE;
+    glGetShaderiv(vert, GL_COMPILE_STATUS, &vertOk);
+    if (!vertOk) {
+        GLint len = 0;
+        glGetShaderiv(vert, GL_INFO_LOG_LENGTH, &len);
+        std::string log(len > 0 ? static_cast<size_t>(len) : 0u, '\0');
+        if (len > 0) glGetShaderInfoLog(vert, len, nullptr, log.data());
+        NF_LOG_ERROR("Renderer", "Vertex shader compile failed: " + log);
+        glDeleteShader(vert);
+        return false;
+    }
+
     GLuint frag = compile(GL_FRAGMENT_SHADER, fragSrc);
+    GLint  fragOk = GL_FALSE;
+    glGetShaderiv(frag, GL_COMPILE_STATUS, &fragOk);
+    if (!fragOk) {
+        GLint len = 0;
+        glGetShaderiv(frag, GL_INFO_LOG_LENGTH, &len);
+        std::string log(len > 0 ? static_cast<size_t>(len) : 0u, '\0');
+        if (len > 0) glGetShaderInfoLog(frag, len, nullptr, log.data());
+        NF_LOG_ERROR("Renderer", "Fragment shader compile failed: " + log);
+        glDeleteShader(vert);
+        glDeleteShader(frag);
+        return false;
+    }
 
     GLuint prog = glCreateProgram();
     glAttachShader(prog, vert);
@@ -27,6 +51,18 @@ bool Shader::LoadFromSource(const std::string& vertSrc, const std::string& fragS
 
     glDeleteShader(vert);
     glDeleteShader(frag);
+
+    GLint linkOk = GL_FALSE;
+    glGetProgramiv(prog, GL_LINK_STATUS, &linkOk);
+    if (!linkOk) {
+        GLint len = 0;
+        glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &len);
+        std::string log(len > 0 ? static_cast<size_t>(len) : 0u, '\0');
+        if (len > 0) glGetProgramInfoLog(prog, len, nullptr, log.data());
+        NF_LOG_ERROR("Renderer", "Shader program link failed: " + log);
+        glDeleteProgram(prog);
+        return false;
+    }
 
     m_Id = static_cast<ShaderId>(prog);
     NF_LOG_INFO("Renderer", "Shader compiled and linked");
