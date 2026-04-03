@@ -351,6 +351,27 @@ bool EditorApp::Init() {
     m_Toolbar.SetInputState(&m_Input);
     m_Toolbar.SetToolContext(&m_ToolContext);
 
+    // Wire mode manager and context tool shelf
+    m_ModeManager.SetUIRenderer(&m_UIRenderer);
+    m_ModeManager.SetInputState(&m_Input);
+    m_ModeManager.SetOnModeChanged([this](EditorMode mode) {
+        // Sync EditorToolMode when the top-level mode changes.
+        switch (mode) {
+        case EditorMode::Select:
+            m_ToolContext.activeMode = nf::EditorToolMode::Select;
+            break;
+        case EditorMode::Voxels:
+            m_ToolContext.activeMode = nf::EditorToolMode::VoxelInspect;
+            break;
+        default:
+            m_ToolContext.activeMode = nf::EditorToolMode::Select;
+            break;
+        }
+    });
+    m_ContextShelf.SetUIRenderer(&m_UIRenderer);
+    m_ContextShelf.SetInputState(&m_Input);
+    m_ContextShelf.SetToolContext(&m_ToolContext);
+
     // Wire PropertyInspectorSystem to Inspector so it renders the property grid
     m_Inspector.SetPropertyInspectorSystem(&m_PropertyInspectorSystem);
     m_Inspector.SetOnPropertyEdited([this]() {
@@ -402,28 +423,19 @@ bool EditorApp::Init() {
         [this](float x, float y, float w, float h) {
             m_ConsolePanel.Draw(x, y, w, h);
         });
-    m_DockingSystem.RegisterPanel("VoxelInspector",
-        [this](float x, float y, float w, float h) {
-            m_VoxelInspector.Draw(x, y, w, h);
-        });
-    m_DockingSystem.RegisterPanel("HUD",
-        [this](float x, float y, float w, float h) {
-            m_HUDPanel.Draw(x, y, w, h);
-        });
-    m_DockingSystem.RegisterPanel("WorldDebug",
-        [this](float x, float y, float w, float h) {
-            m_WorldDebugPanel.Draw(x, y, w, h);
-        });
 
-    // Default layout:
-    //   SceneOutliner (20%) | Viewport+Console (56%) | Inspector+ContentBrowser+VoxelInspector (24%)
-    m_DockingSystem.SetRootSplit("SceneOutliner", "Viewport", 0.20f);
-    m_DockingSystem.SplitPanel("Viewport",  "Inspector",      SplitAxis::Horizontal, 0.70f);
-    m_DockingSystem.SplitPanel("Inspector", "ContentBrowser",  SplitAxis::Vertical,  0.40f);
-    m_DockingSystem.SplitPanel("ContentBrowser", "VoxelInspector", SplitAxis::Vertical, 0.50f);
-    m_DockingSystem.SplitPanel("VoxelInspector", "HUD",            SplitAxis::Vertical, 0.50f);
-    m_DockingSystem.SplitPanel("HUD",           "WorldDebug",     SplitAxis::Vertical, 0.50f);
-    m_DockingSystem.SplitPanel("Viewport",  "Console",         SplitAxis::Vertical,  0.75f);
+    // ---- Cleaner Unreal-like layout ----
+    //
+    //   SceneOutliner (15%) | Viewport (63%) | Inspector (22%)
+    //                       | Console  (25%) |
+    //
+    // Secondary panels (VoxelInspector, HUD, WorldDebug, ContentBrowser)
+    // are demoted from permanent dock space.  They can be accessed via
+    // the mode-specific context shelf or View menu in the future.
+    m_DockingSystem.SetRootSplit("SceneOutliner", "Viewport", 0.15f);
+    m_DockingSystem.SplitPanel("Viewport",  "Inspector",      SplitAxis::Horizontal, 0.74f);
+    m_DockingSystem.SplitPanel("Viewport",  "Console",        SplitAxis::Vertical,   0.75f);
+    m_DockingSystem.SplitPanel("Inspector", "ContentBrowser",  SplitAxis::Vertical,  0.55f);
 
     // The Viewport panel sits directly over the OpenGL 3-D render target.
     // Skip drawing an opaque 2-D background for it so the scene is visible.
@@ -943,11 +955,19 @@ void EditorApp::TickFrame(float dt)
     ProcessHotkeys();
 
     // Compute docking layout FIRST so we know viewport bounds before the 3D pass.
+    // Four-band top structure:
+    //   Band 1: Menu bar + compact toolbar  (m_Toolbar.GetHeight())
+    //   Band 2: Mode tab strip              (EditorModeManager::kStripHeight)
+    //   Band 3: Context tool shelf           (ContextToolShelf::kShelfHeight)
+    //   Bottom: Status bar
     const float toolbarH  = m_Toolbar.GetHeight() * m_DpiScale;
+    const float modeTabH  = EditorModeManager::kStripHeight * m_DpiScale;
+    const float shelfH    = ContextToolShelf::kShelfHeight * m_DpiScale;
     const float statusH   = 22.f * m_DpiScale;
-    const float dockY     = toolbarH;
+    const float topBandsH = toolbarH + modeTabH + shelfH;
+    const float dockY     = topBandsH;
     const float dockW     = static_cast<float>(m_ClientWidth);
-    const float dockH     = static_cast<float>(m_ClientHeight) - toolbarH - statusH;
+    const float dockH     = static_cast<float>(m_ClientHeight) - topBandsH - statusH;
 
     m_DockingSystem.BuildLayout(0.f, dockY, dockW, dockH);
 
@@ -1025,10 +1045,19 @@ void EditorApp::TickFrame(float dt)
     if (m_Toolbar.IsPieActive())
         m_InteractionLoop.Tick(dt);
 
-    // Toolbar strip at the top
+    // ---- Band 1: Toolbar strip at the top ----
     m_Toolbar.Draw(0.f, 0.f, static_cast<float>(m_ClientWidth), toolbarH);
 
-    // Docking panels fill the area between toolbar and status bar.
+    // ---- Band 2: Mode tab strip ----
+    m_ModeManager.Draw(0.f, toolbarH,
+                       static_cast<float>(m_ClientWidth), modeTabH);
+
+    // ---- Band 3: Context tool shelf ----
+    m_ContextShelf.Draw(0.f, toolbarH + modeTabH,
+                        static_cast<float>(m_ClientWidth), shelfH,
+                        m_ModeManager.GetActiveMode());
+
+    // ---- Docking panels fill the area between top bands and status bar ----
     m_DockingSystem.Draw(0.f, dockY, dockW, dockH);
 
     // Status bar at the bottom
