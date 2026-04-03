@@ -13,6 +13,18 @@ namespace NF::Editor {
 // Helpers
 // ---------------------------------------------------------------------------
 
+/// Return the name of the currently active panel for a leaf node.
+/// For tabbed nodes this is the selected tab; otherwise just panelName.
+static const std::string& ActivePanelName(const DockNode& node) noexcept
+{
+    if (!node.tabNames.empty()) {
+        const int idx = std::clamp(node.activeTabIdx, 0,
+                                   static_cast<int>(node.tabNames.size()) - 1);
+        return node.tabNames[static_cast<size_t>(idx)];
+    }
+    return node.panelName;
+}
+
 uint32_t DockingSystem::AllocNode()
 {
     DockNode node{};
@@ -157,7 +169,7 @@ void DockingSystem::AddTab(const std::string& existingPanel,
         return;
     }
 
-    // Initialise the tab list the first time we add a tab.
+    // Initialize the tab list the first time we add a tab.
     if (leaf->tabNames.empty())
         leaf->tabNames.push_back(leaf->panelName);
 
@@ -249,15 +261,12 @@ void DockingSystem::DrawNode(DockNode& node,
             // Determine which panel name to draw (active tab or the only panel).
             const bool hasTabs   = !node.tabNames.empty();
             const int  tabCount  = hasTabs ? static_cast<int>(node.tabNames.size()) : 0;
-            const std::string& activePanelName =
-                hasTabs ? node.tabNames[static_cast<size_t>(
-                              std::clamp(node.activeTabIdx, 0, tabCount - 1))]
-                        : node.panelName;
+            const std::string& activeName = ActivePanelName(node);
 
             // Check whether the active panel has opted out of opaque backgrounds
             bool isTransparent = false;
             for (const auto& n : m_TransparentPanels)
-                if (n == activePanelName) { isTransparent = true; break; }
+                if (n == activeName) { isTransparent = true; break; }
 
             if (!isTransparent) {
                 // Panel background
@@ -330,12 +339,7 @@ void DockingSystem::DrawNode(DockNode& node,
         }
 
         // Call the active panel's content draw callback.
-        const bool hasTabs  = !node.tabNames.empty();
-        const int  tabCount = hasTabs ? static_cast<int>(node.tabNames.size()) : 0;
-        const std::string& drawName =
-            hasTabs ? node.tabNames[static_cast<size_t>(
-                          std::clamp(node.activeTabIdx, 0, tabCount - 1))]
-                    : node.panelName;
+        const std::string& drawName = ActivePanelName(node);
 
         if (DrawFn* fn = FindDrawFn(drawName)) {
             const float dpi       = m_Renderer ? m_Renderer->GetDpiScale() : 1.f;

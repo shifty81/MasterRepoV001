@@ -433,11 +433,16 @@ bool EditorApp::Init() {
     //
     //   ┌──────────────┬────────────────────────┬─────────────────┐
     //   │SceneOutliner │      Viewport          │ Inspector       │  75%
-    //   │ (15%)        │      (61%)             │ VoxelInspector  │
-    //   │              │                        │ (tabs, 24%)     │
+    //   │ (15%)        │                        │ VoxelInspector  │
+    //   │              │                        │ (tabs, ~20%)    │
     //   ├──────────────┴────────────────────────┴─────────────────┤
     //   │ Console | ContentBrowser  (tabs, full width)            │  25%
     //   └────────────────────────────────────────────────────────-┘
+    //
+    // After splits:
+    //   SceneOutliner = 15% of top row
+    //   Viewport      = 76% of the remaining 85% ≈ 65% of top row
+    //   Inspector     = 24% of the remaining 85% ≈ 20% of top row
     //
     m_DockingSystem.SetRootSplit("SceneOutliner", "Console",
                                  0.75f, SplitAxis::Vertical);
