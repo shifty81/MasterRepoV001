@@ -82,7 +82,8 @@ bool VoxelSerializer::DeserializeChunk(const std::byte* data, size_t size,
         return false;
     }
 
-    outChunk.ClearDirty();
+    // Keep chunk marked dirty so RebuildDirty() will regenerate its mesh.
+    // RebuildDirty() clears the flag after mesh generation.
     return true;
 }
 
