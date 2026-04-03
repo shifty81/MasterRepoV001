@@ -18,6 +18,7 @@
 #include "Editor/Panels/EditorToolbar.h"
 #include "Editor/Viewport/EditorViewport.h"
 #include "Editor/Selection/SelectionService.h"
+#include "Editor/Inspector/PropertyInspectorSystem.h"
 #include "Editor/Commands/EditorCommandRegistry.h"
 #include "Editor/Commands/EditorHotkeyMap.h"
 #include "Editor/Tools/EditorToolContext.h"
@@ -84,13 +85,14 @@ private:
     HUDPanel       m_HUDPanel;
     EditorToolbar  m_Toolbar;
 
-    // ---- Editor state systems (reset integration) ----
-    nf::SelectionService       m_Selection;
-    nf::EditorToolContext      m_ToolContext;
-    nf::EditorCommandRegistry  m_CommandRegistry;
-    nf::EditorHotkeyMap        m_HotkeyMap;
-    nf::StatusBarPanel         m_StatusBar;
-    CommandHistory             m_CommandHistory;
+    // ---- Editor state systems ----
+    nf::SelectionService        m_Selection;
+    nf::PropertyInspectorSystem m_PropertyInspectorSystem;
+    nf::EditorToolContext       m_ToolContext;
+    nf::EditorCommandRegistry   m_CommandRegistry;
+    nf::EditorHotkeyMap         m_HotkeyMap;
+    nf::StatusBarPanel          m_StatusBar;
+    CommandHistory              m_CommandHistory;
 
     /// @brief Register all editor commands with the command registry.
     void RegisterEditorCommands();
@@ -109,6 +111,16 @@ private:
 
     /// @brief Apply the current selection to the inspector panel.
     void SyncInspectorToSelection();
+
+    /// @brief Build a PropertySet from the current selection and push it
+    ///        to m_PropertyInspectorSystem.
+    void BuildPropertySetForSelection(const nf::SelectionHandle& handle);
+
+    /// @brief Sync the viewport highlight overlay to the current selection.
+    void UpdateViewportHighlight();
+
+    /// @brief Rebuild SceneOutliner chunk tree from the live GameWorld.
+    void RebuildWorldOutliner();
 
     /// @brief Active tool mode display name.
     [[nodiscard]] static const char* ToolModeName(nf::EditorToolMode mode) noexcept;

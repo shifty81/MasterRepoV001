@@ -3,10 +3,21 @@
 #include "Core/Math/Matrix.h"
 #include "Core/Math/Vector.h"
 #include "Renderer/RHI/RenderDevice.h"
+#include <cstdint>
+#include <string>
 
 namespace NF { class UIRenderer; }
 
 namespace NF::Editor {
+
+/// @brief Highlight state driven by the active selection.
+/// Updated by EditorApp each time the selection changes.
+struct ViewportHighlightState {
+    std::uint64_t selectedWorldObjectId = 0; ///< Non-zero when a world object is selected.
+    std::uint64_t selectedChunkId       = 0; ///< Non-zero when a chunk is selected.
+    std::uint64_t selectedVoxelId       = 0; ///< Non-zero when a voxel is selected.
+    std::string   highlightLabel;            ///< Human-readable label shown as overlay.
+};
 
 /// @brief 3-D viewport with an orbit camera.
 class EditorViewport {
@@ -55,6 +66,14 @@ public:
     /// @brief Mark the viewport as having real 3D scene content rendered.
     void SetSceneRendered(bool rendered) noexcept { m_SceneRendered = rendered; }
 
+    // ---- Selection highlight -----------------------------------------------
+
+    /// @brief Update the selection highlight overlay shown during Draw().
+    void SetHighlightState(ViewportHighlightState state) noexcept { m_HighlightState = std::move(state); }
+
+    /// @brief Return the current highlight state.
+    [[nodiscard]] const ViewportHighlightState& GetHighlightState() const noexcept { return m_HighlightState; }
+
     // ---- Camera control -------------------------------------------------
 
     /// @brief Set the orbit pivot (look-at target) in world space.
@@ -102,6 +121,8 @@ private:
     float m_BoundsH{0.f};
 
     bool  m_SceneRendered{false}; ///< True when real 3D content has been rendered.
+
+    ViewportHighlightState m_HighlightState; ///< Current selection highlight, updated each frame.
 };
 
 } // namespace NF::Editor

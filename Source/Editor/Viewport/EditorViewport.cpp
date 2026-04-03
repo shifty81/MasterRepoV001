@@ -120,6 +120,19 @@ void EditorViewport::Draw(float x, float y, float w, float h) {
                          x + w - 280.f * dpi,
                          y + h - 18.f * dpi,
                          kHintColor, 1.5f);
+
+    // ---- Selection highlight overlay (top-centre) --------------------------
+    if (!m_HighlightState.highlightLabel.empty()) {
+        static constexpr uint32_t kHighlightBg   = 0x1A3A5AE0;
+        static constexpr uint32_t kHighlightText = 0x80C8FFFF;
+        const float labelW = 260.f * dpi;
+        const float labelH = 18.f  * dpi;
+        const float lx = x + (w - labelW) * 0.5f;
+        const float ly = y + 6.f * dpi;
+        m_Renderer->DrawRect({lx - 4.f * dpi, ly, labelW + 8.f * dpi, labelH}, kHighlightBg);
+        m_Renderer->DrawText(m_HighlightState.highlightLabel,
+                             lx, ly + 2.f * dpi, kHighlightText, 1.5f);
+    }
 }
 
 bool EditorViewport::PickRay(float mouseX, float mouseY,

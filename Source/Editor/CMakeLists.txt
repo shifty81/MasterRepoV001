@@ -1,8 +1,6 @@
 add_library(NFEditor STATIC
     Application/EditorApp.cpp
-    Application/EditorAppIntegration.cpp
     Viewport/EditorViewport.cpp
-    Viewport/EditorViewportNF.cpp
     Viewport/TransformGizmo.cpp
     Panels/SceneOutliner.cpp
     Panels/Inspector.cpp
@@ -16,15 +14,12 @@ add_library(NFEditor STATIC
     Panels/HUDPanel.cpp
     Panels/EditorToolbar.cpp
     Panels/MenuBarPanel.cpp
-    Panels/ToolbarPanel.cpp
     Panels/StatusBarPanel.cpp
-    Panels/WorldOutlinerPanel.cpp
     Commands/EditorCommand.cpp
     Commands/EditorCommandRegistry.cpp
     Commands/EditorHotkeyMap.cpp
     Selection/SelectionService.cpp
     Inspector/PropertyInspectorSystem.cpp
-    Inspector/InspectorPanel.cpp
     Tools/VoxelPickService.cpp
 )
 

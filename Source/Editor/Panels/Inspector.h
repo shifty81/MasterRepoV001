@@ -1,5 +1,6 @@
 #pragma once
 #include "Engine/ECS/World.h"
+#include "Editor/Inspector/PropertyInspectorSystem.h"
 #include "Editor/Selection/SelectionService.h"
 
 namespace NF { class UIRenderer; }
@@ -22,6 +23,11 @@ public:
     /// @brief Set a voxel selection for inspection.
     void SetSelectedVoxel(const nf::SelectionHandle& handle, const NF::Game::GameWorld& gameWorld);
 
+    /// @brief Attach the property inspector system that supplies the structured
+    ///        property grid.  When set and populated, it takes precedence over
+    ///        the basic entity / voxel rendering paths.
+    void SetPropertyInspectorSystem(nf::PropertyInspectorSystem* sys) noexcept { m_PropSystem = sys; }
+
     /// @brief Set the UIRenderer used for drawing.
     void SetUIRenderer(UIRenderer* r) noexcept { m_Renderer = r; }
 
@@ -35,6 +41,9 @@ private:
     EntityId     m_SelectedEntity{NullEntity};
     World*       m_World{nullptr};
     UIRenderer*  m_Renderer{nullptr};
+
+    /// Non-owning pointer to the property system fed by EditorApp.
+    nf::PropertyInspectorSystem* m_PropSystem{nullptr};
 
     // Voxel selection data
     bool         m_VoxelSelected{false};
