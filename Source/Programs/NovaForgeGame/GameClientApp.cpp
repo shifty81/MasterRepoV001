@@ -518,7 +518,7 @@ void GameClientApp::DrawHUD()
 
     // Mining feedback flash
     if (m_MineFlashTimer > 0.f) {
-        const float alpha = std::min(1.f, m_MineFlashTimer / 0.2f);
+        const float alpha = std::min(1.f, m_MineFlashTimer / 0.4f);
         const uint32_t flashAlpha = static_cast<uint32_t>(alpha * 255.f);
         const uint32_t flashCol = (kFlashColor & 0xFFFFFF00u) | flashAlpha;
         m_UIRenderer.DrawText("MINED!", hudX, cy, flashCol, scale);

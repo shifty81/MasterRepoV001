@@ -122,6 +122,13 @@ void PreferencesPanel::Draw(float x, float y, float w, float h)
     m_Renderer->DrawRect({x, cy, w, 1.f}, kSepColor);
     cy += 4.f * dpi;
 
+    // --- Helper: test if mouse is inside a rectangular region ---
+    auto isHovered = [&](float rx, float ry, float rw, float rh) -> bool {
+        return m_Input &&
+            m_Input->mouseX >= rx && m_Input->mouseX < rx + rw &&
+            m_Input->mouseY >= ry && m_Input->mouseY < ry + rh;
+    };
+
     // --- Helper lambdas for drawing rows ---
     auto drawLabel = [&](const std::string& label) {
         m_Renderer->DrawText(label + ":", x + padX, cy, kLabelColor, scale);
@@ -134,9 +141,7 @@ void PreferencesPanel::Draw(float x, float y, float w, float h)
         const std::string text = value ? "[ON]" : "[OFF]";
         const float bx = x + padX + colW;
         const float bw = 40.f * dpi;
-        const bool hovered = m_Input &&
-            m_Input->mouseX >= bx && m_Input->mouseX < bx + bw &&
-            m_Input->mouseY >= cy && m_Input->mouseY < cy + lineH;
+        const bool hovered = isHovered(bx, cy, bw, lineH);
         if (hovered)
             m_Renderer->DrawRect({bx, cy, bw, lineH}, kBtnHover);
         m_Renderer->DrawText(text, bx + 2.f * dpi, cy + 2.f * dpi, color, scale);
@@ -197,9 +202,7 @@ void PreferencesPanel::Draw(float x, float y, float w, float h)
 
     // Apply button
     if (cy + btnH <= y + h) {
-        const bool applyHov = m_Input &&
-            m_Input->mouseX >= bx && m_Input->mouseX < bx + btnW &&
-            m_Input->mouseY >= cy && m_Input->mouseY < cy + btnH;
+        const bool applyHov = isHovered(bx, cy, btnW, btnH);
         m_Renderer->DrawRect({bx, cy, btnW, btnH}, applyHov ? kBtnHover : kBtnBg);
         m_Renderer->DrawText("Apply", bx + 6.f * dpi, cy + 2.f * dpi,
                              m_Dirty ? kDirtyColor : kValueColor, scale);
@@ -213,9 +216,7 @@ void PreferencesPanel::Draw(float x, float y, float w, float h)
 
     // Close button
     if (cy + btnH <= y + h) {
-        const bool closeHov = m_Input &&
-            m_Input->mouseX >= bx && m_Input->mouseX < bx + btnW &&
-            m_Input->mouseY >= cy && m_Input->mouseY < cy + btnH;
+        const bool closeHov = isHovered(bx, cy, btnW, btnH);
         m_Renderer->DrawRect({bx, cy, btnW, btnH}, closeHov ? kBtnHover : kBtnBg);
         m_Renderer->DrawText("Close", bx + 6.f * dpi, cy + 2.f * dpi, kValueColor, scale);
         if (closeHov && m_Input && m_Input->leftJustPressed) {

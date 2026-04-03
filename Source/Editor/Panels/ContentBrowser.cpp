@@ -26,6 +26,8 @@ void ContentBrowser::ScanDirectory()
         return;
     }
 
+    /// @brief Scan depth limit — keeps the tree manageable in both
+    ///        performance and visual density terms.
     constexpr int kMaxDepth = 3;
 
     // Recursive helper using a std::function to avoid exposing internals.

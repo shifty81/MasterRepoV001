@@ -53,6 +53,7 @@ public:
     }
 
     void Execute() override {
+        // durability=0 → instant removal (see VoxelEditApi::Mine).
         m_Api.Mine(m_X, m_Y, m_Z, 0);
     }
 

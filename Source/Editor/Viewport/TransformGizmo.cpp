@@ -5,20 +5,18 @@
 namespace NF::Editor {
 
 // ---------------------------------------------------------------------------
-// HitTestAxis — very simple screen-space proximity check against the three
-// axis lines.  Because we don't have a full camera unproject here, we use
-// the mouse delta direction as a heuristic: the axis whose screen-space
-// projection is closest to the cursor wins.  This is a placeholder until
-// proper viewport-unproject is wired.
+// HitTestAxis — screen-space proximity check against the three axis lines.
+//
+// Without access to view/projection matrices, proper screen-space picking
+// is not possible here.  This currently returns None; dragging is driven
+// externally by EditorApp calling SetMouseDown() after performing its own
+// viewport interaction logic.  Once the gizmo receives camera matrices
+// this function should project each axis endpoint to screen coords and
+// find the closest axis within kHitRadius pixels.
 // ---------------------------------------------------------------------------
 
 GizmoAxis TransformGizmo::HitTestAxis([[maybe_unused]] const Vector2& mousePos) const noexcept
 {
-    // Without view/projection matrices available here we cannot do a proper
-    // screen-space hit test.  We default to the axis whose screen delta is
-    // dominant when the user starts dragging: horizontal → X, vertical → Y,
-    // diagonal → Z.  This gives reasonable behaviour for the default orbit
-    // camera orientation.
     return GizmoAxis::None;
 }
 
