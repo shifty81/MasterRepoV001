@@ -49,6 +49,14 @@ public:
     void DrawText(std::string_view text, float x, float y, uint32_t color,
                   float scale = 1.0f);
 
+    /// @brief Measure the pixel dimensions of a text string without drawing.
+    /// @param text    The string to measure.
+    /// @param scale   Base text scale (further multiplied by DPI scale).
+    /// @param outWidth  Receives the total width in pixels.
+    /// @param outHeight Receives the total height in pixels.
+    void MeasureText(std::string_view text, float scale,
+                     float& outWidth, float& outHeight) const noexcept;
+
     /// @brief Flush all batched rects and text to the GPU immediately.
     ///
     /// Call this between drawing passes when later draw calls must appear
