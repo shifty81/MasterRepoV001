@@ -604,42 +604,6 @@ void EditorApp::RegisterEditorCommands()
         }
     });
 
-    // Tools.SelectMode
-    m_CommandRegistry.Register(nf::EditorCommand{
-        "Tools.SelectMode", "Select Mode", nullptr,
-        [this](EditorCommandContext&) {
-            m_ToolContext.activeMode = EditorToolMode::Select;
-            Logger::Log(LogLevel::Info, "Editor", "Tool mode: Select");
-        }
-    });
-
-    // Tools.VoxelInspectMode
-    m_CommandRegistry.Register(nf::EditorCommand{
-        "Tools.VoxelInspectMode", "Voxel Inspect", nullptr,
-        [this](EditorCommandContext&) {
-            m_ToolContext.activeMode = EditorToolMode::VoxelInspect;
-            Logger::Log(LogLevel::Info, "Editor", "Tool mode: VoxelInspect");
-        }
-    });
-
-    // Tools.VoxelAddMode
-    m_CommandRegistry.Register(nf::EditorCommand{
-        "Tools.VoxelAddMode", "Voxel Add", nullptr,
-        [this](EditorCommandContext&) {
-            m_ToolContext.activeMode = EditorToolMode::VoxelAdd;
-            Logger::Log(LogLevel::Info, "Editor", "Tool mode: VoxelAdd");
-        }
-    });
-
-    // Tools.VoxelRemoveMode
-    m_CommandRegistry.Register(nf::EditorCommand{
-        "Tools.VoxelRemoveMode", "Voxel Remove", nullptr,
-        [this](EditorCommandContext&) {
-            m_ToolContext.activeMode = EditorToolMode::VoxelRemove;
-            Logger::Log(LogLevel::Info, "Editor", "Tool mode: VoxelRemove");
-        }
-    });
-
     // Edit.Undo
     m_CommandRegistry.Register(nf::EditorCommand{
         "Edit.Undo", "Undo",

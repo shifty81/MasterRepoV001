@@ -61,17 +61,12 @@ static const MenuItemDef kEditItems[] = {
     { "Preferences...", "Edit.Preferences" },
 };
 
-static const MenuItemDef kViewItems[] = {
-    { "Voxel Overlay (see VoxelInspector panel)", nullptr },
-};
-
 static const MenuDef kMenus[] = {
     { "File", kFileItems, 5 },
     { "Edit", kEditItems, 4 },
-    { "View", kViewItems, 1 },
 };
 
-static constexpr int   kMenuCount = 3;
+static constexpr int   kMenuCount = 2;
 static constexpr float kMenuBtnW  = 52.f;  // logical width of each menu header button
 
 // ---------------------------------------------------------------------------
@@ -160,25 +155,6 @@ void EditorToolbar::Draw(float x, float y, float w, float h)
     const float btnW  = 80.f * dpi;
     const float gap   = 4.f * dpi;
     float bx = x + 8.f * dpi;
-
-    // ---- Tool mode buttons ----
-    if (m_ToolContext) {
-        auto toolBtn = [&](const char* label, nf::EditorToolMode mode) {
-            const bool isActive = (m_ToolContext->activeMode == mode);
-            const uint32_t bg = isActive ? kBtnBgActive : kBtnBg;
-            if (DrawButton(bx, bRowY, btnW, bRowH, label, bg, kTextColor)) {
-                m_ToolContext->activeMode = mode;
-                Logger::Log(LogLevel::Info, "EditorToolbar",
-                            std::string("Tool mode: ") + label);
-            }
-            bx += btnW + gap;
-        };
-
-        toolBtn("Select",  nf::EditorToolMode::Select);
-
-        m_Renderer->DrawRect({bx, bRowY, 1.f, bRowH}, kSepColor);
-        bx += gap * 2.f;
-    }
 
     // ---- Undo / Redo (enabled only when history allows) ----
     {
