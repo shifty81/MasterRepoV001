@@ -19,22 +19,18 @@ uniform mat4 uProjection;
 uniform mat4 uModel;
 
 out vec3 vNormal;
-out vec3 vWorldPos;
 out float vTypeId;
 
 void main() {
-    vec4 worldPos = uModel * vec4(aPosition, 1.0);
-    gl_Position   = uProjection * uView * worldPos;
-    vNormal       = aNormal;
-    vWorldPos     = worldPos.xyz;
-    vTypeId       = aTexCoord.x;
+    gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.0);
+    vNormal     = aNormal;
+    vTypeId     = aTexCoord.x;
 }
 )";
 
 static const char* kVoxelFragSrc = R"(
 #version 330 core
 in vec3 vNormal;
-in vec3 vWorldPos;
 in float vTypeId;
 
 out vec4 FragColor;
@@ -42,7 +38,6 @@ out vec4 FragColor;
 uniform vec3 uLightDir;       // normalised world-space direction toward light
 uniform vec3 uLightColor;     // directional light colour
 uniform vec3 uAmbientColor;   // ambient fill colour
-uniform vec3 uViewPos;        // camera world position (for specular)
 
 // Simple Phong-ish lighting palette for voxel types 0..7.
 vec3 getPalette(int id) {
@@ -73,17 +68,12 @@ void main() {
     else if (normal.y < -0.5) faceBrightness = 0.50;
     else                       faceBrightness = 0.80;
 
-    // Diffuse (Lambert)
+    // Diffuse (Lambert) — view-independent, depends only on face normal and
+    // fixed light direction so appearance stays constant as the camera orbits.
     float diff = max(dot(normal, uLightDir), 0.0);
     vec3 diffuse = diff * uLightColor;
 
-    // Specular (Blinn-Phong) — subtle for blocky voxels
-    vec3 viewDir = normalize(uViewPos - vWorldPos);
-    vec3 halfDir = normalize(uLightDir + viewDir);
-    float spec = pow(max(dot(normal, halfDir), 0.0), 32.0);
-    vec3 specular = spec * uLightColor * 0.15;
-
-    vec3 color = faceBrightness * (uAmbientColor + diffuse + specular) * baseColor;
+    vec3 color = faceBrightness * (uAmbientColor + diffuse) * baseColor;
 
     FragColor = vec4(color, 1.0);
 }
@@ -108,7 +98,6 @@ void ChunkMeshCache::Init(ForwardRenderer* forwardRenderer)
     m_Material.SetVec3("uLightDir",     NF::Vector3{0.4f, 0.8f, 0.3f}.Normalized());  // sun from upper-right
     m_Material.SetVec3("uLightColor",   {1.0f, 0.95f, 0.85f});
     m_Material.SetVec3("uAmbientColor", {0.30f, 0.32f, 0.35f});
-    m_Material.SetVec3("uViewPos",      {0.f, 0.f, 0.f});
 
     NF::Logger::Log(NF::LogLevel::Info, "ChunkMeshCache", "Initialised");
 }
