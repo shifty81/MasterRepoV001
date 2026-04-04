@@ -1,23 +1,81 @@
 #include "Editor/Viewport/TransformGizmo.h"
 #include "Renderer/Debug/DebugDraw.h"
 #include <cmath>
+#include <algorithm>
 
 namespace NF::Editor {
 
 // ---------------------------------------------------------------------------
-// HitTestAxis — screen-space proximity check against the three axis lines.
-//
-// Without access to view/projection matrices, proper screen-space picking
-// is not possible here.  This currently returns None; dragging is driven
-// externally by EditorApp calling SetMouseDown() after performing its own
-// viewport interaction logic.  Once the gizmo receives camera matrices
-// this function should project each axis endpoint to screen coords and
-// find the closest axis within kHitRadius pixels.
+// ProjectToScreen — world → window-space (top-left origin, pixel coords)
 // ---------------------------------------------------------------------------
 
-GizmoAxis TransformGizmo::HitTestAxis([[maybe_unused]] const Vector2& mousePos) const noexcept
+Vector2 TransformGizmo::ProjectToScreen(const Vector3& worldPos) const noexcept
 {
-    return GizmoAxis::None;
+    Vector4 clip = m_ViewProj * Vector4(worldPos, 1.f);
+    if (std::abs(clip.W) < 1e-6f)
+        return {-10000.f, -10000.f}; // Behind the camera / degenerate
+
+    // Perspective divide → NDC in [-1, 1]
+    const float ndcX = clip.X / clip.W;
+    const float ndcY = clip.Y / clip.W;
+
+    // Map NDC to viewport window-space (top-left origin).
+    const float sx = m_VpX + (ndcX * 0.5f + 0.5f) * m_VpW;
+    const float sy = m_VpY + (1.f - (ndcY * 0.5f + 0.5f)) * m_VpH; // flip Y
+    return {sx, sy};
+}
+
+// ---------------------------------------------------------------------------
+// PointToSegmentDist — 2D point-to-line-segment minimum distance
+// ---------------------------------------------------------------------------
+
+float TransformGizmo::PointToSegmentDist(const Vector2& p,
+                                          const Vector2& a,
+                                          const Vector2& b) noexcept
+{
+    const Vector2 ab = b - a;
+    const float lenSq = ab.LengthSq();
+    if (lenSq < 1e-8f) return (p - a).Length(); // Degenerate segment
+
+    // Parameter t of closest point on infinite line, clamped to [0,1].
+    float t = (p - a).Dot(ab) / lenSq;
+    t = std::clamp(t, 0.f, 1.f);
+
+    const Vector2 closest = a + ab * t;
+    return (p - closest).Length();
+}
+
+// ---------------------------------------------------------------------------
+// HitTestAxis — screen-space proximity check against the three axis lines
+// ---------------------------------------------------------------------------
+
+GizmoAxis TransformGizmo::HitTestAxis(const Vector2& mousePos) const noexcept
+{
+    const Vector2 origin = ProjectToScreen(m_Position);
+
+    struct AxisCandidate { GizmoAxis axis; float dist; };
+    AxisCandidate best{GizmoAxis::None, kHitRadiusPx};
+
+    // X axis
+    {
+        const Vector2 tip = ProjectToScreen({m_Position.X + kAxisLength, m_Position.Y, m_Position.Z});
+        const float d = PointToSegmentDist(mousePos, origin, tip);
+        if (d < best.dist) { best = {GizmoAxis::X, d}; }
+    }
+    // Y axis
+    {
+        const Vector2 tip = ProjectToScreen({m_Position.X, m_Position.Y + kAxisLength, m_Position.Z});
+        const float d = PointToSegmentDist(mousePos, origin, tip);
+        if (d < best.dist) { best = {GizmoAxis::Y, d}; }
+    }
+    // Z axis
+    {
+        const Vector2 tip = ProjectToScreen({m_Position.X, m_Position.Y, m_Position.Z + kAxisLength});
+        const float d = PointToSegmentDist(mousePos, origin, tip);
+        if (d < best.dist) { best = {GizmoAxis::Z, d}; }
+    }
+
+    return best.axis;
 }
 
 // ---------------------------------------------------------------------------

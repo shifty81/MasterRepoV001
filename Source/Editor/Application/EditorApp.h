@@ -17,6 +17,7 @@
 #include "Editor/Panels/HUDPanel.h"
 #include "Editor/Panels/EditorToolbar.h"
 #include "Editor/Viewport/EditorViewport.h"
+#include "Editor/Viewport/TransformGizmo.h"
 #include "Editor/Selection/SelectionService.h"
 #include "Editor/Inspector/PropertyInspectorSystem.h"
 #include "Editor/Commands/EditorCommandRegistry.h"
@@ -29,6 +30,9 @@
 #include "Editor/Application/EditorModeManager.h"
 #include "Editor/Application/ContextToolShelf.h"
 #include "Editor/Panels/PreferencesPanel.h"
+#include "Editor/Panels/MaterialEditorPanel.h"
+#include "Editor/Panels/LiveProfilerBackend.h"
+#include "Editor/Panels/LiveProfilerPanel.h"
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -103,6 +107,10 @@ private:
     EditorModeManager           m_ModeManager;
     ContextToolShelf            m_ContextShelf;
     PreferencesPanel            m_PreferencesPanel;
+    MaterialEditorPanel         m_MaterialEditor;
+    TransformGizmo              m_TransformGizmo;
+    LiveProfilerBackend         m_ProfilerBackend;
+    LiveProfilerPanel           m_ProfilerPanel;
 
     /// @brief Register all editor commands with the command registry.
     void RegisterEditorCommands();
