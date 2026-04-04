@@ -95,6 +95,12 @@ bool EditorToolbar::DrawButton(float x, float y, float bw, float bh,
     m_Renderer->DrawRect({x, y, bw, bh}, fill);
     m_Renderer->DrawOutlineRect({x, y, bw, bh}, kSepColor);
 
+    // Bevel/depth effect: lighter top-left inner edge, darker bottom-right inner edge.
+    m_Renderer->DrawRect({x + 1.f, y + 1.f, bw - 2.f, 1.f},         0xFFFFFF20U); // top
+    m_Renderer->DrawRect({x + 1.f, y + 1.f, 1.f,      bh - 2.f},    0xFFFFFF20U); // left
+    m_Renderer->DrawRect({x + 1.f, y + bh - 2.f, bw - 2.f, 1.f},    0x00000030U); // bottom
+    m_Renderer->DrawRect({x + bw - 2.f, y + 1.f, 1.f, bh - 2.f},    0x00000030U); // right
+
     if (label) {
         const uint32_t tc = enabled ? textColor : kDisabledColor;
         m_Renderer->DrawText(label, x + 4.f * dpi, y + 4.f * dpi, tc, 1.f);
@@ -176,28 +182,52 @@ void EditorToolbar::Draw(float x, float y, float w, float h)
         bx += gap * 2.f;
     }
 
-    // ---- Play ----
+    // ---- Play / Pause / Stop ----
     {
-        const uint32_t playBg = m_PieActive ? kBtnBgActive : kBtnBgPlay;
-        if (DrawButton(bx, bRowY, btnW, bRowH, "> Play", playBg, kTextColor)) {
-            if (!m_PieActive) {
-                m_PieActive = true;
+        const bool isStopped = (m_PieState == PieState::Stopped);
+        const bool isPlaying = (m_PieState == PieState::Playing);
+        const bool isPaused  = (m_PieState == PieState::Paused);
+
+        // Play: starts from Stopped (+ reset) or resumes from Paused (no reset).
+        const uint32_t playBg = isPlaying ? kBtnBgActive : kBtnBgPlay;
+        if (DrawButton(bx, bRowY, btnW, bRowH, "> Play", playBg, kTextColor, !isPlaying)) {
+            if (isStopped) {
+                m_PieState = PieState::Playing;
                 if (m_Loop) m_Loop->Reset();
                 Logger::Log(LogLevel::Info, "EditorToolbar", "PIE started");
+            } else if (isPaused) {
+                m_PieState = PieState::Playing;
+                Logger::Log(LogLevel::Info, "EditorToolbar", "PIE resumed");
             }
         }
-    }
-    bx += btnW + gap;
+        bx += btnW + gap;
 
-    // ---- Stop ----
-    if (DrawButton(bx, bRowY, btnW, bRowH, "[] Stop", kBtnBgStop, kTextColor)) {
-        if (m_PieActive) {
-            m_PieActive = false;
-            if (m_Loop) m_Loop->Reset();
-            Logger::Log(LogLevel::Info, "EditorToolbar", "PIE stopped");
+        // Pause: freezes the simulation without resetting it.
+        // Clicking Pause again while already paused resumes (acts as a toggle).
+        const uint32_t pauseBg = isPaused ? kBtnBgActive : kBtnBg;
+        if (DrawButton(bx, bRowY, btnW, bRowH, "|| Pause", pauseBg, kTextColor,
+                       isPlaying || isPaused)) {
+            if (isPlaying) {
+                m_PieState = PieState::Paused;
+                Logger::Log(LogLevel::Info, "EditorToolbar", "PIE paused");
+            } else if (isPaused) {
+                m_PieState = PieState::Playing;
+                Logger::Log(LogLevel::Info, "EditorToolbar", "PIE resumed");
+            }
         }
+        bx += btnW + gap;
+
+        // Stop: halts and resets the simulation.
+        const bool pieActive = !isStopped;
+        if (DrawButton(bx, bRowY, btnW, bRowH, "[] Stop", kBtnBgStop, kTextColor, pieActive)) {
+            if (pieActive) {
+                m_PieState = PieState::Stopped;
+                if (m_Loop) m_Loop->Reset();
+                Logger::Log(LogLevel::Info, "EditorToolbar", "PIE stopped");
+            }
+        }
+        bx += btnW + gap;
     }
-    bx += btnW + gap;
 
 #ifdef _WIN32
     // ---- Launch standalone game ----

@@ -4,6 +4,8 @@
 #include "Core/Logging/Log.h"
 #include "Game/Voxel/VoxelType.h"
 #include "Game/Voxel/Chunk.h"
+#include "Game/Voxel/ChunkCoord.h"
+#include "Renderer/Debug/DebugDraw.h"
 #include "Editor/Commands/VoxelEditCommands.h"
 #include <algorithm>
 #include <chrono>
@@ -539,6 +541,11 @@ bool EditorApp::Init() {
     // The Viewport panel sits directly over the OpenGL 3-D render target.
     // Skip drawing an opaque 2-D background for it so the scene is visible.
     m_DockingSystem.SetPanelTransparent("Viewport");
+
+    // Restore the last-saved docking layout (split ratios + active tabs) so
+    // the user's panel arrangement persists across sessions.
+    if (!m_PreferencesPanel.GetData().dockLayout.empty())
+        m_DockingSystem.DeserializeLayout(m_PreferencesPanel.GetData().dockLayout);
 
     m_Running = true;
     Logger::Log(LogLevel::Info, "Editor", "EditorApp::Init complete -- editor-first boot to DevWorld");
@@ -1109,6 +1116,23 @@ void EditorApp::TickFrame(float dt)
         m_MeshCache.Render();
         m_ForwardRenderer.EndScene();
 
+        // Draw 6DOF chunk-border wireframes when the Debug/Chunks overlay is on.
+        if (m_ToolContext.showChunkBorders) {
+            const Matrix4x4 viewProj = proj * view;
+            for (const auto& coord : m_GameWorld.GetChunkMap().GetLoadedCoords()) {
+                int32_t ox, oy, oz;
+                NF::Game::ChunkOrigin(coord, ox, oy, oz);
+                const float half = static_cast<float>(NF::Game::kChunkSize) * 0.5f;
+                NF::DebugDraw::Box(
+                    { static_cast<float>(ox) + half,
+                      static_cast<float>(oy) + half,
+                      static_cast<float>(oz) + half },
+                    { half, half, half },
+                    { 0.20f, 0.75f, 1.00f }); // cyan border
+            }
+            NF::DebugDraw::Flush(*m_RenderDevice, viewProj);
+        }
+
         // Draw the transform gizmo on top of the 3D scene.
         m_TransformGizmo.SetCameraMatrices(view, proj);
         m_TransformGizmo.SetViewportBounds(vpX, vpY, vpW, vpH);
@@ -1172,7 +1196,10 @@ void EditorApp::TickFrame(float dt)
     }
     // Apply Show Grid preference to the viewport.
     m_Viewport.SetShowGrid(m_PreferencesPanel.GetData().showGrid);
-    if (m_Toolbar.IsPieActive())
+    // Sync the serialized docking layout so the next autosave captures any
+    // split-ratio or tab changes the user made this frame.
+    m_PreferencesPanel.GetData().dockLayout = m_DockingSystem.SerializeLayout();
+    if (m_Toolbar.IsPiePlaying())
         m_InteractionLoop.Tick(dt);
 
     // ---- Band 1: Toolbar strip at the top ----

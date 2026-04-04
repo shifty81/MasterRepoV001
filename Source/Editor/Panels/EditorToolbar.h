@@ -17,6 +17,9 @@ public:
     static constexpr float kBtnHeight  = 28.f;  ///< Tool button row (logical pixels).
     static constexpr float kHeight     = kMenuHeight + kBtnHeight; ///< Total height.
 
+    /// @brief Play-In-Editor simulation state.
+    enum class PieState { Stopped, Playing, Paused };
+
     void SetUIRenderer(UIRenderer* r)                        noexcept { m_Renderer = r; }
     void SetInteractionLoop(NF::Game::InteractionLoop* loop) noexcept { m_Loop = loop; }
     void SetInputState(EditorInputState* input)              noexcept { m_Input = input; }
@@ -33,8 +36,14 @@ public:
     /// @brief Returns the total toolbar height (same as kHeight).
     [[nodiscard]] float GetHeight() const noexcept { return kHeight; }
 
-    /// @brief Returns true when Play-In-Editor is active.
-    [[nodiscard]] bool IsPieActive() const noexcept { return m_PieActive; }
+    /// @brief Returns true only when the simulation is actively ticking (not paused, not stopped).
+    [[nodiscard]] bool IsPiePlaying() const noexcept { return m_PieState == PieState::Playing; }
+
+    /// @brief Returns true when PIE is paused (simulation frozen but not reset).
+    [[nodiscard]] bool IsPiePaused()  const noexcept { return m_PieState == PieState::Paused; }
+
+    /// @brief Returns the full PIE state.
+    [[nodiscard]] PieState GetPieState() const noexcept { return m_PieState; }
 
 private:
     UIRenderer*                m_Renderer{nullptr};
@@ -42,7 +51,7 @@ private:
     EditorInputState*          m_Input{nullptr};
     nf::EditorToolContext*     m_ToolContext{nullptr};
     nf::EditorCommandRegistry* m_CommandRegistry{nullptr};
-    bool                       m_PieActive{false};  ///< True while PIE is running.
+    PieState                   m_PieState{PieState::Stopped}; ///< Current PIE simulation state.
 
     // Menu state
     int   m_OpenMenuIdx{-1};  ///< Index of the currently open menu; -1 = none.

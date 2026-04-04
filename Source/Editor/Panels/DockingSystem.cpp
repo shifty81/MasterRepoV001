@@ -4,6 +4,7 @@
 #include "UI/Rendering/UIRenderer.h"
 #include "Core/Logging/Log.h"
 #include <algorithm>
+#include <cstdio>
 #include <cstring>
 #include <stdexcept>
 
@@ -322,6 +323,12 @@ void DockingSystem::DrawNode(DockNode& node,
                                              : theme.titleBarBg;
                     m_Renderer->DrawRect({tabX, tabY, tabW, tabH}, tabBg);
 
+                    // Bevel depth on each tab
+                    m_Renderer->DrawRect({tabX + 1.f, tabY + 1.f, tabW - 2.f, 1.f},       0xFFFFFF15U);
+                    m_Renderer->DrawRect({tabX + 1.f, tabY + 1.f, 1.f,        tabH - 2.f}, 0xFFFFFF15U);
+                    m_Renderer->DrawRect({tabX + 1.f, tabY + tabH - 2.f, tabW - 2.f, 1.f}, 0x00000020U);
+                    m_Renderer->DrawRect({tabX + tabW - 2.f, tabY + 1.f, 1.f, tabH - 2.f}, 0x00000020U);
+
                     // Active accent bar at the top of the tab
                     if (isActive)
                         m_Renderer->DrawRect({tabX, y, tabW, 2.f * dpi}, theme.worldAccent);
@@ -386,14 +393,70 @@ void DockingSystem::DrawNode(DockNode& node,
     }
     if (!first || !second) return;
 
+    // --- Resize handle: hit-zone of ±4 logical px around the split line ---
+    constexpr float kHitHalfPx = 4.f;
+    bool divHovered = false;
+
     if (node.axis == SplitAxis::Horizontal) {
-        float leftW = w * node.splitRatio;
+        const float divX = x + w * node.splitRatio;
+        divHovered = m_Input &&
+            m_Input->mouseX >= divX - kHitHalfPx &&
+            m_Input->mouseX <  divX + kHitHalfPx &&
+            m_Input->mouseY >= y && m_Input->mouseY < y + h;
+
+        // Start drag on divider click.
+        if (divHovered && m_Input->leftJustPressed && !m_ResizeDrag.active)
+            m_ResizeDrag = { node.id, true, m_Input->mouseX, node.splitRatio };
+
+        // Continue drag while button held.
+        if (m_ResizeDrag.active && m_ResizeDrag.nodeId == node.id) {
+            if (m_Input->leftDown && w > 0.f)
+                node.splitRatio = std::clamp(
+                    m_ResizeDrag.startRatio + (m_Input->mouseX - m_ResizeDrag.startMouse) / w,
+                    0.1f, 0.9f);
+            else
+                m_ResizeDrag = {};
+        }
+
+        // Draw children first, then overlay the divider handle on top.
+        const float leftW = w * node.splitRatio;
         DrawNode(*first,  x,          y, leftW,      h);
         DrawNode(*second, x + leftW,  y, w - leftW,  h);
-    } else {
-        float topH = h * node.splitRatio;
+
+        // Divider highlight — visible as a bright 2 px line when hovered or dragging.
+        if (m_Renderer && (divHovered || (m_ResizeDrag.active && m_ResizeDrag.nodeId == node.id))) {
+            const float gx = x + w * node.splitRatio;
+            m_Renderer->DrawRect({gx - 1.f, y, 2.f, h}, ActiveTheme().worldAccent);
+        }
+
+    } else { // Vertical split
+
+        const float divY = y + h * node.splitRatio;
+        divHovered = m_Input &&
+            m_Input->mouseX >= x && m_Input->mouseX <  x + w &&
+            m_Input->mouseY >= divY - kHitHalfPx &&
+            m_Input->mouseY <  divY + kHitHalfPx;
+
+        if (divHovered && m_Input->leftJustPressed && !m_ResizeDrag.active)
+            m_ResizeDrag = { node.id, true, m_Input->mouseY, node.splitRatio };
+
+        if (m_ResizeDrag.active && m_ResizeDrag.nodeId == node.id) {
+            if (m_Input->leftDown && h > 0.f)
+                node.splitRatio = std::clamp(
+                    m_ResizeDrag.startRatio + (m_Input->mouseY - m_ResizeDrag.startMouse) / h,
+                    0.1f, 0.9f);
+            else
+                m_ResizeDrag = {};
+        }
+
+        const float topH = h * node.splitRatio;
         DrawNode(*first,  x, y,          w, topH);
         DrawNode(*second, x, y + topH,   w, h - topH);
+
+        if (m_Renderer && (divHovered || (m_ResizeDrag.active && m_ResizeDrag.nodeId == node.id))) {
+            const float gy = y + h * node.splitRatio;
+            m_Renderer->DrawRect({x, gy - 1.f, w, 2.f}, ActiveTheme().worldAccent);
+        }
     }
 }
 
@@ -402,6 +465,57 @@ void DockingSystem::Draw(float x, float y, float totalWidth, float totalHeight)
     if (m_Nodes.empty()) return;
     BuildLayout(x, y, totalWidth, totalHeight);
     DrawNode(m_Nodes[0], x, y, totalWidth, totalHeight);
+}
+
+// ---------------------------------------------------------------------------
+// Layout serialization
+// ---------------------------------------------------------------------------
+
+std::string DockingSystem::SerializeLayout() const
+{
+    // Format: pipe-separated records, one per node in m_Nodes vector order.
+    // Each record: "<splitRatio>:<activeTabIdx>"
+    // Split nodes store their ratio; leaf nodes store 0.5 as placeholder.
+    // Leaf nodes with tabs store their activeTabIdx; others store -1.
+    std::string result;
+    result.reserve(m_Nodes.size() * 16);
+    for (size_t i = 0; i < m_Nodes.size(); ++i) {
+        if (i > 0) result += '|';
+        const auto& n = m_Nodes[i];
+        char buf[32];
+        std::snprintf(buf, sizeof(buf), "%.4f:%d",
+                      n.isLeaf ? 0.5f : n.splitRatio,
+                      (!n.isLeaf || n.tabNames.empty()) ? -1 : n.activeTabIdx);
+        result += buf;
+    }
+    return result;
+}
+
+void DockingSystem::DeserializeLayout(const std::string& data)
+{
+    if (data.empty()) return;
+
+    size_t nodeIdx = 0;
+    size_t start   = 0;
+    while (start < data.size() && nodeIdx < m_Nodes.size()) {
+        size_t end = data.find('|', start);
+        if (end == std::string::npos) end = data.size();
+
+        const char* tok = data.c_str() + start;
+        float ratio   = 0.5f;
+        int   tabIdx  = -1;
+        if (std::sscanf(tok, "%f:%d", &ratio, &tabIdx) == 2) {
+            auto& n = m_Nodes[nodeIdx];
+            if (!n.isLeaf)
+                n.splitRatio = std::clamp(ratio, 0.1f, 0.9f);
+            else if (!n.tabNames.empty() && tabIdx >= 0)
+                n.activeTabIdx = std::clamp(tabIdx, 0,
+                    static_cast<int>(n.tabNames.size()) - 1);
+        }
+
+        start = end + 1;
+        ++nodeIdx;
+    }
 }
 
 } // namespace NF::Editor
