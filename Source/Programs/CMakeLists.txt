@@ -18,6 +18,24 @@ if(NF_BUILD_EDITOR)
     message(STATUS "  NovaForgeEditor executable configured")
 endif()
 
+# NovaForge Dedicated Server executable
+if(NF_BUILD_SERVER)
+    add_executable(NovaForgeServer NovaForgeServer/main.cpp)
+    target_include_directories(NovaForgeServer PRIVATE ${CMAKE_SOURCE_DIR}/Source)
+    target_link_libraries(NovaForgeServer PRIVATE
+        NF::Game
+        NF::Engine
+        NF::NodeGraph
+        NF::Networking
+        NF::Physics
+        NF::Audio
+        NF::Animation
+        NF::Input
+        NF::Core
+    )
+    message(STATUS "  NovaForgeServer executable configured")
+endif()
+
 # NovaForge Game executable
 if(NF_BUILD_GAME)
     add_executable(NovaForgeGame

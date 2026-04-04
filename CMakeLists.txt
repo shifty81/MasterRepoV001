@@ -62,9 +62,10 @@ foreach(_dir Content Config)
 endforeach()
 
 # Build options
-option(NF_BUILD_EDITOR "Build NovaForge Editor" ON)
-option(NF_BUILD_GAME   "Build NovaForge Game Runtime" ON)
-option(NF_BUILD_TESTS  "Build test suite" OFF)
+option(NF_BUILD_EDITOR  "Build NovaForge Editor" ON)
+option(NF_BUILD_GAME    "Build NovaForge Game Runtime" ON)
+option(NF_BUILD_TESTS   "Build test suite" OFF)
+option(NF_BUILD_SERVER  "Build NovaForge Dedicated Server" OFF)
 
 # Modules (static libraries)
 add_subdirectory(Source/Core)
@@ -76,6 +77,7 @@ add_subdirectory(Source/Animation)
 add_subdirectory(Source/Input)
 add_subdirectory(Source/Networking)
 add_subdirectory(Source/UI)
+add_subdirectory(Source/Engine/NodeGraph)
 add_subdirectory(Source/Game)
 
 if(NF_BUILD_EDITOR)

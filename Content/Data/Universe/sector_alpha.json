@@ -1,0 +1,20 @@
+{
+  "id": "sector_alpha",
+  "name": "Alpha Sector",
+  "description": "The core inhabited sector. Home to the Merchant Guild headquarters and the main player starting area.",
+  "type": "core",
+  "danger_level": 1,
+  "spawn": { "x": 0.0, "y": 0.0, "z": 0.0 },
+  "bounds": { "min": [-5000, -500, -5000], "max": [5000, 500, 5000] },
+  "stations": [
+    { "id": "station_merchant_guild_alpha", "name": "Merchant Guild Station", "position": [500, 0, 200], "faction": "faction_merchant_guild" },
+    { "id": "station_explorers_guild_alpha", "name": "Explorers Guild Outpost", "position": [-300, 0, 800], "faction": "faction_explorers_guild" }
+  ],
+  "points_of_interest": [
+    { "id": "poi_pirate_hideout_alpha", "name": "Abandoned Asteroid Base", "position": [2000, 100, -1500], "type": "dungeon" },
+    { "id": "poi_resource_field_alpha", "name": "Ore-Rich Asteroid Belt", "position": [-1000, 0, 2000], "type": "mining_zone" }
+  ],
+  "ambient_factions": ["faction_merchant_guild", "faction_explorers_guild", "faction_pirates"],
+  "music_track": "ambient_sector_core",
+  "skybox": "skybox_nebula_blue"
+}

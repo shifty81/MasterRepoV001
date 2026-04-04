@@ -10,7 +10,19 @@
     "contentRoot": "Content",
     "configRoot": "Config",
     "saveRoot": "Saved",
-    "logRoot": "Saved/Logs"
+    "logRoot": "Saved/Logs",
+    "data": "Content/Data",
+    "schemas": "Schemas",
+    "scripts": "Scripts"
+  },
+  "server": {
+    "default_port": 27015,
+    "tick_rate": 60,
+    "max_players": 20,
+    "protocol": "lockstep_rollback"
+  },
+  "game": {
+    "deterministic_simulation": true
   },
   "phases": [
     "Phase0_Bootstrap",

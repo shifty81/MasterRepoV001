@@ -1,0 +1,41 @@
+{
+  "$schema": "../../../Schemas/mission.schema.json",
+  "id": "exploration_uncharted_sector",
+  "type": "exploration",
+  "name": "Into the Unknown",
+  "description": "Survey data indicates an uncharted sector beyond the frontier. Navigate there, scan all anomalies, and return with your findings.",
+  "sector": "sector_frontier",
+  "giver": "faction_explorers_guild",
+  "prerequisites": [],
+  "objectives": [
+    {
+      "id": "obj_travel_frontier",
+      "type": "travel",
+      "description": "Travel to the Frontier sector",
+      "target_id": "sector_frontier"
+    },
+    {
+      "id": "obj_scan_anomalies",
+      "type": "scan",
+      "description": "Scan all detected anomalies",
+      "target_id": "anomaly_frontier",
+      "quantity": 3
+    },
+    {
+      "id": "obj_return_data",
+      "type": "deliver",
+      "description": "Return scan data to the Explorers' Guild station",
+      "target_id": "station_explorers_guild_alpha"
+    }
+  ],
+  "rewards": {
+    "credits": 1800,
+    "xp": 600,
+    "reputation": { "faction_explorers_guild": 20 },
+    "items": [
+      { "item_id": "item_stellar_chart_frontier", "quantity": 1 }
+    ]
+  },
+  "time_limit_seconds": 0,
+  "repeatable": false
+}

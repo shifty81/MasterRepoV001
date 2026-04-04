@@ -1,0 +1,20 @@
+{
+  "id": "sector_frontier",
+  "name": "Frontier Sector",
+  "description": "An uncharted sector beyond the edge of known space. Resources are abundant but danger is extreme. Only experienced pilots venture here.",
+  "type": "frontier",
+  "danger_level": 4,
+  "spawn": { "x": 10000.0, "y": 0.0, "z": 10000.0 },
+  "bounds": { "min": [8000, -800, 8000], "max": [18000, 800, 18000] },
+  "stations": [
+    { "id": "station_frontier_outpost", "name": "Frontier Outpost Zeta", "position": [10500, 0, 10200], "faction": "faction_independent" }
+  ],
+  "points_of_interest": [
+    { "id": "poi_signal_source_frontier", "name": "Anomalous Signal Source", "position": [12000, 200, 14000], "type": "story" },
+    { "id": "poi_alien_wreckage", "name": "Alien Wreckage Field", "position": [15000, -100, 11000], "type": "exploration" },
+    { "id": "poi_deep_ore_belt", "name": "Deep Ore Belt", "position": [9000, 0, 16000], "type": "mining_zone" }
+  ],
+  "ambient_factions": ["faction_independent", "faction_pirates"],
+  "music_track": "ambient_sector_frontier",
+  "skybox": "skybox_deep_space_red"
+}

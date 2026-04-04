@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../Schemas/ship.schema.json",
+  "id": "frigate_sentinel",
+  "class": "frigate",
+  "name": "Sentinel",
+  "description": "A medium-class warship with balanced offence and defence. The workhorse of any fleet.",
+  "stats": {
+    "hull": 600,
+    "shield": 300,
+    "speed": 60.0,
+    "maneuverability": 0.5,
+    "cargo_capacity": 32,
+    "crew": 8,
+    "power_output": 120.0
+  },
+  "modules": ["railgun_mk1", "point_defence_turret", "medium_shield_gen", "standard_engine"],
+  "module_slots": { "weapon": 4, "utility": 3, "engine": 1, "cargo": 1 },
+  "voxel_asset": "Content/Blocks/Ships/frigate_sentinel.nfblock",
+  "cost": { "Metal": 800, "Stone": 200, "Ore": 150 },
+  "unlock_level": 5
+}
