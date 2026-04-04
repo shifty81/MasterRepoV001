@@ -20,7 +20,7 @@ void HUDPanel::DrawBar(float x, float y, float w, float barH,
     const uint32_t kTextColor = ActiveTheme().hudText;
     constexpr uint32_t kGlowColor = 0xFFFFFF10;
     const float dpi   = m_Renderer->GetDpiScale();
-    const float scale = 2.f;
+    const float scale = 1.f;
 
     m_Renderer->DrawRect({x, y, w, barH}, kBgColor);
     m_Renderer->DrawRect({x, y, w, 1.f}, kGlowColor);
@@ -53,7 +53,7 @@ void HUDPanel::Draw(float x, float y, float w, float h) {
     const float lineH = 18.f * dpi;
     const float barH  = 14.f * dpi;
     const float padX  = 6.f  * dpi;
-    const float scale = 2.f;
+    const float scale = 1.f;
     float cy = y + 4.f * dpi;
 
     m_Renderer->DrawRect({x, y, w, 1.f}, kPanelGlow);
@@ -71,7 +71,7 @@ void HUDPanel::Draw(float x, float y, float w, float h) {
         cy += lineH;
 
         const std::string bootLine = std::string("Boot: ") + m_GameWorld->GetBootstrapStatusText();
-        m_Renderer->DrawText(bootLine, x + padX, cy + 2.f * dpi, kLabelColor, 1.5f);
+        m_Renderer->DrawText(bootLine, x + padX, cy + 2.f * dpi, kLabelColor, 1.f);
         cy += lineH;
 
         m_Renderer->DrawRect({x, cy, w, 1.f}, kSepColor);

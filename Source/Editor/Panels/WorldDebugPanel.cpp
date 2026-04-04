@@ -17,10 +17,10 @@ void WorldDebugPanel::Draw(float x, float y, float w, float h)
     const float dpi   = m_Renderer->GetDpiScale();
     const float lineH = 18.f * dpi;
     const float padX  = 6.f * dpi;
-    const float scale = 1.8f;
+    const float scale = 1.f;
     float cy = y + 4.f * dpi;
 
-    m_Renderer->DrawText("World Debug", x + padX, cy, kHeaderColor, 2.f);
+    m_Renderer->DrawText("World Debug", x + padX, cy, kHeaderColor, 1.f);
     cy += 20.f * dpi;
     m_Renderer->DrawRect({x, cy, w, 1.f}, kSepColor);
     cy += 4.f * dpi;

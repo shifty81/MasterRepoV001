@@ -380,6 +380,16 @@ bool EditorApp::Init() {
     // Apply saved theme preference
     SetTheme(m_PreferencesPanel.GetData().theme);
 
+    // Wire MaterialEditorPanel
+    m_MaterialEditor.SetUIRenderer(&m_UIRenderer);
+    m_MaterialEditor.SetInputState(&m_Input);
+    m_MaterialEditor.SetOpen(true);
+
+    // Wire LiveProfilerBackend + Panel
+    m_ProfilerPanel.SetUIRenderer(&m_UIRenderer);
+    m_ProfilerPanel.SetInputState(&m_Input);
+    m_ProfilerPanel.SetBackend(&m_ProfilerBackend);
+
     // Wire PropertyInspectorSystem to Inspector so it renders the property grid
     m_Inspector.SetPropertyInspectorSystem(&m_PropertyInspectorSystem);
     m_Inspector.SetOnPropertyEdited([this]() {
@@ -404,6 +414,8 @@ bool EditorApp::Init() {
         m_Inspector.SetSelectedEntity(id, &m_Level.GetWorld());
         BuildPropertySetForSelection(handle);
         UpdateViewportHighlight();
+        // Sync gizmo to the selected entity.
+        m_TransformGizmo.SetSelectedEntity(id);
     });
 
     // Use manifest content root if available, else default
@@ -451,7 +463,7 @@ bool EditorApp::Init() {
             r->DrawRect({btnX, btnY, btnW, btnH}, btnBg);
             r->DrawOutlineRect({btnX, btnY, btnW, btnH}, theme.panelBorder);
             r->DrawText(label, btnX + 4.f * dpi, btnY + 3.f * dpi,
-                        focusMode ? 0xFFFFFFFF : theme.textSecondary, 1.8f);
+                        focusMode ? 0xFFFFFFFF : theme.textSecondary, 1.f);
         });
     m_DockingSystem.RegisterPanel("Inspector",
         [this](float x, float y, float w, float h) {
@@ -472,6 +484,18 @@ bool EditorApp::Init() {
     m_DockingSystem.RegisterPanel("Preferences",
         [this](float x, float y, float w, float h) {
             m_PreferencesPanel.Draw(x, y, w, h);
+        });
+    m_DockingSystem.RegisterPanel("WorldDebug",
+        [this](float x, float y, float w, float h) {
+            m_WorldDebugPanel.Draw(x, y, w, h);
+        });
+    m_DockingSystem.RegisterPanel("MaterialEditor",
+        [this](float x, float y, float w, float h) {
+            m_MaterialEditor.Draw(x, y, w, h);
+        });
+    m_DockingSystem.RegisterPanel("Profiler",
+        [this](float x, float y, float w, float h) {
+            m_ProfilerPanel.Draw(x, y, w, h);
         });
 
     // ---- Unreal-like layout with tabbed regions and full-width bottom dock ----
@@ -500,8 +524,11 @@ bool EditorApp::Init() {
     // Tabs on the right: Inspector + VoxelInspector + Preferences
     m_DockingSystem.AddTab("Inspector", "VoxelInspector");
     m_DockingSystem.AddTab("Inspector", "Preferences");
-    // Tabs on the bottom: Console + ContentBrowser
+    // Tabs on the bottom: Console + ContentBrowser + WorldDebug + MaterialEditor + Profiler
     m_DockingSystem.AddTab("Console", "ContentBrowser");
+    m_DockingSystem.AddTab("Console", "WorldDebug");
+    m_DockingSystem.AddTab("Console", "MaterialEditor");
+    m_DockingSystem.AddTab("Console", "Profiler");
 
     // The Viewport panel sits directly over the OpenGL 3-D render target.
     // Skip drawing an opaque 2-D background for it so the scene is visible.
@@ -718,7 +745,7 @@ void EditorApp::DrawStatusBar(float x, float y, float w, float h)
 
     const float dpi = m_UIRenderer.GetDpiScale();
     std::string status = m_StatusBar.BuildDisplayString();
-    m_UIRenderer.DrawText(status, x + 8.f * dpi, y + 3.f * dpi, kStatusText, 1.5f);
+    m_UIRenderer.DrawText(status, x + 8.f * dpi, y + 4.f * dpi, kStatusText, 1.f);
 }
 
 // ---------------------------------------------------------------------------
@@ -1056,6 +1083,9 @@ const char* EditorApp::ToolModeName(nf::EditorToolMode mode) noexcept
 
 void EditorApp::TickFrame(float dt)
 {
+    // ---- Profiler frame begin ----
+    m_ProfilerBackend.BeginFrame();
+
     m_RenderDevice->BeginFrame();
     m_RenderDevice->Clear(0.18f, 0.18f, 0.18f, 1.f);
     m_Level.Update(dt);
@@ -1109,6 +1139,13 @@ void EditorApp::TickFrame(float dt)
         m_MeshCache.Render();
         m_ForwardRenderer.EndScene();
 
+        // Draw the transform gizmo on top of the 3D scene.
+        m_TransformGizmo.SetCameraMatrices(view, proj);
+        m_TransformGizmo.SetViewportBounds(vpX, vpY, vpW, vpH);
+        m_TransformGizmo.SetMouseDown(m_Input.leftDown);
+        m_TransformGizmo.Update(dt, {m_Input.mouseX, m_Input.mouseY});
+        m_TransformGizmo.Draw(*m_RenderDevice);
+
         // Restore full-window viewport for UI pass.
         m_RenderDevice->EnableScissor(false);
         m_RenderDevice->SetViewport(0, 0, m_ClientWidth, m_ClientHeight);
@@ -1154,6 +1191,7 @@ void EditorApp::TickFrame(float dt)
     m_HUDPanel.Update(dt);
     m_WorldDebugPanel.Update(dt);
     m_PreferencesPanel.Update(dt);
+    m_ProfilerPanel.Update(dt);
     // Apply theme changes from preferences only when the selection changes.
     {
         static EditorTheme s_LastAppliedTheme = m_PreferencesPanel.GetData().theme;
@@ -1162,6 +1200,8 @@ void EditorApp::TickFrame(float dt)
             s_LastAppliedTheme = m_PreferencesPanel.GetData().theme;
         }
     }
+    // Apply Show Grid preference to the viewport.
+    m_Viewport.SetShowGrid(m_PreferencesPanel.GetData().showGrid);
     if (m_Toolbar.IsPieActive())
         m_InteractionLoop.Tick(dt);
 
@@ -1191,6 +1231,9 @@ void EditorApp::TickFrame(float dt)
     m_UIRenderer.EndFrame();
 
     m_RenderDevice->EndFrame();
+
+    // ---- Profiler frame end ----
+    m_ProfilerBackend.EndFrame();
 }
 
 void EditorApp::Run() {

@@ -68,13 +68,13 @@ void EditorModeManager::Draw(float x, float y, float w, float h)
         if (active)
             m_Renderer->DrawRect({cx, y + h - 3.f, tabW, 3.f}, theme.worldAccent);
 
-        // Label — scale 2.0 to match toolbar text size.
+        // Label — scale 1.0 for the 8×14 bitmap font.
         const char* label = EditorModeName(mode);
         const uint32_t textCol = active ? theme.textHeader : theme.textPrimary;
         m_Renderer->DrawText(label,
                              cx + 8.f * dpi,
-                             y + 4.f * dpi,
-                             textCol, 2.f);
+                             y + 5.f * dpi,
+                             textCol, 1.f);
 
         cx += tabW + 2.f * dpi;
     }

@@ -170,7 +170,7 @@ void MaterialEditorPanel::Draw(float x, float y, float w, float h)
     const uint32_t kTitleColor   = t.textHeader;
 
     const float dpi   = m_Renderer->GetDpiScale();
-    const float scale = 2.f;
+    const float scale = 1.f;
 
     // Background
     m_Renderer->DrawRect({x, y, w, h}, kBgColor);
@@ -270,7 +270,7 @@ void MaterialEditorPanel::Draw(float x, float y, float w, float h)
             m_Renderer->DrawRect({nx - pinDotR, py + pinRowH * 0.5f - pinDotR,
                                    pinDotR * 2.f, pinDotR * 2.f}, PinTypeColor(pin.type));
             // Pin label
-            m_Renderer->DrawText(pin.name, nx + 4.f * dpi, py + 1.f * dpi, kTextColor, 1.5f);
+            m_Renderer->DrawText(pin.name, nx + 4.f * dpi, py + 1.f * dpi, kTextColor, 1.f);
             ++inputIdx;
         }
 
@@ -283,7 +283,7 @@ void MaterialEditorPanel::Draw(float x, float y, float w, float h)
             m_Renderer->DrawRect({nx + nodeW - pinDotR, py + pinRowH * 0.5f - pinDotR,
                                    pinDotR * 2.f, pinDotR * 2.f}, PinTypeColor(pin.type));
             // Pin label (right-justified heuristic)
-            m_Renderer->DrawText(pin.name, nx + nodeW - 40.f * dpi, py + 1.f * dpi, kTextColor, 1.5f);
+            m_Renderer->DrawText(pin.name, nx + nodeW - 40.f * dpi, py + 1.f * dpi, kTextColor, 1.f);
             ++outputIdx;
         }
     }

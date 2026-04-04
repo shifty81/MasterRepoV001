@@ -111,7 +111,7 @@ void ContentBrowser::Draw(float x, float y, float w, float h) {
     const float lineH = 18.f * dpi;
     const float padX  = 6.f  * dpi;
     const float indent = 14.f * dpi;
-    const float scale = 2.f;
+    const float scale = 1.f;
     float cy = y + 4.f * dpi;
 
     // Root path label (non-clickable header)
