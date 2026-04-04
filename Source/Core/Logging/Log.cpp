@@ -257,8 +257,11 @@ void Logger::Log(LogLevel level, std::string_view channel, std::string_view msg)
             std::lock_guard lock(s_Mutex);
             cbCopy = s_Callback;
         }
-        if (cbCopy)
-            cbCopy(line);
+        if (cbCopy) {
+            try { cbCopy(line); }
+            catch (...) { /* Swallow exceptions from the callback to keep
+                             the logger running reliably. */ }
+        }
     }
 
     if (level == LogLevel::Fatal)
