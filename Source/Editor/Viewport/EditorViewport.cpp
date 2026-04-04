@@ -75,7 +75,7 @@ void EditorViewport::Update(float dt) {
     // Rotates pitch/yaw in place; same as orbit but the target then moves
     // with WASD so the overall behaviour feels like a free-fly camera.
     if (m_Input->rightDown && (dx != 0.f || dy != 0.f)) {
-        m_Yaw   += dx * kOrbitSensitivity;
+        m_Yaw   -= dx * kOrbitSensitivity;
         m_Pitch -= dy * kOrbitSensitivity; // invert Y for natural feel
         m_Pitch  = std::clamp(m_Pitch, -kMaxPitch, kMaxPitch);
     }
