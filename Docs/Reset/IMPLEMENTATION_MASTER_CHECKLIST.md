@@ -57,6 +57,7 @@
 - [x] maximize behavior stable — WM_DPICHANGED handler wired
 - [x] minimum readable font/theme pass complete — centralized EditorTheme with Dark/Light/HighContrast; all panels wired
 - [x] command feedback visible in status/log — StatusBarPanel reflects state
+- [x] preferences panel wired into dock — PreferencesPanel as tab in right dock; clickable theme cycle; Edit.Preferences command; INI persistence
 
 ## Validation
 - [x] voxel select works

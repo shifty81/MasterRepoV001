@@ -184,7 +184,31 @@ void PreferencesPanel::Draw(float x, float y, float w, float h)
     };
 
     // --- Draw preference rows ---
-    drawStringRow("Theme",     ThemeToString(m_Data.theme));
+
+    // Theme row — clickable to cycle Dark → Light → HighContrast → Dark
+    {
+        if (cy + lineH <= y + h) {
+            drawLabel("Theme");
+            const std::string themeStr = ThemeToString(m_Data.theme);
+            const float bx = x + padX + colW;
+            const float bw = 100.f * dpi;
+            const bool hovered = isHovered(bx, cy, bw, lineH);
+            if (hovered)
+                m_Renderer->DrawRect({bx, cy, bw, lineH}, kBtnHover);
+            m_Renderer->DrawText("[" + themeStr + "]", bx + 2.f * dpi, cy + 2.f * dpi,
+                                 kValueColor, scale);
+            if (hovered && m_Input && m_Input->leftJustPressed) {
+                switch (m_Data.theme) {
+                case EditorTheme::Dark:         m_Data.theme = EditorTheme::Light;        break;
+                case EditorTheme::Light:        m_Data.theme = EditorTheme::HighContrast; break;
+                case EditorTheme::HighContrast: m_Data.theme = EditorTheme::Dark;         break;
+                }
+                m_Dirty = true;
+            }
+            cy += lineH;
+        }
+    }
+
     drawIntRow("FPS Limit",    m_Data.fpsLimit);
     drawBoolRow("Autosave",    m_Data.autosaveEnabled);
     drawIntRow("Autosave Sec", m_Data.autosaveIntervalSec);
