@@ -25,6 +25,7 @@ int main(int /*argc*/, char* argv[])
         }
     }
 
+    NF::Logger::Init("Saved/Logs");
     NF::Logger::Log(NF::LogLevel::Info, "Game", "Starting NovaForge Game");
 
     NF::Game::GameClientApp app;
@@ -38,5 +39,6 @@ int main(int /*argc*/, char* argv[])
     app.Shutdown();
 
     NF::Logger::Log(NF::LogLevel::Info, "Game", "NovaForge Game exited cleanly");
+    NF::Logger::Shutdown();
     return 0;
 }

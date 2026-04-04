@@ -321,6 +321,12 @@ bool EditorApp::Init() {
     m_Inspector.SetUIRenderer(&m_UIRenderer);
     m_ContentBrowser.SetUIRenderer(&m_UIRenderer);
     m_ConsolePanel.SetUIRenderer(&m_UIRenderer);
+
+    // Forward all Logger messages into the in-editor Console tab so the
+    // external OS console window is no longer needed.
+    Logger::SetCallback([this](std::string_view line) {
+        m_ConsolePanel.AddMessage(std::string(line));
+    });
     m_Viewport.SetUIRenderer(&m_UIRenderer);
     m_VoxelInspector.SetUIRenderer(&m_UIRenderer);
     m_HUDPanel.SetUIRenderer(&m_UIRenderer);
@@ -1225,6 +1231,10 @@ void EditorApp::TickFrame(float dt)
                   static_cast<float>(m_ClientWidth), statusH);
 
     // Menu drop-downs drawn last so they render on top of all panels.
+    // Flush the accumulated rect + text batches first so that the dropdown
+    // background and text form a separate render pass that paints over
+    // everything drawn above.
+    m_UIRenderer.Flush();
     m_Toolbar.DrawDropdown();
 
     // Flush all batched UI draw calls to the GPU
@@ -1294,6 +1304,11 @@ void EditorApp::Run() {
 
 void EditorApp::Shutdown() {
     Logger::Log(LogLevel::Info, "Editor", "EditorApp::Shutdown");
+
+    // Disconnect the Logger callback BEFORE tearing down panels so no
+    // shutdown-time log messages reference a destroyed ConsolePanel.
+    Logger::SetCallback(nullptr);
+
     m_MeshCache.Shutdown();
     m_ForwardRenderer.Shutdown();
     m_GameWorld.Shutdown();
