@@ -102,7 +102,7 @@ bool EditorToolbar::DrawButton(float x, float y, float bw, float bh,
 
     if (label) {
         const uint32_t tc = enabled ? textColor : kDisabledColor;
-        m_Renderer->DrawText(label, x + 6.f * dpi, y + 4.f * dpi, tc, 2.f);
+        m_Renderer->DrawText(label, x + 4.f * dpi, y + 4.f * dpi, tc, 1.f);
     }
 
     return clicked;
@@ -129,7 +129,7 @@ void EditorToolbar::Draw(float x, float y, float w, float h)
     m_Renderer->DrawRect({x, y + menuH - 1.f, w, 1.f}, kSepColor);
 
     // ---- Title (left of File/Edit/View) ----
-    m_Renderer->DrawText("NovaForge", x + 8.f * dpi, y + 4.f * dpi, kTitleColor, 2.f);
+    m_Renderer->DrawText("NovaForge", x + 8.f * dpi, y + 4.f * dpi, kTitleColor, 1.f);
 
     // ---- Menu header buttons: File | Edit | View ----
     float hx = x + 100.f * dpi;
@@ -143,7 +143,7 @@ void EditorToolbar::Draw(float x, float y, float w, float h)
 
         const uint32_t bg = isOpen ? kMenuOpenBg : (hovered ? kBtnBgHover : kMenuBarBg);
         m_Renderer->DrawRect({hx, y, mBtnW, menuH}, bg);
-        m_Renderer->DrawText(kMenus[i].name, hx + 6.f * dpi, y + 4.f * dpi, kTextColor, 2.f);
+        m_Renderer->DrawText(kMenus[i].name, hx + 6.f * dpi, y + 4.f * dpi, kTextColor, 1.f);
 
         if (hovered && m_Input->leftJustPressed) {
             m_OpenMenuIdx = isOpen ? -1 : i;
@@ -318,8 +318,8 @@ void EditorToolbar::DrawDropdown()
             m_Renderer->DrawRect({ddX, iy, ddW, itemH}, kBtnBgHover);
 
         m_Renderer->DrawText(item.label,
-                              ddX + 14.f * dpi, iy + 2.f * dpi,
-                              canExec ? kTextColor : kDisabledColor, 2.f);
+                              ddX + 14.f * dpi, iy + 3.f * dpi,
+                              canExec ? kTextColor : kDisabledColor, 1.f);
 
         if (itemHov && canExec && m_Input && m_Input->leftJustPressed) {
             m_CommandRegistry->Execute(item.commandId);

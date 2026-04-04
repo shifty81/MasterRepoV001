@@ -29,9 +29,8 @@ void SceneOutliner::Draw(float x, float y, float w, float h) {
 
     const float dpi   = m_Renderer->GetDpiScale();
     const float lineH = 18.f * dpi;
-    const float scale = 2.f;
+    const float scale = 1.f;
     const float padX  = 6.f * dpi;
-    const float indX  = 14.f * dpi;
     float cy = y + 4.f * dpi;
 
     // ---- World / chunk tree section -----------------------------------------

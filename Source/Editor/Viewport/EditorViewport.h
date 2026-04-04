@@ -112,6 +112,9 @@ public:
     /// Use this to focus the camera on a selected object.
     void FocusOnPosition(const Vector3& worldPos) noexcept;
 
+    /// @brief Enable or disable the fallback grid overlay.
+    void SetShowGrid(bool show) noexcept { m_ShowGrid = show; }
+
     /// @brief Cached viewport panel bounds (set each Draw call).
     [[nodiscard]] float GetBoundsX() const noexcept { return m_BoundsX; }
     [[nodiscard]] float GetBoundsY() const noexcept { return m_BoundsY; }
@@ -141,6 +144,7 @@ private:
     float m_BoundsH{0.f};
 
     bool  m_SceneRendered{false}; ///< True when real 3D content has been rendered.
+    bool  m_ShowGrid{true};      ///< When false, suppress the fallback grid overlay.
 
     ViewportHighlightState m_HighlightState; ///< Current selection highlight, updated each frame.
 };

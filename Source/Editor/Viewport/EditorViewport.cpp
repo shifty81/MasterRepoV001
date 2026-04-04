@@ -135,16 +135,18 @@ void EditorViewport::Draw(float x, float y, float w, float h) {
 
         m_Renderer->DrawRect({x, y, w, h}, kViewportBg);
 
-        const float gridSpacing = 40.f * dpi;
-        for (float gx = x + gridSpacing; gx < x + w; gx += gridSpacing)
-            m_Renderer->DrawRect({gx, y, 1.f, h}, kGridLineColor);
-        for (float gy = y + gridSpacing; gy < y + h; gy += gridSpacing)
-            m_Renderer->DrawRect({x, gy, w, 1.f}, kGridLineColor);
+        if (m_ShowGrid) {
+            const float gridSpacing = 40.f * dpi;
+            for (float gx = x + gridSpacing; gx < x + w; gx += gridSpacing)
+                m_Renderer->DrawRect({gx, y, 1.f, h}, kGridLineColor);
+            for (float gy = y + gridSpacing; gy < y + h; gy += gridSpacing)
+                m_Renderer->DrawRect({x, gy, w, 1.f}, kGridLineColor);
+        }
 
         m_Renderer->DrawText("3D Viewport",
                              x + w * 0.5f - 44.f * dpi,
                              y + h * 0.5f - 7.f  * dpi,
-                             kLabelColor, 2.f);
+                             kLabelColor, 1.f);
     }
 
     // Camera info overlay (bottom-left corner of viewport).
@@ -164,14 +166,14 @@ void EditorViewport::Draw(float x, float y, float w, float h) {
     m_Renderer->DrawText(camStr,
                          x + padX,
                          y + h - 18.f * dpi,
-                         kCamInfoColor, 1.5f);
+                         kCamInfoColor, 1.f);
 
     // Controls hint (bottom-right)
     static constexpr uint32_t kHintColor = 0x505050FF;
     m_Renderer->DrawText("RMB: Look+WASD/QE  Shift: Fast  MMB: Pan  Wheel: Zoom",
                          x + w - 420.f * dpi,
                          y + h - 18.f * dpi,
-                         kHintColor, 1.5f);
+                         kHintColor, 1.f);
 
     // ---- Selection highlight overlay (top-centre) --------------------------
     if (!m_HighlightState.highlightLabel.empty()) {
@@ -183,7 +185,7 @@ void EditorViewport::Draw(float x, float y, float w, float h) {
         const float ly = y + 6.f * dpi;
         m_Renderer->DrawRect({lx - 4.f * dpi, ly, labelW + 8.f * dpi, labelH}, kHighlightBg);
         m_Renderer->DrawText(m_HighlightState.highlightLabel,
-                             lx, ly + 2.f * dpi, kHighlightText, 1.5f);
+                             lx, ly + 2.f * dpi, kHighlightText, 1.f);
     }
 }
 

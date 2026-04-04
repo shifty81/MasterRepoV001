@@ -451,7 +451,7 @@ bool EditorApp::Init() {
             r->DrawRect({btnX, btnY, btnW, btnH}, btnBg);
             r->DrawOutlineRect({btnX, btnY, btnW, btnH}, theme.panelBorder);
             r->DrawText(label, btnX + 4.f * dpi, btnY + 3.f * dpi,
-                        focusMode ? 0xFFFFFFFF : theme.textSecondary, 1.8f);
+                        focusMode ? 0xFFFFFFFF : theme.textSecondary, 1.f);
         });
     m_DockingSystem.RegisterPanel("Inspector",
         [this](float x, float y, float w, float h) {
@@ -718,7 +718,7 @@ void EditorApp::DrawStatusBar(float x, float y, float w, float h)
 
     const float dpi = m_UIRenderer.GetDpiScale();
     std::string status = m_StatusBar.BuildDisplayString();
-    m_UIRenderer.DrawText(status, x + 8.f * dpi, y + 3.f * dpi, kStatusText, 1.5f);
+    m_UIRenderer.DrawText(status, x + 8.f * dpi, y + 4.f * dpi, kStatusText, 1.f);
 }
 
 // ---------------------------------------------------------------------------
@@ -1162,6 +1162,8 @@ void EditorApp::TickFrame(float dt)
             s_LastAppliedTheme = m_PreferencesPanel.GetData().theme;
         }
     }
+    // Apply Show Grid preference to the viewport.
+    m_Viewport.SetShowGrid(m_PreferencesPanel.GetData().showGrid);
     if (m_Toolbar.IsPieActive())
         m_InteractionLoop.Tick(dt);
 

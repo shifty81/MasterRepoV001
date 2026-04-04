@@ -48,6 +48,16 @@ public:
     void DrawOutlineRect(const Rect& rect, uint32_t color);
     void DrawText(std::string_view text, float x, float y, uint32_t color,
                   float scale = 1.0f);
+
+    /// @brief Measure the pixel width and height of a text string at the given
+    ///        scale (before DPI scaling).  Useful for centering or sizing buttons.
+    /// @param text  The string to measure.
+    /// @param scale Text scale factor (same semantics as DrawText).
+    /// @param outWidth  Receives the text width in pixels (DPI-scaled).
+    /// @param outHeight Receives the text height in pixels (DPI-scaled).
+    void MeasureText(std::string_view text, float scale,
+                     float& outWidth, float& outHeight) const noexcept;
+
     void EndFrame();
 
 private:

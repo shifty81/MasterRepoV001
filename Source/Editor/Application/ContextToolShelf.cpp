@@ -8,8 +8,8 @@ namespace NF::Editor {
 // Helpers
 // ---------------------------------------------------------------------------
 
-static constexpr float kCharWidthEstimate = 6.f;   // approx px per char at scale 1.0
-static constexpr float kShelfTextScale    = 1.8f;
+static constexpr float kCharWidthEstimate = 8.f;   // 8px per char at scale 1.0 (8×14 font)
+static constexpr float kShelfTextScale    = 1.f;
 static constexpr float kLabelPadRight     = 8.f;
 static constexpr float kBtnPadInner       = 4.f;
 
@@ -48,7 +48,7 @@ bool ContextToolShelf::DrawShelfButton(float& cx, float y, float h,
     m_Renderer->DrawOutlineRect({cx, btnY, btnW, btnH}, theme.panelBorder);
 
     uint32_t textCol = active ? theme.textHeader : theme.textPrimary;
-    m_Renderer->DrawText(label, cx + kBtnPadInner * dpi, btnY + 2.f * dpi, textCol, kShelfTextScale);
+    m_Renderer->DrawText(label, cx + kBtnPadInner * dpi, btnY + 3.f * dpi, textCol, kShelfTextScale);
 
     cx += btnW + kBtnPadInner * dpi;
     return clicked;
