@@ -404,7 +404,7 @@ TEST_CASE("AISystem::RegisterAgent replaces existing agent for same entity", "[a
 
     // After re-registration the pointer returned should be for the fresh agent
     REQUIRE(sys.GetAgent(1) == &second);
-    (void)first;
+    REQUIRE(sys.GetAgent(1) != &first);
 
     sys.Shutdown();
 }

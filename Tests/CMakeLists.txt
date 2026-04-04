@@ -17,12 +17,15 @@ add_executable(NFTests
     Core/CoreSystemTests.cpp
     Engine/ECSTests.cpp
     Engine/BehaviorTreeTests.cpp
+    Engine/NodeGraphTests.cpp
+    Engine/AISystemTests.cpp
     Input/GamepadTests.cpp
     Physics/PhysicsTests.cpp
     Animation/AnimationTests.cpp
     Bootstrap/BootstrapSmokeTests.cpp
     DevWorld/DevWorldTests.cpp
     Voxel/VoxelTests.cpp
+    Voxel/PCGWorldGenTests.cpp
     VoxelMesh/VoxelMeshTests.cpp
     Interaction/InteractionTests.cpp
     Movement/MovementTests.cpp

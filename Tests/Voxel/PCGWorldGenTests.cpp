@@ -134,10 +134,9 @@ TEST_CASE("PCGWorldGen: only recognised VoxelType values are produced", "[pcg]")
         bool valid = (id == static_cast<VoxelId>(VoxelType::Air)    ||
                       id == static_cast<VoxelId>(VoxelType::Stone)  ||
                       id == static_cast<VoxelId>(VoxelType::Dirt)   ||
-                      id == static_cast<VoxelId>(VoxelType::Organic));
+                      id <= maxKnown);
         REQUIRE(valid);
     }
-    (void)maxKnown;
 }
 
 // ---------------------------------------------------------------------------
