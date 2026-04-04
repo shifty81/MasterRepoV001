@@ -39,11 +39,11 @@ void ForwardRenderer::EndScene() {
 
 void ForwardRenderer::Flush() {
 #ifdef NF_HAS_OPENGL
-    // Enable backface culling for the 3-D scene pass.
+    // Enable backface culling for the 3D scene pass.
     // All voxel faces use CCW winding when viewed from outside, so culling
-    // GL_BACK removes the dark interior faces that appear when the camera
-    // orbits under or around the terrain.  We restore the disabled state
-    // afterwards so the 2-D UI pass is unaffected.
+    // back-facing polygons (GL_BACK) removes the dark interior faces that
+    // appear when the camera orbits under or around the terrain.  We restore
+    // the disabled state afterwards so the 2D UI pass is unaffected.
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
