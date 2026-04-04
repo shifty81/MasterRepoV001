@@ -27,6 +27,24 @@ SetResult VoxelEditApi::SetVoxel(int32_t wx, int32_t wy, int32_t wz, VoxelId id)
 
     LocalVoxelCoord lc = WorldToLocal(wx, wy, wz);
     chunk->SetVoxel(lc.X, lc.Y, lc.Z, id);
+
+    // If the edited voxel sits on a chunk boundary, the face-adjacent
+    // neighbour chunk may need to show or hide its boundary face.  Mark
+    // it dirty so it re-meshes with the updated neighbour data next frame.
+    auto markNeighbourDirty = [&](ChunkCoord nc) {
+        Chunk* neighbour = m_Map.GetChunk(nc);
+        if (neighbour) neighbour->MarkDirty();
+    };
+
+    const uint8_t kMaxLocalCoord = static_cast<uint8_t>(kChunkSize - 1);
+
+    if (lc.X == 0)            markNeighbourDirty({cc.X - 1, cc.Y, cc.Z});
+    if (lc.X == kMaxLocalCoord) markNeighbourDirty({cc.X + 1, cc.Y, cc.Z});
+    if (lc.Y == 0)            markNeighbourDirty({cc.X, cc.Y - 1, cc.Z});
+    if (lc.Y == kMaxLocalCoord) markNeighbourDirty({cc.X, cc.Y + 1, cc.Z});
+    if (lc.Z == 0)            markNeighbourDirty({cc.X, cc.Y, cc.Z - 1});
+    if (lc.Z == kMaxLocalCoord) markNeighbourDirty({cc.X, cc.Y, cc.Z + 1});
+
     return SetResult::Success;
 }
 

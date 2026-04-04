@@ -63,6 +63,16 @@ void main() {
 
     vec3 normal = normalize(vNormal);
 
+    // Per-face baked brightness — Minecraft-style directional shading so that
+    // every face is distinguishable regardless of the dynamic light direction.
+    //   Top    (+Y): 1.00  — fully lit
+    //   Sides  (±X, ±Z): 0.80  — slightly dimmer
+    //   Bottom (-Y): 0.50  — clearly shadowed
+    float faceBrightness;
+    if (normal.y > 0.5)       faceBrightness = 1.00;
+    else if (normal.y < -0.5) faceBrightness = 0.50;
+    else                       faceBrightness = 0.80;
+
     // Diffuse (Lambert)
     float diff = max(dot(normal, uLightDir), 0.0);
     vec3 diffuse = diff * uLightColor;
@@ -73,7 +83,7 @@ void main() {
     float spec = pow(max(dot(normal, halfDir), 0.0), 32.0);
     vec3 specular = spec * uLightColor * 0.15;
 
-    vec3 color = (uAmbientColor + diffuse + specular) * baseColor;
+    vec3 color = faceBrightness * (uAmbientColor + diffuse + specular) * baseColor;
 
     FragColor = vec4(color, 1.0);
 }
@@ -97,7 +107,7 @@ void ChunkMeshCache::Init(ForwardRenderer* forwardRenderer)
     m_Material.SetShader(&m_Shader);
     m_Material.SetVec3("uLightDir",     NF::Vector3{0.4f, 0.8f, 0.3f}.Normalized());  // sun from upper-right
     m_Material.SetVec3("uLightColor",   {1.0f, 0.95f, 0.85f});
-    m_Material.SetVec3("uAmbientColor", {0.15f, 0.17f, 0.20f});
+    m_Material.SetVec3("uAmbientColor", {0.30f, 0.32f, 0.35f});
     m_Material.SetVec3("uViewPos",      {0.f, 0.f, 0.f});
 
     NF::Logger::Log(NF::LogLevel::Info, "ChunkMeshCache", "Initialised");
@@ -123,8 +133,20 @@ void ChunkMeshCache::RebuildDirty(ChunkMap& map)
 
         const ChunkCoord coord = chunk->GetCoord();
 
+        // Fetch the 6 face-adjacent neighbour chunks so the mesher can cull
+        // cross-chunk boundary faces correctly.  Null means open air on that
+        // side, which is correct for unloaded / non-existent neighbours.
+        const Chunk* neighbours[6] = {
+            map.GetChunk({coord.X - 1, coord.Y,     coord.Z    }),  // -X
+            map.GetChunk({coord.X + 1, coord.Y,     coord.Z    }),  // +X
+            map.GetChunk({coord.X,     coord.Y - 1, coord.Z    }),  // -Y
+            map.GetChunk({coord.X,     coord.Y + 1, coord.Z    }),  // +Y
+            map.GetChunk({coord.X,     coord.Y,     coord.Z - 1}),  // -Z
+            map.GetChunk({coord.X,     coord.Y,     coord.Z + 1}),  // +Z
+        };
+
         // Generate mesh data on the CPU.
-        MeshData meshData = m_Mesher.Generate(*chunk);
+        MeshData meshData = m_Mesher.Generate(*chunk, neighbours);
         chunk->ClearMeshDirty();
 
         if (meshData.Indices.empty()) {
