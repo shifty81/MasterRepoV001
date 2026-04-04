@@ -50,8 +50,9 @@ public:
                   float scale = 1.0f);
 
     /// @brief Measure the pixel width and height of a text string at the given
-    ///        scale (before DPI scaling).  Useful for centering or sizing buttons.
-    /// @param text  The string to measure.
+    ///        scale.  Returns effective rendered dimensions including DPI scaling.
+    ///        Only counts printable ASCII characters (the bitmap font covers 32–127).
+    /// @param text  The ASCII string to measure.
     /// @param scale Text scale factor (same semantics as DrawText).
     /// @param outWidth  Receives the text width in pixels (DPI-scaled).
     /// @param outHeight Receives the text height in pixels (DPI-scaled).
