@@ -918,12 +918,12 @@ void EditorApp::UpdateViewportHighlight()
             }
             case nf::SelectionKind::Chunk: {
                 // Decode the 20-bit packed chunk coord fields.
-                const int32_t cx = nf::UnpackVoxelCoord(h.id, 0);
-                const int32_t cy = nf::UnpackVoxelCoord(h.id, nf::kVoxelCoordBits);
-                const int32_t cz = nf::UnpackVoxelCoord(h.id, nf::kVoxelCoordBits * 2);
-                focusPos = { static_cast<float>(cx) * NF::Game::kChunkSize + NF::Game::kChunkSize * 0.5f,
-                             static_cast<float>(cy) * NF::Game::kChunkSize + NF::Game::kChunkSize * 0.5f,
-                             static_cast<float>(cz) * NF::Game::kChunkSize + NF::Game::kChunkSize * 0.5f };
+                const int32_t chunkX = nf::UnpackVoxelCoord(h.id, 0);
+                const int32_t chunkY = nf::UnpackVoxelCoord(h.id, nf::kVoxelCoordBits);
+                const int32_t chunkZ = nf::UnpackVoxelCoord(h.id, nf::kVoxelCoordBits * 2);
+                focusPos = { static_cast<float>(chunkX) * NF::Game::kChunkSize + NF::Game::kChunkSize * 0.5f,
+                             static_cast<float>(chunkY) * NF::Game::kChunkSize + NF::Game::kChunkSize * 0.5f,
+                             static_cast<float>(chunkZ) * NF::Game::kChunkSize + NF::Game::kChunkSize * 0.5f };
                 break;
             }
             default:
