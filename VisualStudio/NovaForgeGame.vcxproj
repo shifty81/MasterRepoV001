@@ -37,20 +37,20 @@
 
   <!-- Debug build commands -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>cd /d "$(SolutionDir)" &amp;&amp; cmake --preset windows-x64-debug &amp;&amp; cmake --build Builds\windows-x64-debug --target NovaForgeGame --config Debug</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>cd /d "$(SolutionDir)." &amp;&amp; cmake --preset windows-x64-debug &amp;&amp; cmake --build Builds\windows-x64-debug --target NovaForgeGame --config Debug -- /bl:"Builds\NovaForgeGame-debug.binlog"</NMakeBuildCommandLine>
     <NMakeOutput>$(SolutionDir)Builds\windows-x64-debug\bin\Debug\NovaForgeGame.exe</NMakeOutput>
-    <NMakeCleanCommandLine>cd /d "$(SolutionDir)" &amp;&amp; cmake --build Builds\windows-x64-debug --target NovaForgeGame --config Debug --clean-first</NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>cd /d "$(SolutionDir)" &amp;&amp; cmake --preset windows-x64-debug &amp;&amp; cmake --build Builds\windows-x64-debug --target NovaForgeGame --config Debug --clean-first</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd /d "$(SolutionDir)." &amp;&amp; cmake --build Builds\windows-x64-debug --target NovaForgeGame --config Debug --clean-first</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>cd /d "$(SolutionDir)." &amp;&amp; cmake --preset windows-x64-debug &amp;&amp; cmake --build Builds\windows-x64-debug --target NovaForgeGame --config Debug --clean-first -- /bl:"Builds\NovaForgeGame-debug.binlog"</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>_DEBUG;_WINDOWS;%(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(SolutionDir)Source;$(SolutionDir)ThirdParty;%(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
 
   <!-- Release build commands -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <NMakeBuildCommandLine>cd /d "$(SolutionDir)" &amp;&amp; cmake --preset windows-x64 &amp;&amp; cmake --build Builds\windows-x64 --target NovaForgeGame --config Release</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>cd /d "$(SolutionDir)." &amp;&amp; cmake --preset windows-x64 &amp;&amp; cmake --build Builds\windows-x64 --target NovaForgeGame --config Release -- /bl:"Builds\NovaForgeGame-release.binlog"</NMakeBuildCommandLine>
     <NMakeOutput>$(SolutionDir)Builds\windows-x64\bin\Release\NovaForgeGame.exe</NMakeOutput>
-    <NMakeCleanCommandLine>cd /d "$(SolutionDir)" &amp;&amp; cmake --build Builds\windows-x64 --target NovaForgeGame --config Release --clean-first</NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>cd /d "$(SolutionDir)" &amp;&amp; cmake --preset windows-x64 &amp;&amp; cmake --build Builds\windows-x64 --target NovaForgeGame --config Release --clean-first</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd /d "$(SolutionDir)." &amp;&amp; cmake --build Builds\windows-x64 --target NovaForgeGame --config Release --clean-first</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>cd /d "$(SolutionDir)." &amp;&amp; cmake --preset windows-x64 &amp;&amp; cmake --build Builds\windows-x64 --target NovaForgeGame --config Release --clean-first -- /bl:"Builds\NovaForgeGame-release.binlog"</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>NDEBUG;_WINDOWS;%(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(SolutionDir)Source;$(SolutionDir)ThirdParty;%(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>

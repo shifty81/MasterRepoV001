@@ -1,0 +1,29 @@
+<Project>
+  <!--
+    Directory.Build.props — auto-imported by MSBuild for every project in this tree.
+
+    Guard: C++ Makefile projects require Visual Studio's MSBuild, not the .NET SDK's.
+    If $(VCTargetsPath) is empty the build was launched with 'dotnet build' or
+    'dotnet msbuild' which lacks the C++ workload.  Emit a clear error instead of
+    the cryptic MSB4278.
+
+    Binary logging: when the property EnableBinLog is set (e.g. /p:EnableBinLog=true),
+    the outer solution build produces a .binlog next to the .sln.  For the inner
+    CMake/MSBuild the vcxproj NMake commands pass /bl automatically.
+  -->
+
+  <PropertyGroup>
+    <!-- Friendly error when the wrong MSBuild is used -->
+    <_NF_VCTargetsMissing Condition="'$(VCTargetsPath)' == '' or !Exists('$(VCTargetsPath)\Microsoft.Cpp.Default.props')">true</_NF_VCTargetsMissing>
+  </PropertyGroup>
+
+  <Target Name="_NF_CheckVCTargets" BeforeTargets="Build;Rebuild;Clean"
+          Condition="'$(_NF_VCTargetsMissing)' == 'true'">
+    <Error Text="NovaForge requires Visual Studio's MSBuild (not the .NET SDK).
+Open a 'Developer Command Prompt for VS 2022' and use:
+  msbuild NovaForge.sln /p:Configuration=Debug /p:Platform=x64
+Or build from the Visual Studio IDE.
+Do NOT use 'dotnet build' or 'dotnet msbuild' — the .NET SDK MSBuild lacks C++ targets." />
+  </Target>
+
+</Project>

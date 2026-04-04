@@ -4,6 +4,7 @@
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX    // prevent min/max macros from conflicting with std::min/std::max
 #define NODRAWTEXT  // prevent DrawText being macro-expanded to DrawTextA/DrawTextW
 #include <windows.h>
 #endif
