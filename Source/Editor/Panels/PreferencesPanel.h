@@ -21,6 +21,7 @@ struct PreferenceData {
     bool        showGrid{true};             ///< Render the viewport grid.
     float       uiScale{1.0f};             ///< Global UI DPI scale factor.
     std::string recentProjectsDir{};        ///< Last-used projects directory path.
+    std::string dockLayout{};               ///< Serialized docking split ratios and tab states.
 };
 
 /// @brief Editor preferences panel.

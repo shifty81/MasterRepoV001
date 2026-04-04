@@ -51,6 +51,7 @@ bool PreferencesPanel::Load(const std::string& path)
         else if (key == "showGrid")        m_Data.showGrid            = (val == "1" || val == "true");
         else if (key == "uiScale")         m_Data.uiScale             = std::stof(val);
         else if (key == "recentProjectsDir") m_Data.recentProjectsDir = val;
+        else if (key == "dockLayout")        m_Data.dockLayout        = val;
     }
     Logger::Log(LogLevel::Info, "Preferences", "Loaded from " + path);
     return true;
@@ -69,6 +70,7 @@ bool PreferencesPanel::Save(const std::string& path) const
     f << "showGrid="             << (m_Data.showGrid ? "1" : "0")         << "\n";
     f << "uiScale="              << m_Data.uiScale                         << "\n";
     f << "recentProjectsDir="    << m_Data.recentProjectsDir               << "\n";
+    f << "dockLayout="           << m_Data.dockLayout                      << "\n";
 
     Logger::Log(LogLevel::Info, "Preferences", "Saved to " + path);
     return true;

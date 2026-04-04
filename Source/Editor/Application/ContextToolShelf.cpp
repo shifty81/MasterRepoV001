@@ -47,6 +47,12 @@ bool ContextToolShelf::DrawShelfButton(float& cx, float y, float h,
     m_Renderer->DrawRect({cx, btnY, btnW, btnH}, bg);
     m_Renderer->DrawOutlineRect({cx, btnY, btnW, btnH}, theme.panelBorder);
 
+    // Bevel depth effect inside the border.
+    m_Renderer->DrawRect({cx + 1.f, btnY + 1.f, btnW - 2.f, 1.f},      0xFFFFFF1AU); // top
+    m_Renderer->DrawRect({cx + 1.f, btnY + 1.f, 1.f,        btnH - 2.f}, 0xFFFFFF1AU); // left
+    m_Renderer->DrawRect({cx + 1.f, btnY + btnH - 2.f, btnW - 2.f, 1.f}, 0x00000025U); // bottom
+    m_Renderer->DrawRect({cx + btnW - 2.f, btnY + 1.f, 1.f, btnH - 2.f}, 0x00000025U); // right
+
     uint32_t textCol = active ? theme.textHeader : theme.textPrimary;
     m_Renderer->DrawText(label, cx + kBtnPadInner * dpi, btnY + 3.f * dpi, textCol, kShelfTextScale);
 
@@ -171,7 +177,11 @@ void ContextToolShelf::DrawDebugShelf(float x, float y, float w, float h)
     DrawShelfButton(cx, y, h, "Collision", false);
     DrawShelfButton(cx, y, h, "Bounds", false);
     DrawShelfButton(cx, y, h, "Stats", false);
-    DrawShelfButton(cx, y, h, "Chunks", false);
+
+    // "Chunks" toggles the 6DOF chunk-border wireframe overlay.
+    const bool chunksOn = m_ToolContext && m_ToolContext->showChunkBorders;
+    if (DrawShelfButton(cx, y, h, "Chunks", chunksOn))
+        if (m_ToolContext) m_ToolContext->showChunkBorders = !m_ToolContext->showChunkBorders;
 }
 
 } // namespace NF::Editor

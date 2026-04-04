@@ -16,5 +16,6 @@ namespace nf
         bool cameraNavigationActive = false;
         bool worldDirty = false;
         int selectedVoxelType = 1;
+        bool showChunkBorders = false; ///< Draw 6DOF chunk-border wireframes in the viewport.
     };
 }

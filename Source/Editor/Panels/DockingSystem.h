@@ -90,6 +90,15 @@ public:
     [[nodiscard]] bool GetPanelRect(const std::string& name,
                                     float& x, float& y, float& w, float& h) const noexcept;
 
+    /// @brief Serialize split ratios and active-tab indices to a compact string
+    ///        suitable for storage in the preferences INI.  Node structure must
+    ///        be identical when DeserializeLayout() is called.
+    [[nodiscard]] std::string SerializeLayout() const;
+
+    /// @brief Restore split ratios and active-tab indices from a previously
+    ///        serialized string.  Unknown or out-of-range data is silently ignored.
+    void DeserializeLayout(const std::string& data);
+
 private:
     struct PanelEntry {
         std::string name;
@@ -106,6 +115,15 @@ private:
     uint32_t                 m_NextId{1};
     UIRenderer*              m_Renderer{nullptr};
     const EditorInputState*  m_Input{nullptr};
+
+    // --- Resize drag state ---
+    struct ResizeDrag {
+        uint32_t nodeId{0};      ///< ID of the split node being dragged.
+        bool     active{false};
+        float    startMouse{0.f}; ///< Mouse X (H-split) or Y (V-split) when drag began.
+        float    startRatio{0.f}; ///< splitRatio value at drag start.
+    };
+    ResizeDrag m_ResizeDrag;
 
     uint32_t    AllocNode();
     DockNode*   FindLeaf(const std::string& name);

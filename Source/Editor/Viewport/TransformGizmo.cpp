@@ -234,7 +234,7 @@ void TransformGizmo::Draw([[maybe_unused]] RenderDevice& device) {
     }
     }
 
-    DebugDraw::Flush(device);
+    DebugDraw::Flush(device, m_ViewProj);
 }
 
 } // namespace NF::Editor
