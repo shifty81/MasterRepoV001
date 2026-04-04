@@ -4,9 +4,10 @@
 #include "UI/Rendering/UIRenderer.h"
 #include "Core/Logging/Log.h"
 #include <algorithm>
-#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <stdexcept>
+#include <string>
 
 namespace NF::Editor {
 
@@ -482,11 +483,10 @@ std::string DockingSystem::SerializeLayout() const
     for (size_t i = 0; i < m_Nodes.size(); ++i) {
         if (i > 0) result += '|';
         const auto& n = m_Nodes[i];
-        char buf[32];
-        std::snprintf(buf, sizeof(buf), "%.4f:%d",
-                      n.isLeaf ? 0.5f : n.splitRatio,
-                      (!n.isLeaf || n.tabNames.empty()) ? -1 : n.activeTabIdx);
-        result += buf;
+        // Use std::to_string to avoid fixed-size buffer truncation.
+        const float ratio   = n.isLeaf ? 0.5f : n.splitRatio;
+        const int   tabIdx  = (!n.isLeaf || n.tabNames.empty()) ? -1 : n.activeTabIdx;
+        result += std::to_string(ratio) + ':' + std::to_string(tabIdx);
     }
     return result;
 }
@@ -502,9 +502,17 @@ void DockingSystem::DeserializeLayout(const std::string& data)
         if (end == std::string::npos) end = data.size();
 
         const char* tok = data.c_str() + start;
-        float ratio   = 0.5f;
-        int   tabIdx  = -1;
-        if (std::sscanf(tok, "%f:%d", &ratio, &tabIdx) == 2) {
+        // Use strtof/strtol with explicit end-pointer checking for safe parsing.
+        char* endPtr = nullptr;
+        const float ratio = std::strtof(tok, &endPtr);
+        int tabIdx = -1;
+        if (endPtr && *endPtr == ':') {
+            char* endPtr2 = nullptr;
+            const long parsed = std::strtol(endPtr + 1, &endPtr2, 10);
+            if (endPtr2 && endPtr2 != endPtr + 1)
+                tabIdx = static_cast<int>(parsed);
+        }
+        if (endPtr && endPtr != tok) {
             auto& n = m_Nodes[nodeIdx];
             if (!n.isLeaf)
                 n.splitRatio = std::clamp(ratio, 0.1f, 0.9f);

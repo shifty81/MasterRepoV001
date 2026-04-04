@@ -1122,12 +1122,12 @@ void EditorApp::TickFrame(float dt)
             for (const auto& coord : m_GameWorld.GetChunkMap().GetLoadedCoords()) {
                 int32_t ox, oy, oz;
                 NF::Game::ChunkOrigin(coord, ox, oy, oz);
-                const float half = static_cast<float>(NF::Game::kChunkSize) * 0.5f;
+                const float chunkHalfExtent = static_cast<float>(NF::Game::kChunkSize) * 0.5f;
                 NF::DebugDraw::Box(
-                    { static_cast<float>(ox) + half,
-                      static_cast<float>(oy) + half,
-                      static_cast<float>(oz) + half },
-                    { half, half, half },
+                    { static_cast<float>(ox) + chunkHalfExtent,
+                      static_cast<float>(oy) + chunkHalfExtent,
+                      static_cast<float>(oz) + chunkHalfExtent },
+                    { chunkHalfExtent, chunkHalfExtent, chunkHalfExtent },
                     { 0.20f, 0.75f, 1.00f }); // cyan border
             }
             NF::DebugDraw::Flush(*m_RenderDevice, viewProj);
