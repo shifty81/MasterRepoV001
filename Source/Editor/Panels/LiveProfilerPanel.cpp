@@ -29,11 +29,19 @@ void LiveProfilerPanel::Draw(float x, float y, float w, float h)
         const double avgCpu = m_Backend->AverageCpuMs(60);
         const double peakCpu = m_Backend->PeakCpuMs();
         const double avgGpu = m_Backend->AverageGpuMs(60);
-        std::string title = "Profiler  CPU avg:"
-            + std::to_string(static_cast<int>(avgCpu * 10.0) / 10.0).substr(0, 5) + "ms"
-            + "  peak:" + std::to_string(static_cast<int>(peakCpu * 10.0) / 10.0).substr(0, 5) + "ms";
+
+        // Helper: format a double to at most 1 decimal place, capped at 5 chars.
+        auto fmtMs = [](double v) -> std::string {
+            std::string s = std::to_string(static_cast<int>(v * 10.0) / 10.0);
+            // Trim to at most 5 characters for compact display.
+            if (s.size() > 5) s.resize(5);
+            return s;
+        };
+
+        std::string title = "Profiler  CPU avg:" + fmtMs(avgCpu) + "ms"
+            + "  peak:" + fmtMs(peakCpu) + "ms";
         if (avgGpu > 0.0)
-            title += "  GPU:" + std::to_string(static_cast<int>(avgGpu * 10.0) / 10.0).substr(0, 5) + "ms";
+            title += "  GPU:" + fmtMs(avgGpu) + "ms";
 
         m_Renderer->DrawText(title, x + padX, cy, t.textHeader, scale);
         cy += lineH;
