@@ -6,6 +6,10 @@
 #include "Core/Logging/Log.h"
 #include <vector>
 
+#ifdef NF_HAS_OPENGL
+#include "Renderer/RHI/GLHeaders.h"
+#endif
+
 namespace NF {
 
 void ForwardRenderer::Init(RenderDevice* device) {
@@ -34,6 +38,17 @@ void ForwardRenderer::EndScene() {
 }
 
 void ForwardRenderer::Flush() {
+#ifdef NF_HAS_OPENGL
+    // Enable backface culling for the 3-D scene pass.
+    // All voxel faces use CCW winding when viewed from outside, so culling
+    // GL_BACK removes the dark interior faces that appear when the camera
+    // orbits under or around the terrain.  We restore the disabled state
+    // afterwards so the 2-D UI pass is unaffected.
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
+#endif
+
     for (auto& cmd : m_Queue) {
         cmd.MaterialPtr->Bind();
 
@@ -51,6 +66,10 @@ void ForwardRenderer::Flush() {
         cmd.MeshPtr->Draw();
     }
     m_Queue.clear();
+
+#ifdef NF_HAS_OPENGL
+    glDisable(GL_CULL_FACE);
+#endif
 }
 
 } // namespace NF

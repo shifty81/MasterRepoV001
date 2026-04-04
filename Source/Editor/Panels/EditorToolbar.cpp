@@ -175,9 +175,6 @@ void EditorToolbar::Draw(float x, float y, float w, float h)
         };
 
         toolBtn("Select",  nf::EditorToolMode::Select);
-        toolBtn("Inspect", nf::EditorToolMode::VoxelInspect);
-        toolBtn("+ Voxel", nf::EditorToolMode::VoxelAdd);
-        toolBtn("- Voxel", nf::EditorToolMode::VoxelRemove);
 
         m_Renderer->DrawRect({bx, bRowY, 1.f, bRowH}, kSepColor);
         bx += gap * 2.f;
