@@ -21,13 +21,33 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${NF_OUTPUT_ROOT}/lib)
 file(MAKE_DIRECTORY "${NF_OUTPUT_ROOT}/Saved/Logs")
 
 # Symlink Content/ and Config/ into the output tree.
+# On Windows, symbolic links require Developer Mode or elevated privileges.
+# If the symlink fails, fall back to a directory junction (mklink /J) which
+# works without elevation and still reflects edits immediately.
 foreach(_dir Content Config)
     if(NOT EXISTS "${NF_OUTPUT_ROOT}/${_dir}")
         file(CREATE_LINK
              "${CMAKE_SOURCE_DIR}/${_dir}"
              "${NF_OUTPUT_ROOT}/${_dir}"
-             SYMBOLIC)
-        message(STATUS "  Linked ${_dir}/ -> Nova_${PROJECT_VERSION}/${_dir}/")
+             SYMBOLIC
+             RESULT _link_result)
+        if(_link_result STREQUAL "0")
+            message(STATUS "  Linked ${_dir}/ -> Nova_${PROJECT_VERSION}/${_dir}/")
+        elseif(WIN32)
+            # Fall back to a directory junction (no elevation required).
+            execute_process(
+                COMMAND cmd /c mklink /J
+                        "${NF_OUTPUT_ROOT}/${_dir}"
+                        "${CMAKE_SOURCE_DIR}/${_dir}"
+                RESULT_VARIABLE _junc_result)
+            if(_junc_result EQUAL 0)
+                message(STATUS "  Junction ${_dir}/ -> Nova_${PROJECT_VERSION}/${_dir}/")
+            else()
+                message(WARNING "Could not link or junction ${_dir}/: ${_link_result}")
+            endif()
+        else()
+            message(WARNING "Could not create symlink for ${_dir}/: ${_link_result}")
+        endif()
     endif()
 endforeach()
 
