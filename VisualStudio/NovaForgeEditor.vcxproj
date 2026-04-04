@@ -37,20 +37,20 @@
 
   <!-- Debug build commands -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>cd /d "$(SolutionDir)" &amp;&amp; cmake --preset windows-x64-debug &amp;&amp; cmake --build Builds\windows-x64-debug --target NovaForgeEditor --config Debug</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>cd /d "$(SolutionDir)." &amp;&amp; cmake --preset windows-x64-debug &amp;&amp; cmake --build Builds\windows-x64-debug --target NovaForgeEditor --config Debug</NMakeBuildCommandLine>
     <NMakeOutput>$(SolutionDir)Builds\windows-x64-debug\bin\Debug\NovaForgeEditor.exe</NMakeOutput>
-    <NMakeCleanCommandLine>cd /d "$(SolutionDir)" &amp;&amp; cmake --build Builds\windows-x64-debug --target NovaForgeEditor --config Debug --clean-first</NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>cd /d "$(SolutionDir)" &amp;&amp; cmake --preset windows-x64-debug &amp;&amp; cmake --build Builds\windows-x64-debug --target NovaForgeEditor --config Debug --clean-first</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd /d "$(SolutionDir)." &amp;&amp; cmake --build Builds\windows-x64-debug --target NovaForgeEditor --config Debug --clean-first</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>cd /d "$(SolutionDir)." &amp;&amp; cmake --preset windows-x64-debug &amp;&amp; cmake --build Builds\windows-x64-debug --target NovaForgeEditor --config Debug --clean-first</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>_DEBUG;_WINDOWS;%(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(SolutionDir)Source;$(SolutionDir)ThirdParty;%(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
 
   <!-- Release build commands -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <NMakeBuildCommandLine>cd /d "$(SolutionDir)" &amp;&amp; cmake --preset windows-x64 &amp;&amp; cmake --build Builds\windows-x64 --target NovaForgeEditor --config Release</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>cd /d "$(SolutionDir)." &amp;&amp; cmake --preset windows-x64 &amp;&amp; cmake --build Builds\windows-x64 --target NovaForgeEditor --config Release</NMakeBuildCommandLine>
     <NMakeOutput>$(SolutionDir)Builds\windows-x64\bin\Release\NovaForgeEditor.exe</NMakeOutput>
-    <NMakeCleanCommandLine>cd /d "$(SolutionDir)" &amp;&amp; cmake --build Builds\windows-x64 --target NovaForgeEditor --config Release --clean-first</NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>cd /d "$(SolutionDir)" &amp;&amp; cmake --preset windows-x64 &amp;&amp; cmake --build Builds\windows-x64 --target NovaForgeEditor --config Release --clean-first</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd /d "$(SolutionDir)." &amp;&amp; cmake --build Builds\windows-x64 --target NovaForgeEditor --config Release --clean-first</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>cd /d "$(SolutionDir)." &amp;&amp; cmake --preset windows-x64 &amp;&amp; cmake --build Builds\windows-x64 --target NovaForgeEditor --config Release --clean-first</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>NDEBUG;_WINDOWS;%(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(SolutionDir)Source;$(SolutionDir)ThirdParty;%(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>

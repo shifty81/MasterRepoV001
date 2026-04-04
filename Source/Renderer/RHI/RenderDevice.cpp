@@ -7,6 +7,7 @@
 
 #if defined(NF_HAS_OPENGL) && defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX      // prevent min/max macros from conflicting with std::min/std::max
 #include <windows.h>
 #endif
 
