@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../Schemas/ship.schema.json",
+  "id": "explorer_pathfinder",
+  "class": "explorer",
+  "name": "Pathfinder",
+  "description": "Long-range exploration vessel with deep scanner arrays and extended fuel reserves. Built to go where others cannot.",
+  "stats": {
+    "hull": 350,
+    "shield": 150,
+    "speed": 90.0,
+    "maneuverability": 0.7,
+    "cargo_capacity": 48,
+    "crew": 4,
+    "power_output": 80.0
+  },
+  "modules": ["deep_scanner", "long_range_sensors", "fuel_cell_ext", "standard_engine"],
+  "module_slots": { "weapon": 1, "utility": 4, "engine": 2, "cargo": 2 },
+  "voxel_asset": "Content/Blocks/Ships/explorer_pathfinder.nfblock",
+  "cost": { "Metal": 500, "Stone": 100, "Ice": 200 },
+  "unlock_level": 3
+}

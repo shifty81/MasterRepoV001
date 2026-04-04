@@ -1,6 +1,7 @@
 # Build outputs
 Builds/
 build/
+build_*/
 cmake-build-*/
 out/
 Nova_*/

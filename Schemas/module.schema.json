@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://novaforge.game/schemas/module.schema.json",
+  "title": "Ship Module Definition",
+  "description": "Schema for NovaForge ship module data files.",
+  "type": "object",
+  "required": ["id", "slot_type", "name", "stats"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "slot_type": {
+      "type": "string",
+      "enum": ["weapon", "utility", "engine", "cargo"],
+      "description": "The type of module slot this module occupies."
+    },
+    "name":        { "type": "string" },
+    "description": { "type": "string" },
+    "tier": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Tech tier (1 = basic, 5 = advanced)."
+    },
+    "stats": {
+      "type": "object",
+      "description": "Stat modifications applied when this module is equipped.",
+      "additionalProperties": { "type": "number" }
+    },
+    "power_draw": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Power consumed by this module in MW."
+    },
+    "cost": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "unlock_level": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "compatible_classes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Ship classes that can equip this module. Empty = all classes."
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../Schemas/ship.schema.json",
+  "id": "mining_prospector",
+  "class": "mining",
+  "name": "Prospector",
+  "description": "Dedicated mining vessel with reinforced drill arrays and oversized cargo bays. The backbone of any resource operation.",
+  "stats": {
+    "hull": 400,
+    "shield": 100,
+    "speed": 40.0,
+    "maneuverability": 0.3,
+    "cargo_capacity": 128,
+    "crew": 3,
+    "power_output": 90.0
+  },
+  "modules": ["mining_laser_mk1", "ore_compressor", "cargo_expander", "basic_engine"],
+  "module_slots": { "weapon": 0, "utility": 3, "engine": 1, "cargo": 4 },
+  "voxel_asset": "Content/Blocks/Ships/mining_prospector.nfblock",
+  "cost": { "Metal": 400, "Stone": 200, "Ore": 80 },
+  "unlock_level": 1
+}

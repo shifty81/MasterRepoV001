@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://novaforge.game/schemas/mission.schema.json",
+  "title": "Mission Definition",
+  "description": "Schema for NovaForge mission definition data files.",
+  "type": "object",
+  "required": ["id", "type", "name", "objectives", "rewards"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "Unique mission identifier."
+    },
+    "type": {
+      "type": "string",
+      "enum": ["bounty", "exploration", "story", "trade", "escort", "mining", "building"],
+      "description": "Mission category."
+    },
+    "name": {
+      "type": "string",
+      "description": "Display name shown in mission log."
+    },
+    "description": {
+      "type": "string",
+      "description": "Full mission briefing text."
+    },
+    "sector": {
+      "type": "string",
+      "description": "ID of the sector where this mission takes place."
+    },
+    "giver": {
+      "type": "string",
+      "description": "NPC ID or faction ID that offers this mission."
+    },
+    "prerequisites": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Mission IDs that must be completed before this one unlocks."
+    },
+    "objectives": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "description"],
+        "additionalProperties": false,
+        "properties": {
+          "id":          { "type": "string" },
+          "type":        { "type": "string", "enum": ["kill", "collect", "travel", "deliver", "build", "scan", "talk"] },
+          "description": { "type": "string" },
+          "target_id":   { "type": "string" },
+          "quantity":    { "type": "integer", "minimum": 1 },
+          "optional":    { "type": "boolean", "default": false }
+        }
+      }
+    },
+    "rewards": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "credits":    { "type": "integer", "minimum": 0 },
+        "xp":         { "type": "integer", "minimum": 0 },
+        "reputation": {
+          "type": "object",
+          "additionalProperties": { "type": "integer" }
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["item_id", "quantity"],
+            "properties": {
+              "item_id":  { "type": "string" },
+              "quantity": { "type": "integer", "minimum": 1 }
+            }
+          }
+        }
+      }
+    },
+    "time_limit_seconds": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Optional time limit in seconds. 0 = no limit."
+    },
+    "repeatable": {
+      "type": "boolean",
+      "default": false
+    },
+    "graph_script": {
+      "type": "string",
+      "description": "Optional path to a .nfgraph GameFlow graph for scripted mission logic."
+    }
+  }
+}

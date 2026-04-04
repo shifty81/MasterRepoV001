@@ -1,0 +1,41 @@
+{
+  "$schema": "../../../Schemas/mission.schema.json",
+  "id": "bounty_pirate_cleanup",
+  "type": "bounty",
+  "name": "Pirate Cleanup",
+  "description": "A pirate gang has been raiding merchant convoys in Sector Alpha. Eliminate their patrol ships and collect proof of destruction.",
+  "sector": "sector_alpha",
+  "giver": "faction_merchant_guild",
+  "prerequisites": [],
+  "objectives": [
+    {
+      "id": "obj_kill_pirates",
+      "type": "kill",
+      "description": "Destroy pirate patrol ships",
+      "target_id": "npc_pirate_fighter",
+      "quantity": 5
+    },
+    {
+      "id": "obj_collect_tags",
+      "type": "collect",
+      "description": "Collect identification tags from destroyed ships",
+      "target_id": "item_pirate_id_tag",
+      "quantity": 5
+    },
+    {
+      "id": "obj_scan_hideout",
+      "type": "scan",
+      "description": "Locate and scan the pirate hideout asteroid",
+      "target_id": "poi_pirate_hideout_alpha",
+      "optional": true
+    }
+  ],
+  "rewards": {
+    "credits": 2500,
+    "xp": 400,
+    "reputation": { "faction_merchant_guild": 10, "faction_pirates": -15 },
+    "items": []
+  },
+  "time_limit_seconds": 0,
+  "repeatable": true
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "../../../Schemas/mission.schema.json",
+  "id": "story_first_contact",
+  "type": "story",
+  "name": "First Contact",
+  "description": "Anomalous signals have been detected near the outer asteroid belt. Investigate the source — you may not be alone out here.",
+  "sector": "sector_frontier",
+  "giver": "npc_commander_voss",
+  "prerequisites": ["exploration_uncharted_sector"],
+  "objectives": [
+    {
+      "id": "obj_locate_signal",
+      "type": "travel",
+      "description": "Navigate to the signal source coordinates",
+      "target_id": "poi_signal_source_frontier"
+    },
+    {
+      "id": "obj_scan_artifact",
+      "type": "scan",
+      "description": "Scan the anomalous artifact",
+      "target_id": "artifact_alien_probe"
+    },
+    {
+      "id": "obj_talk_voss",
+      "type": "talk",
+      "description": "Report findings to Commander Voss",
+      "target_id": "npc_commander_voss"
+    }
+  ],
+  "rewards": {
+    "credits": 5000,
+    "xp": 1500,
+    "reputation": { "faction_explorers_guild": 30, "faction_military": 15 },
+    "items": [
+      { "item_id": "item_alien_component", "quantity": 1 }
+    ]
+  },
+  "time_limit_seconds": 0,
+  "repeatable": false,
+  "graph_script": "Content/Graphs/Missions/story_first_contact.nfgraph"
+}

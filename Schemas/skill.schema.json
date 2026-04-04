@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://novaforge.game/schemas/skill.schema.json",
+  "title": "Skill Definition",
+  "description": "Schema for NovaForge player skill data files.",
+  "type": "object",
+  "required": ["id", "tree", "name", "max_rank"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "tree": {
+      "type": "string",
+      "enum": ["combat", "engineering", "exploration", "trading", "leadership", "mining"],
+      "description": "Skill tree this skill belongs to."
+    },
+    "name":        { "type": "string" },
+    "description": { "type": "string" },
+    "max_rank": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "prerequisites": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["skill_id", "min_rank"],
+        "properties": {
+          "skill_id": { "type": "string" },
+          "min_rank":  { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "effects_per_rank": {
+      "type": "array",
+      "description": "Array of effect objects, one per rank. Length must equal max_rank.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "stat":      { "type": "string" },
+          "operation": { "type": "string", "enum": ["add", "multiply"] },
+          "value":     { "type": "number" }
+        }
+      }
+    },
+    "xp_cost_per_rank": {
+      "type": "array",
+      "description": "XP required to advance to each rank. Length must equal max_rank.",
+      "items": { "type": "integer", "minimum": 0 }
+    },
+    "icon": {
+      "type": "string",
+      "description": "Relative path to the skill icon asset."
+    }
+  }
+}

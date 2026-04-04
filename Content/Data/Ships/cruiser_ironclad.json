@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../Schemas/ship.schema.json",
+  "id": "cruiser_ironclad",
+  "class": "cruiser",
+  "name": "Ironclad",
+  "description": "A heavily armoured cruiser built for sustained combat. Slow but nearly indestructible.",
+  "stats": {
+    "hull": 2000,
+    "shield": 800,
+    "speed": 30.0,
+    "maneuverability": 0.2,
+    "cargo_capacity": 80,
+    "crew": 30,
+    "power_output": 400.0
+  },
+  "modules": ["heavy_cannon_battery", "missile_launcher", "heavy_shield_gen", "point_defence_array", "heavy_engine"],
+  "module_slots": { "weapon": 6, "utility": 4, "engine": 2, "cargo": 2 },
+  "voxel_asset": "Content/Blocks/Ships/cruiser_ironclad.nfblock",
+  "cost": { "Metal": 3000, "Stone": 500, "Ore": 600, "Ice": 100 },
+  "unlock_level": 15
+}

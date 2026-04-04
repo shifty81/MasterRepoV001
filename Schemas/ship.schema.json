@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://novaforge.game/schemas/ship.schema.json",
+  "title": "Ship Definition",
+  "description": "Schema for NovaForge ship definition data files.",
+  "type": "object",
+  "required": ["id", "class", "name", "stats", "modules"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique machine-readable identifier (snake_case).",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "class": {
+      "type": "string",
+      "description": "Ship class category.",
+      "enum": ["fighter", "frigate", "cruiser", "explorer", "mining", "transport", "capital"]
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable display name."
+    },
+    "description": {
+      "type": "string",
+      "description": "Flavour text shown in ship selection UI."
+    },
+    "stats": {
+      "type": "object",
+      "required": ["hull", "shield", "speed", "cargo_capacity", "crew"],
+      "additionalProperties": false,
+      "properties": {
+        "hull":           { "type": "integer", "minimum": 1, "description": "Max hull hit points." },
+        "shield":         { "type": "integer", "minimum": 0, "description": "Max shield hit points." },
+        "speed":          { "type": "number",  "minimum": 0, "description": "Max speed in world units/s." },
+        "maneuverability":{ "type": "number",  "minimum": 0, "maximum": 1.0, "description": "Turn rate 0-1." },
+        "cargo_capacity": { "type": "integer", "minimum": 0, "description": "Cargo bay slots." },
+        "crew":           { "type": "integer", "minimum": 1, "description": "Crew capacity." },
+        "power_output":   { "type": "number",  "minimum": 0, "description": "Total power grid in MW." }
+      }
+    },
+    "modules": {
+      "type": "array",
+      "description": "Default equipped module IDs.",
+      "items": { "type": "string" }
+    },
+    "module_slots": {
+      "type": "object",
+      "description": "Available module slots by type.",
+      "properties": {
+        "weapon":  { "type": "integer", "minimum": 0 },
+        "utility": { "type": "integer", "minimum": 0 },
+        "engine":  { "type": "integer", "minimum": 0 },
+        "cargo":   { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "voxel_asset": {
+      "type": "string",
+      "description": "Relative path to the .nfblock voxel asset for this ship.",
+      "pattern": ".*\\.nfblock$"
+    },
+    "cost": {
+      "type": "object",
+      "description": "Base construction cost in resources.",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "unlock_level": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Player progression level required to build this ship."
+    }
+  }
+}

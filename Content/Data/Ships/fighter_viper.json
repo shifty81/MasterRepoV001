@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../Schemas/ship.schema.json",
+  "id": "fighter_viper",
+  "class": "fighter",
+  "name": "Viper",
+  "description": "A fast and agile light fighter. Low hull, high speed. Favoured by bounty hunters and pirates alike.",
+  "stats": {
+    "hull": 200,
+    "shield": 80,
+    "speed": 120.0,
+    "maneuverability": 0.9,
+    "cargo_capacity": 8,
+    "crew": 1,
+    "power_output": 40.0
+  },
+  "modules": ["laser_cannon_mk1", "basic_engine", "basic_shield_gen"],
+  "module_slots": { "weapon": 2, "utility": 1, "engine": 1, "cargo": 0 },
+  "voxel_asset": "Content/Blocks/Ships/fighter_viper.nfblock",
+  "cost": { "Metal": 120, "Stone": 40 },
+  "unlock_level": 0
+}
