@@ -31,7 +31,11 @@ struct DockNode {
 constexpr float kPanelTitleBarHeight = 22.f;
 class DockingSystem {
 public:
-    using DrawFn = std::function<void(float x, float y, float w, float h)>;
+    using DrawFn        = std::function<void(float x, float y, float w, float h)>;
+    /// @brief Optional overlay drawn inside the title bar of a single (non-tabbed) panel.
+    /// Receives the full title-bar rect; the callback is responsible for right-aligning
+    /// any controls it draws within that region.
+    using HeaderExtrasFn = std::function<void(float x, float y, float w, float h)>;
 
     struct PanelRect {
         std::string name;
@@ -44,6 +48,7 @@ public:
     DockingSystem() = default;
 
     void SetUIRenderer(UIRenderer* renderer) noexcept { m_Renderer = renderer; }
+    [[nodiscard]] UIRenderer* GetUIRenderer() const noexcept { return m_Renderer; }
     void SetInputState(const EditorInputState* input) noexcept { m_Input = input; }
     void RegisterPanel(const std::string& name, DrawFn drawFn);
 
@@ -51,6 +56,11 @@ public:
     ///        an opaque background behind it.  Use this for the 3-D Viewport
     ///        panel so the OpenGL scene is visible through the chrome.
     void SetPanelTransparent(const std::string& name);
+
+    /// @brief Register an optional overlay drawn inside the title bar of a single
+    ///        (non-tabbed) panel.  The callback receives the full title-bar rect and
+    ///        is responsible for right-aligning any controls within that region.
+    void SetPanelHeaderExtras(const std::string& panelName, HeaderExtrasFn fn);
 
     /// @brief Create the root split.
     /// @param axis  Split direction (default Horizontal = left|right).
@@ -90,6 +100,9 @@ private:
     std::vector<PanelEntry>  m_Panels;
     std::vector<PanelRect>   m_LastPanelRects;
     std::vector<std::string> m_TransparentPanels; ///< Panels that skip background drawing.
+
+    struct HeaderExtrasEntry { std::string name; HeaderExtrasFn fn; };
+    std::vector<HeaderExtrasEntry> m_HeaderExtras; ///< Optional title-bar overlays per panel.
     uint32_t                 m_NextId{1};
     UIRenderer*              m_Renderer{nullptr};
     const EditorInputState*  m_Input{nullptr};

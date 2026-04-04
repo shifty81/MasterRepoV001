@@ -412,6 +412,39 @@ bool EditorApp::Init() {
         [this](float x, float y, float w, float h) {
             m_Viewport.Draw(x, y, w, h);
         });
+
+    // Camera mode toggle button — drawn in the Viewport panel title bar (top-right).
+    m_DockingSystem.SetPanelHeaderExtras("Viewport",
+        [this](float bx, float by, float bw, float bh) {
+            if (!m_DockingSystem.GetUIRenderer()) return;
+            UIRenderer* r   = m_DockingSystem.GetUIRenderer();
+            const float dpi = r->GetDpiScale();
+
+            const bool  focusMode = (m_Viewport.GetCameraMode() == ViewportCameraMode::FocusOrbit);
+            const char* label     = focusMode ? "Focus" : "Orbit";
+
+            // Button dimensions — right-aligned in the title bar with a small margin.
+            const float btnW  = 46.f * dpi;
+            const float btnH  = (bh - 4.f * dpi);
+            const float btnX  = bx + bw - btnW - 4.f * dpi;
+            const float btnY  = by + 2.f * dpi;
+
+            // Hit test against the raw input state (captured from the viewport).
+            const bool hovered = m_Input.mouseX >= btnX && m_Input.mouseX < btnX + btnW &&
+                                 m_Input.mouseY >= btnY && m_Input.mouseY < btnY + btnH;
+            if (hovered && m_Input.leftJustPressed)
+                m_Viewport.SetCameraMode(focusMode ? ViewportCameraMode::Orbit
+                                                   : ViewportCameraMode::FocusOrbit);
+
+            const auto& theme = ActiveTheme();
+            const uint32_t btnBg = focusMode ? theme.worldAccent
+                                 : hovered   ? theme.hoverBg
+                                             : theme.titleBarBg;
+            r->DrawRect({btnX, btnY, btnW, btnH}, btnBg);
+            r->DrawOutlineRect({btnX, btnY, btnW, btnH}, theme.panelBorder);
+            r->DrawText(label, btnX + 4.f * dpi, btnY + 3.f * dpi,
+                        focusMode ? 0xFFFFFFFF : theme.textSecondary, 1.8f);
+        });
     m_DockingSystem.RegisterPanel("Inspector",
         [this](float x, float y, float w, float h) {
             m_Inspector.Draw(x, y, w, h);
@@ -865,6 +898,38 @@ void EditorApp::UpdateViewportHighlight()
             break;
         default:
             break;
+        }
+
+        // In FocusOrbit mode, snap the orbit pivot to the selected object's
+        // world position whenever the selection changes.
+        if (m_Viewport.GetCameraMode() == ViewportCameraMode::FocusOrbit &&
+            m_Selection.IsSelectionChanged())
+        {
+            Vector3 focusPos = m_Viewport.GetCameraTarget(); // default: no change
+            switch (h.kind) {
+            case nf::SelectionKind::Voxel: {
+                const int32_t vx = nf::UnpackVoxelCoord(h.id, 0);
+                const int32_t vy = nf::UnpackVoxelCoord(h.id, nf::kVoxelCoordBits);
+                const int32_t vz = nf::UnpackVoxelCoord(h.id, nf::kVoxelCoordBits * 2);
+                focusPos = { static_cast<float>(vx) + 0.5f,
+                             static_cast<float>(vy) + 0.5f,
+                             static_cast<float>(vz) + 0.5f };
+                break;
+            }
+            case nf::SelectionKind::Chunk: {
+                // Decode the 20-bit packed chunk coord fields.
+                const int32_t cx = nf::UnpackVoxelCoord(h.id, 0);
+                const int32_t cy = nf::UnpackVoxelCoord(h.id, nf::kVoxelCoordBits);
+                const int32_t cz = nf::UnpackVoxelCoord(h.id, nf::kVoxelCoordBits * 2);
+                focusPos = { static_cast<float>(cx) * NF::Game::kChunkSize + NF::Game::kChunkSize * 0.5f,
+                             static_cast<float>(cy) * NF::Game::kChunkSize + NF::Game::kChunkSize * 0.5f,
+                             static_cast<float>(cz) * NF::Game::kChunkSize + NF::Game::kChunkSize * 0.5f };
+                break;
+            }
+            default:
+                break;
+            }
+            m_Viewport.FocusOnPosition(focusPos);
         }
     }
     m_Viewport.SetHighlightState(std::move(state));

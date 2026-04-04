@@ -79,6 +79,14 @@ void DockingSystem::SetPanelTransparent(const std::string& name)
     m_TransparentPanels.push_back(name);
 }
 
+void DockingSystem::SetPanelHeaderExtras(const std::string& panelName, HeaderExtrasFn fn)
+{
+    for (auto& e : m_HeaderExtras) {
+        if (e.name == panelName) { e.fn = std::move(fn); return; }
+    }
+    m_HeaderExtras.push_back({panelName, std::move(fn)});
+}
+
 void DockingSystem::SetRootSplit(const std::string& firstPanel,
                                   const std::string& secondPanel,
                                   float ratio,
@@ -337,6 +345,14 @@ void DockingSystem::DrawNode(DockNode& node,
                     m_Renderer->DrawText(node.panelName,
                                          x + 6.f * dpi, y + 4.f * dpi,
                                          theme.textTitle, 2.f);
+                }
+
+                // Optional per-panel title-bar extras (e.g. mode toggle buttons).
+                for (auto& e : m_HeaderExtras) {
+                    if (e.name == node.panelName && e.fn) {
+                        e.fn(x, y, w, titleBarH);
+                        break;
+                    }
                 }
             }
 
