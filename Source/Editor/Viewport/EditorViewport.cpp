@@ -37,6 +37,10 @@ void EditorViewport::Resize(int width, int height) {
     m_Height = height;
 }
 
+void EditorViewport::FocusOnPosition(const Vector3& worldPos) noexcept {
+    m_Target = worldPos;
+}
+
 void EditorViewport::Update(float dt) {
     if (!m_Input || m_BoundsW <= 0.f || m_BoundsH <= 0.f) return;
 

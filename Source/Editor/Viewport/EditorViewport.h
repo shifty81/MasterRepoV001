@@ -19,6 +19,12 @@ struct ViewportHighlightState {
     std::string   highlightLabel;            ///< Human-readable label shown as overlay.
 };
 
+/// @brief Camera behaviour mode for the editor viewport.
+enum class ViewportCameraMode : uint8_t {
+    Orbit,      ///< Classic orbit: pivot stays fixed until manually panned.
+    FocusOrbit, ///< Focus-orbit: pivot snaps to the selected object on every selection change.
+};
+
 /// @brief 3-D viewport with an orbit camera.
 class EditorViewport {
 public:
@@ -94,6 +100,18 @@ public:
     /// @brief Return the current camera target (orbit pivot).
     [[nodiscard]] const Vector3& GetCameraTarget() const noexcept { return m_Target; }
 
+    // ---- Camera mode -------------------------------------------------------
+
+    /// @brief Return the active camera behaviour mode.
+    [[nodiscard]] ViewportCameraMode GetCameraMode() const noexcept { return m_CameraMode; }
+
+    /// @brief Set the camera behaviour mode.
+    void SetCameraMode(ViewportCameraMode mode) noexcept { m_CameraMode = mode; }
+
+    /// @brief Immediately snap the orbit pivot to the given world-space position.
+    /// Use this to focus the camera on a selected object.
+    void FocusOnPosition(const Vector3& worldPos) noexcept;
+
     /// @brief Cached viewport panel bounds (set each Draw call).
     [[nodiscard]] float GetBoundsX() const noexcept { return m_BoundsX; }
     [[nodiscard]] float GetBoundsY() const noexcept { return m_BoundsY; }
@@ -113,6 +131,8 @@ private:
     float   m_Yaw{0.f};      ///< Horizontal angle (radians).
     float   m_Zoom{100.f};   ///< Distance from target.
     Vector3 m_Target{};      ///< Orbit pivot point.
+
+    ViewportCameraMode m_CameraMode{ViewportCameraMode::Orbit}; ///< Active camera behaviour.
 
     // Cached viewport bounds (set each Draw call, read in Update).
     float m_BoundsX{0.f};
