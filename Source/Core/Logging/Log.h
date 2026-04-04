@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include <string_view>
 
 namespace NF {
@@ -13,10 +14,35 @@ enum class LogLevel {
     Fatal
 };
 
-/// @brief Central, thread-safe logging facility for NovaForge.
+/// @brief Central, thread-safe, multi-sink logging facility for NovaForge.
+///
+/// Sinks:
+///   1. **Console** (stdout / stderr) — always active.
+///   2. **Master log file** — `{logRoot}/NovaForge.log` — all channels combined.
+///   3. **Per-channel log files** — `{logRoot}/{Channel}/{Channel}.log`.
+///   4. **VS Output Debug String** — on Windows, every message is also sent to
+///      the Visual Studio Output window via `OutputDebugStringA`.
+///
+/// Call @c Init() early in your program (before any Log() calls if you want
+/// file output).  If Init() is never called the logger still works as a
+/// console-only logger — no files are opened and no crash occurs.
 class Logger {
 public:
-    /// @brief Emit a log message.
+    /// @brief Initialise file sinks.
+    ///
+    /// Creates (or reuses) the directory @p logRoot and opens the master
+    /// log file.  Per-channel subdirectories are created lazily on first
+    /// message.
+    ///
+    /// @param logRoot  Absolute or CWD-relative directory for log files
+    ///                 (e.g. "Saved/Logs").
+    /// @return True if the master log file was opened successfully.
+    static bool Init(const std::string& logRoot);
+
+    /// @brief Flush and close all open log files.
+    static void Shutdown();
+
+    /// @brief Emit a log message to all active sinks.
     /// @param level   Severity of the message.
     /// @param channel Subsystem or category name (e.g. "Renderer", "Physics").
     /// @param msg     Human-readable message text.
@@ -29,6 +55,12 @@ public:
     /// @brief Return the short label string for a given log level.
     /// @param level The level to stringify.
     static std::string_view LevelToString(LogLevel level) noexcept;
+
+    /// @brief Query whether file sinks have been initialised.
+    [[nodiscard]] static bool IsFileLoggingActive() noexcept;
+
+    /// @brief Return the resolved log root directory (empty if not initialised).
+    [[nodiscard]] static std::string GetLogRoot() noexcept;
 };
 
 } // namespace NF
