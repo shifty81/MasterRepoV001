@@ -20,7 +20,7 @@
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
 
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" Condition="Exists('$(VCTargetsPath)\Microsoft.Cpp.Default.props')" />
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
@@ -33,12 +33,12 @@
     <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
 
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" Condition="Exists('$(VCTargetsPath)\Microsoft.Cpp.props')" />
 
   <!-- Debug build + run tests (uses windows-x64-debug-tests preset) -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeBuildCommandLine>cd /d "$(SolutionDir)." &amp;&amp; cmake --preset windows-x64-debug-tests &amp;&amp; cmake --build Builds\windows-x64-debug-tests --target NFTests --config Debug -- /bl:"Builds\NovaForgeTests-debug.binlog"</NMakeBuildCommandLine>
-    <NMakeOutput>$(SolutionDir)Builds\windows-x64-debug-tests\bin\Debug\NFTests.exe</NMakeOutput>
+    <NMakeOutput>$(SolutionDir)Nova_0.1.0\bin\Debug\NFTests.exe</NMakeOutput>
     <NMakeCleanCommandLine>cd /d "$(SolutionDir)." &amp;&amp; cmake --build Builds\windows-x64-debug-tests --target NFTests --config Debug --clean-first</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>cd /d "$(SolutionDir)." &amp;&amp; cmake --preset windows-x64-debug-tests &amp;&amp; cmake --build Builds\windows-x64-debug-tests --target NFTests --config Debug --clean-first -- /bl:"Builds\NovaForgeTests-debug.binlog"</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>_DEBUG;_WINDOWS;%(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
@@ -48,14 +48,14 @@
   <!-- Release build + run tests -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <NMakeBuildCommandLine>cd /d "$(SolutionDir)." &amp;&amp; cmake --preset windows-x64 -DNF_BUILD_TESTS=ON &amp;&amp; cmake --build Builds\windows-x64 --target NFTests --config Release -- /bl:"Builds\NovaForgeTests-release.binlog"</NMakeBuildCommandLine>
-    <NMakeOutput>$(SolutionDir)Builds\windows-x64\bin\Release\NFTests.exe</NMakeOutput>
+    <NMakeOutput>$(SolutionDir)Nova_0.1.0\bin\Release\NFTests.exe</NMakeOutput>
     <NMakeCleanCommandLine>cd /d "$(SolutionDir)." &amp;&amp; cmake --build Builds\windows-x64 --target NFTests --config Release --clean-first</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>cd /d "$(SolutionDir)." &amp;&amp; cmake --preset windows-x64 -DNF_BUILD_TESTS=ON &amp;&amp; cmake --build Builds\windows-x64 --target NFTests --config Release --clean-first -- /bl:"Builds\NovaForgeTests-release.binlog"</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>NDEBUG;_WINDOWS;%(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(SolutionDir)Source;$(SolutionDir)Tests;$(SolutionDir)ThirdParty;%(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
 
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" Condition="Exists('$(VCTargetsPath)\Microsoft.Cpp.targets')" />
 
   <!-- Source files for browsing / IntelliSense -->
   <ItemGroup>

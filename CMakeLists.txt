@@ -31,7 +31,7 @@ foreach(_dir Content Config)
              "${NF_OUTPUT_ROOT}/${_dir}"
              SYMBOLIC
              RESULT _link_result)
-        if(_link_result STREQUAL "0")
+        if(_link_result EQUAL 0)
             message(STATUS "  Linked ${_dir}/ -> Nova_${PROJECT_VERSION}/${_dir}/")
         elseif(WIN32)
             # Fall back to a directory junction (no elevation required).
@@ -43,7 +43,7 @@ foreach(_dir Content Config)
             if(_junc_result EQUAL 0)
                 message(STATUS "  Junction ${_dir}/ -> Nova_${PROJECT_VERSION}/${_dir}/")
             else()
-                message(WARNING "Could not link or junction ${_dir}/: ${_link_result}")
+                message(WARNING "Could not link or junction ${_dir}/: ${_junc_result}")
             endif()
         else()
             message(WARNING "Could not create symlink for ${_dir}/: ${_link_result}")
