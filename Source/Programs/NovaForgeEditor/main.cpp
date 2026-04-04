@@ -3,6 +3,13 @@
 #include "Core/Logging/Log.h"
 #include <filesystem>
 
+#ifdef _WIN32
+// Build as a WIN32 (windowed) application but keep using main() as entry point
+// so we do not need to change to WinMain.  This prevents a separate console
+// window from appearing alongside the editor.
+#pragma comment(linker, "/subsystem:windows /entry:mainCRTStartup")
+#endif
+
 int main(int argc, char* argv[])
 {
     // Set the working directory to the parent of the executable's directory

@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include <string>
 #include <string_view>
 
@@ -14,6 +15,11 @@ enum class LogLevel {
     Fatal
 };
 
+/// @brief Callback type for the in-app log sink.
+///
+/// Receives the fully formatted log line (e.g. "[123ms][INFO ][Editor] msg").
+using LogCallback = std::function<void(std::string_view formattedLine)>;
+
 /// @brief Central, thread-safe, multi-sink logging facility for NovaForge.
 ///
 /// Sinks:
@@ -22,6 +28,8 @@ enum class LogLevel {
 ///   3. **Per-channel log files** — `{logRoot}/{Channel}/{Channel}.log`.
 ///   4. **VS Output Debug String** — on Windows, every message is also sent to
 ///      the Visual Studio Output window via `OutputDebugStringA`.
+///   5. **In-app callback** — optional; forwards each formatted line to
+///      a user-supplied function (e.g. the editor's ConsolePanel).
 ///
 /// Call @c Init() early in your program (before any Log() calls if you want
 /// file output).  If Init() is never called the logger still works as a
@@ -61,6 +69,13 @@ public:
 
     /// @brief Return the resolved log root directory (empty if not initialised).
     [[nodiscard]] static std::string GetLogRoot() noexcept;
+
+    /// @brief Register an in-app callback that receives every formatted log
+    ///        line.  Pass an empty/null callback to remove a previous one.
+    ///
+    /// The callback is invoked **outside** the logger mutex so it is safe for
+    /// the callback to call back into Logger::Log without deadlocking.
+    static void SetCallback(LogCallback cb);
 };
 
 } // namespace NF

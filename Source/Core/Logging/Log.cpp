@@ -30,6 +30,7 @@ bool                                             s_FileLoggingActive = false;
 std::string                                      s_LogRoot;
 std::ofstream                                    s_MasterFile;   // NovaForge.log
 std::unordered_map<std::string, std::ofstream>   s_ChannelFiles; // per-channel
+LogCallback                                      s_Callback;     // in-app sink
 
 // ---------------------------------------------------------------------------
 // Timestamp helpers (called under lock)
@@ -174,6 +175,11 @@ std::string Logger::GetLogRoot() noexcept {
     return s_LogRoot;
 }
 
+void Logger::SetCallback(LogCallback cb) {
+    std::lock_guard lock(s_Mutex);
+    s_Callback = std::move(cb);
+}
+
 void Logger::Log(LogLevel level, std::string_view channel, std::string_view msg) {
     if (level < s_MinLevel)
         return;
@@ -240,6 +246,19 @@ void Logger::Log(LogLevel level, std::string_view channel, std::string_view msg)
                 cf.flush();
             }
         }
+    }
+
+    // ----- Sink 5: In-app callback (e.g. editor ConsolePanel) -----
+    // Copy the callback under the lock, then invoke outside it so the
+    // callback can safely call Logger::Log without deadlocking.
+    {
+        LogCallback cbCopy;
+        {
+            std::lock_guard lock(s_Mutex);
+            cbCopy = s_Callback;
+        }
+        if (cbCopy)
+            cbCopy(line);
     }
 
     if (level == LogLevel::Fatal)
