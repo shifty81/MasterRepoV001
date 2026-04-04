@@ -8,12 +8,15 @@ namespace NF {
 
 /// @brief Immediate-mode 2-D renderer used by the UI layer.
 ///
-/// Batches coloured quads and text quads between BeginFrame() / EndFrame().
-/// Uses the existing NF::Shader class for GPU programs, the same VAO/VBO
-/// pattern from MeshRenderer, and stb_easy_font for glyph generation.
+/// Batches coloured quads and textured text quads between
+/// BeginFrame() / EndFrame().  Rect drawing uses a simple
+/// coloured-vertex shader.  Text rendering uses an 8×14
+/// embedded bitmap font baked into a GL texture atlas
+/// (see BuiltinFont.h).
 class UIRenderer {
 public:
-    /// @brief Initialise the renderer (compile shader, allocate buffers).
+    /// @brief Initialise the renderer (compile shaders, allocate buffers,
+    ///        bake font atlas texture).
     /// @return True on success.
     bool Init();
 
@@ -48,8 +51,16 @@ public:
     void EndFrame();
 
 private:
+    // ---- Coloured-quad vertex (rects) ----
     struct UIVertex {
         float X, Y;
+        float R, G, B, A;
+    };
+
+    // ---- Textured vertex (font glyphs) ----
+    struct TextVertex {
+        float X, Y;
+        float U, V;
         float R, G, B, A;
     };
 
@@ -57,19 +68,30 @@ private:
     [[nodiscard]] Rect CurrentClipRect() const noexcept;
     [[nodiscard]] Rect IntersectRect(const Rect& a, const Rect& b) const noexcept;
     [[nodiscard]] bool ClipRectToCurrent(const Rect& input, Rect& output) const noexcept;
-    void Flush();
+    void FlushRects();
+    void FlushText();
 
     bool  m_Initialised{false};
     float m_ViewportWidth{1280.f};
     float m_ViewportHeight{720.f};
     float m_DpiScale{1.f};
 
+    // ---- Rect pipeline (coloured quads) ----
     uint32_t m_ShaderProgram{0};
     uint32_t m_VAO{0};
     uint32_t m_VBO{0};
 
-    std::vector<UIVertex> m_Vertices;
-    std::vector<Rect>     m_ClipStack;
+    // ---- Text pipeline (textured quads) ----
+    uint32_t m_TextShaderProgram{0};
+    uint32_t m_TextVAO{0};
+    uint32_t m_TextVBO{0};
+    uint32_t m_FontTexture{0};  ///< GL texture holding the font atlas.
+    int      m_AtlasW{0};       ///< Atlas width in pixels.
+    int      m_AtlasH{0};       ///< Atlas height in pixels.
+
+    std::vector<UIVertex>   m_Vertices;      ///< Rect batch.
+    std::vector<TextVertex> m_TextVertices;   ///< Text batch.
+    std::vector<Rect>       m_ClipStack;
 };
 
 } // namespace NF

@@ -7,10 +7,20 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Output directories — binaries land in Nova_<version>/ at the repo root.
+# The per-config variants (DEBUG, RELEASE, …) ensure that multi-config
+# generators (Visual Studio) do *not* append a config subdirectory.
+# This means single-config and multi-config builds produce the same flat
+# layout, and Launch Game can always find NovaForgeGame.exe beside the editor.
 set(NF_OUTPUT_ROOT "${CMAKE_SOURCE_DIR}/Nova_${PROJECT_VERSION}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${NF_OUTPUT_ROOT}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${NF_OUTPUT_ROOT}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${NF_OUTPUT_ROOT}/lib)
+
+foreach(_cfg DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${_cfg} ${NF_OUTPUT_ROOT}/bin)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${_cfg} ${NF_OUTPUT_ROOT}/lib)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${_cfg} ${NF_OUTPUT_ROOT}/lib)
+endforeach()
 
 # ---------------------------------------------------------------------------
 # Mirror project folders into the output directory so the executables can

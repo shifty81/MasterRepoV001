@@ -372,6 +372,14 @@ bool EditorApp::Init() {
     m_ContextShelf.SetInputState(&m_Input);
     m_ContextShelf.SetToolContext(&m_ToolContext);
 
+    // Wire PreferencesPanel
+    m_PreferencesPanel.SetUIRenderer(&m_UIRenderer);
+    m_PreferencesPanel.SetInputState(&m_Input);
+    m_PreferencesPanel.SetOpen(true); // Always open in docked mode
+    m_PreferencesPanel.Load("editor_prefs.ini");
+    // Apply saved theme preference
+    SetTheme(m_PreferencesPanel.GetData().theme);
+
     // Wire PropertyInspectorSystem to Inspector so it renders the property grid
     m_Inspector.SetPropertyInspectorSystem(&m_PropertyInspectorSystem);
     m_Inspector.SetOnPropertyEdited([this]() {
@@ -461,6 +469,10 @@ bool EditorApp::Init() {
         [this](float x, float y, float w, float h) {
             m_VoxelInspector.Draw(x, y, w, h);
         });
+    m_DockingSystem.RegisterPanel("Preferences",
+        [this](float x, float y, float w, float h) {
+            m_PreferencesPanel.Draw(x, y, w, h);
+        });
 
     // ---- Unreal-like layout with tabbed regions and full-width bottom dock ----
     //
@@ -485,8 +497,9 @@ bool EditorApp::Init() {
     // Split rest: Viewport (76%) | Inspector (24%)
     m_DockingSystem.SplitPanel("Viewport", "Inspector",
                                SplitAxis::Horizontal, 0.76f);
-    // Tabs on the right: Inspector + VoxelInspector
+    // Tabs on the right: Inspector + VoxelInspector + Preferences
     m_DockingSystem.AddTab("Inspector", "VoxelInspector");
+    m_DockingSystem.AddTab("Inspector", "Preferences");
     // Tabs on the bottom: Console + ContentBrowser
     m_DockingSystem.AddTab("Console", "ContentBrowser");
 
@@ -611,6 +624,17 @@ void EditorApp::RegisterEditorCommands()
         [this](EditorCommandContext&) {
             m_CommandHistory.Redo();
             Logger::Log(LogLevel::Info, "Editor", "Redo");
+        }
+    });
+
+    // Edit.Preferences
+    m_CommandRegistry.Register(nf::EditorCommand{
+        "Edit.Preferences", "Preferences", nullptr,
+        [this](EditorCommandContext&) {
+            // The Preferences panel is a docked tab that is always visible
+            // when its tab is active (SetOpen(true) at init). This command
+            // exists in the Edit menu for discoverability.
+            Logger::Log(LogLevel::Info, "Editor", "Preferences — use the Preferences tab in the right dock");
         }
     });
 
@@ -1062,6 +1086,8 @@ void EditorApp::TickFrame(float dt)
 
     // ---- Render 3D scene into viewport region ----
     m_MeshCache.RebuildDirty(m_GameWorld.GetChunkMap());
+    // Clear collision-dirty flags independently of mesh rebuild.
+    m_GameWorld.GetChunkMap().ClearAllCollisionDirty();
     if (hasViewport && vpW > 0.f && vpH > 0.f) {
         // OpenGL uses a bottom-left origin for glViewport/glScissor while the
         // UI coordinate system has Y=0 at the top of the window. Flip Y so
@@ -1127,6 +1153,15 @@ void EditorApp::TickFrame(float dt)
     m_VoxelInspector.Update(dt);
     m_HUDPanel.Update(dt);
     m_WorldDebugPanel.Update(dt);
+    m_PreferencesPanel.Update(dt);
+    // Apply theme changes from preferences only when the selection changes.
+    {
+        static EditorTheme s_LastAppliedTheme = m_PreferencesPanel.GetData().theme;
+        if (m_PreferencesPanel.GetData().theme != s_LastAppliedTheme) {
+            SetTheme(m_PreferencesPanel.GetData().theme);
+            s_LastAppliedTheme = m_PreferencesPanel.GetData().theme;
+        }
+    }
     if (m_Toolbar.IsPieActive())
         m_InteractionLoop.Tick(dt);
 

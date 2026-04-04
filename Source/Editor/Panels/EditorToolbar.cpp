@@ -57,6 +57,8 @@ static const MenuItemDef kFileItems[] = {
 static const MenuItemDef kEditItems[] = {
     { "Undo", "Edit.Undo" },
     { "Redo", "Edit.Redo" },
+    { nullptr, nullptr },  // separator
+    { "Preferences...", "Edit.Preferences" },
 };
 
 static const MenuItemDef kViewItems[] = {
@@ -65,7 +67,7 @@ static const MenuItemDef kViewItems[] = {
 
 static const MenuDef kMenus[] = {
     { "File", kFileItems, 5 },
-    { "Edit", kEditItems, 2 },
+    { "Edit", kEditItems, 4 },
     { "View", kViewItems, 1 },
 };
 

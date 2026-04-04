@@ -28,6 +28,7 @@
 #include "Editor/Application/EditorWorldSession.h"
 #include "Editor/Application/EditorModeManager.h"
 #include "Editor/Application/ContextToolShelf.h"
+#include "Editor/Panels/PreferencesPanel.h"
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -101,6 +102,7 @@ private:
     EditorWorldSession          m_WorldSession;
     EditorModeManager           m_ModeManager;
     ContextToolShelf            m_ContextShelf;
+    PreferencesPanel            m_PreferencesPanel;
 
     /// @brief Register all editor commands with the command registry.
     void RegisterEditorCommands();

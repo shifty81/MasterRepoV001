@@ -51,6 +51,14 @@ public:
     /// @brief Collect pointers to chunks whose collision data needs rebuilding.
     [[nodiscard]] std::vector<Chunk*> GetCollisionDirtyChunks();
 
+    /// @brief Clear collision-dirty flags on all chunks.
+    ///
+    /// The voxel collision system reads solidity directly from voxel data
+    /// (via IsSolidAt), so no separate collision structure rebuild is needed.
+    /// Call this once per frame after movement/collision resolution to keep
+    /// collision-dirty flags from accumulating.
+    void ClearAllCollisionDirty() noexcept;
+
     /// @brief Collect all loaded chunk coords.
     [[nodiscard]] std::vector<ChunkCoord> GetLoadedCoords() const;
 
