@@ -14,6 +14,19 @@ static constexpr float kZoomSensitivity  = 0.12f;  // fraction of current zoom p
 static constexpr float kMinZoom          = 0.2f;
 static constexpr float kMaxZoom          = 500.f;
 static constexpr float kMaxPitch         = 1.55f;  // ~89 degrees (avoid gimbal lock)
+static constexpr float kFlySpeed         = 2.0f;   // world units per second per unit of zoom
+static constexpr float kFlyShiftMult     = 3.0f;   // speed multiplier when Shift is held
+
+// Win32 Virtual-Key codes needed for FPS fly movement (no <windows.h> required).
+// These match the Win32 VK_* constants and are only meaningful on Windows;
+// on other platforms the keysDown[] array stays all-false so the block is a no-op.
+static constexpr uint8_t kVK_Shift = 0x10;
+static constexpr uint8_t kVK_W     = 0x57;
+static constexpr uint8_t kVK_A     = 0x41;
+static constexpr uint8_t kVK_S     = 0x53;
+static constexpr uint8_t kVK_D     = 0x44;
+static constexpr uint8_t kVK_Q     = 0x51;
+static constexpr uint8_t kVK_E     = 0x45;
 
 void EditorViewport::Init(RenderDevice* device) {
     m_Device = device;
@@ -24,7 +37,7 @@ void EditorViewport::Resize(int width, int height) {
     m_Height = height;
 }
 
-void EditorViewport::Update([[maybe_unused]] float dt) {
+void EditorViewport::Update(float dt) {
     if (!m_Input || m_BoundsW <= 0.f || m_BoundsH <= 0.f) return;
 
     if (!IsMouseInside()) return;
@@ -32,24 +45,55 @@ void EditorViewport::Update([[maybe_unused]] float dt) {
     const float dx = m_Input->mouseDeltaX;
     const float dy = m_Input->mouseDeltaY;
 
-    // --- Orbit: right mouse drag ---
+    // Pre-compute trig values shared by orbit, pan, and fly movement.
+    const float cp = std::cos(m_Pitch);
+    const float sp = std::sin(m_Pitch);
+    const float cy = std::cos(m_Yaw);
+    const float sy = std::sin(m_Yaw);
+
+    // Camera basis vectors (world space).
+    // forward: direction from eye toward target (unit length).
+    const Vector3 forward{ -cp * sy, -sp, -cp * cy };
+    // right: horizontal-only right direction.
+    // When pitch is near ±90° cp approaches zero; fall back to the world-right
+    // axis so the cross product never degenerates.
+    Vector3 right;
+    if (std::abs(cp) > 0.01f) {
+        right = forward.Cross({0.f, 1.f, 0.f}).Normalized();
+    } else {
+        // Camera is looking nearly straight up or down — use a stable fallback.
+        right = Vector3{ cy, 0.f, -sy };
+    }
+    // up: camera up (perpendicular to both forward and right).
+    const Vector3 camUp = right.Cross(forward);
+
+    // --- Look: right mouse drag ---
+    // Rotates pitch/yaw in place; same as orbit but the target then moves
+    // with WASD so the overall behaviour feels like a free-fly camera.
     if (m_Input->rightDown && (dx != 0.f || dy != 0.f)) {
         m_Yaw   += dx * kOrbitSensitivity;
         m_Pitch -= dy * kOrbitSensitivity; // invert Y for natural feel
         m_Pitch  = std::clamp(m_Pitch, -kMaxPitch, kMaxPitch);
     }
 
+    // --- FPS-style WASD fly movement (only while RMB is held) ---
+    // Translating m_Target by any vector moves the camera eye by the same
+    // vector (zoom stays constant), giving a first-person fly feel.
+    if (m_Input->rightDown) {
+        const bool   shiftHeld = m_Input->keysDown[kVK_Shift];
+        const float  speedMult = shiftHeld ? kFlyShiftMult : 1.0f;
+        const float  flyDist   = kFlySpeed * m_Zoom * dt * speedMult;
+
+        if (m_Input->keysDown[kVK_W]) m_Target += forward * flyDist;
+        if (m_Input->keysDown[kVK_S]) m_Target -= forward * flyDist;
+        if (m_Input->keysDown[kVK_D]) m_Target += right   * flyDist;
+        if (m_Input->keysDown[kVK_A]) m_Target -= right   * flyDist;
+        if (m_Input->keysDown[kVK_E]) m_Target += camUp   * flyDist;
+        if (m_Input->keysDown[kVK_Q]) m_Target -= camUp   * flyDist;
+    }
+
     // --- Pan: middle mouse drag ---
     if (m_Input->middleDown && (dx != 0.f || dy != 0.f)) {
-        // Build camera right and up axes from current yaw/pitch.
-        const float cp = std::cos(m_Pitch);
-        const float sp = std::sin(m_Pitch);
-        const float cy = std::cos(m_Yaw);
-        const float sy = std::sin(m_Yaw);
-
-        Vector3 right  = Vector3{ cy, 0.f, -sy }.Normalized();
-        Vector3 camUp  = Vector3{ sp * sy, cp, sp * cy }.Normalized();
-
         // Scale pan speed with zoom so distant scenes pan at a natural rate.
         const float panScale = kPanSensitivity * m_Zoom;
         m_Target = m_Target - right * (dx * panScale) + camUp * (dy * panScale);
@@ -106,9 +150,13 @@ void EditorViewport::Draw(float x, float y, float w, float h) {
     auto toDeg = [](float rad) -> int {
         return static_cast<int>(rad * (180.f / std::numbers::pi_v<float>));
     };
-    std::string camStr = "Yaw " + std::to_string(toDeg(m_Yaw))
+    const Vector3 eye = GetCameraEye();
+    std::string camStr = "Yaw "   + std::to_string(toDeg(m_Yaw))
                        + "  Pitch " + std::to_string(toDeg(m_Pitch))
-                       + "  Zoom " + std::to_string(static_cast<int>(m_Zoom));
+                       + "  Zoom "  + std::to_string(static_cast<int>(m_Zoom))
+                       + "  Eye ("  + std::to_string(static_cast<int>(eye.X))
+                       + ", "       + std::to_string(static_cast<int>(eye.Y))
+                       + ", "       + std::to_string(static_cast<int>(eye.Z)) + ")";
     m_Renderer->DrawText(camStr,
                          x + padX,
                          y + h - 18.f * dpi,
@@ -116,8 +164,8 @@ void EditorViewport::Draw(float x, float y, float w, float h) {
 
     // Controls hint (bottom-right)
     static constexpr uint32_t kHintColor = 0x505050FF;
-    m_Renderer->DrawText("RMB: Orbit  MMB: Pan  Wheel: Zoom",
-                         x + w - 280.f * dpi,
+    m_Renderer->DrawText("RMB: Look+WASD/QE  Shift: Fast  MMB: Pan  Wheel: Zoom",
+                         x + w - 420.f * dpi,
                          y + h - 18.f * dpi,
                          kHintColor, 1.5f);
 
