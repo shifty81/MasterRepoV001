@@ -329,7 +329,7 @@ void DockingSystem::DrawNode(DockNode& node,
                     // Tab label
                     const uint32_t textCol = isActive ? theme.textTitle : theme.textSecondary;
                     m_Renderer->DrawText(tabName, tabX + 6.f * dpi, tabY + 3.f * dpi,
-                                         textCol, 1.8f);
+                                         textCol, 1.f);
 
                     // Thin separator between tabs
                     if (ti < tabCount - 1)
@@ -344,7 +344,7 @@ void DockingSystem::DrawNode(DockNode& node,
                 if (!node.panelName.empty()) {
                     m_Renderer->DrawText(node.panelName,
                                          x + 6.f * dpi, y + 4.f * dpi,
-                                         theme.textTitle, 2.f);
+                                         theme.textTitle, 1.f);
                 }
 
                 // Optional per-panel title-bar extras (e.g. mode toggle buttons).

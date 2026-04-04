@@ -409,6 +409,17 @@ void UIRenderer::DrawText(std::string_view text, float x, float y,
 }
 
 // ---------------------------------------------------------------------------
+// MeasureText
+// ---------------------------------------------------------------------------
+
+void UIRenderer::MeasureText(std::string_view text, float scale,
+                              float& outWidth, float& outHeight) const noexcept {
+    const float effectiveScale = scale * m_DpiScale;
+    outWidth  = static_cast<float>(text.size()) * static_cast<float>(kFontCellW) * effectiveScale;
+    outHeight = static_cast<float>(kFontCellH) * effectiveScale;
+}
+
+// ---------------------------------------------------------------------------
 // Flush helpers
 // ---------------------------------------------------------------------------
 

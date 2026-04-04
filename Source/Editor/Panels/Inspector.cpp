@@ -93,9 +93,9 @@ void Inspector::Draw(float x, float y, float w, float h) {
     const uint32_t kEditableCol  = t.editableText;
     const uint32_t kHoverCol     = t.hoverText;
     const float dpi   = m_Renderer->GetDpiScale();
-    const float lineH = 20.f * dpi;
+    const float lineH = 18.f * dpi;
     const float padX  = 6.f * dpi;
-    const float scale = 2.f;
+    const float scale = 1.f;
     float cy = y + 4.f * dpi;
 
     // ---- Structured property grid (from PropertyInspectorSystem) ------------

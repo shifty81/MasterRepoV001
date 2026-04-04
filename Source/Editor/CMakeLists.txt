@@ -13,6 +13,7 @@ add_library(NFEditor STATIC
     Panels/DockingSystem.cpp
     Panels/PreferencesPanel.cpp
     Panels/LiveProfilerBackend.cpp
+    Panels/LiveProfilerPanel.cpp
     Panels/MaterialEditorPanel.cpp
     Panels/VoxelInspector.cpp
     Panels/HUDPanel.cpp
