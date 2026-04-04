@@ -30,10 +30,11 @@ void LiveProfilerPanel::Draw(float x, float y, float w, float h)
         const double peakCpu = m_Backend->PeakCpuMs();
         const double avgGpu = m_Backend->AverageGpuMs(60);
 
-        // Helper: format a double to at most 1 decimal place, capped at 5 chars.
+        // Helper: format a double to 1 decimal place, capped at 5 chars.
         auto fmtMs = [](double v) -> std::string {
-            std::string s = std::to_string(static_cast<int>(v * 10.0) / 10.0);
-            // Trim to at most 5 characters for compact display.
+            // Round to 1 decimal place then convert.
+            int tenths = static_cast<int>(v * 10.0 + 0.5);
+            std::string s = std::to_string(tenths / 10) + "." + std::to_string(tenths % 10);
             if (s.size() > 5) s.resize(5);
             return s;
         };

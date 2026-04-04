@@ -43,7 +43,7 @@ StorageBoxId StorageSystem::FindNearest(const NF::Vector3& position,
     for (const auto& b : m_Boxes) {
         const NF::Vector3 diff = b.position - position;
         const float distSq = diff.LengthSq();
-        if (distSq <= bestDist) {
+        if (distSq < bestDist) {
             bestDist = distSq;
             best     = b.id;
         }

@@ -76,9 +76,11 @@ TradeResult TradeMarket::Buy(NF::Game::ResourceType type, uint32_t count,
     entry->stock    -= count;
     inv.AddItem(type, count);
 
-    // Price increases with each unit bought.
-    for (uint32_t i = 0; i < count; ++i)
-        AdjustPrice(*entry, def.basePrice, +1.f);
+    // Batch price adjustment: apply step for each unit in a single formula.
+    const float totalStep = def.basePrice * kPriceStep * static_cast<float>(count);
+    entry->currentPrice = std::clamp(entry->currentPrice + totalStep,
+                                     def.basePrice * kPriceFloor,
+                                     def.basePrice * kPriceCeiling);
 
     return TradeResult::Success;
 }
@@ -104,9 +106,11 @@ TradeResult TradeMarket::Sell(NF::Game::ResourceType type, uint32_t count,
     entry->stock    += count;
     m_PlayerCredits += totalRevenue;
 
-    // Price decreases with each unit sold.
-    for (uint32_t i = 0; i < count; ++i)
-        AdjustPrice(*entry, def.basePrice, -1.f);
+    // Batch price adjustment: apply step for each unit in a single formula.
+    const float totalStep = def.basePrice * kPriceStep * static_cast<float>(count);
+    entry->currentPrice = std::clamp(entry->currentPrice - totalStep,
+                                     def.basePrice * kPriceFloor,
+                                     def.basePrice * kPriceCeiling);
 
     return TradeResult::Success;
 }

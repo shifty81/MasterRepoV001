@@ -6,7 +6,9 @@ uint32_t ProgressionSystem::XPThreshold(int level) noexcept
 {
     if (level <= 1) return 0;
     // Cumulative XP for level N: kXpPerLevel * (N-1) * N / 2
-    return kXpPerLevel * static_cast<uint32_t>(level - 1) * static_cast<uint32_t>(level) / 2;
+    // Use uint64_t to avoid overflow for large levels.
+    const auto n = static_cast<uint64_t>(level);
+    return static_cast<uint32_t>(kXpPerLevel * (n - 1) * n / 2);
 }
 
 int ProgressionSystem::UnlockLevel(SkillUnlock skill) noexcept
