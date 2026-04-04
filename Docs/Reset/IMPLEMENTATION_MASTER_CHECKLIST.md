@@ -51,13 +51,13 @@
 - [x] game boots cleanly from normal build output
 - [x] Launch Game path documented and stabilized — CreateProcess logs error code
 - [x] project paths resolved through one service — ProjectPathService
-- [x] output directory structure normalized
+- [x] output directory structure normalized — per-config overrides flatten Debug/Release subdirs; VS and CMake write to same Nova_0.1.0/bin/
 
 ## Minimum Usability
 - [x] docking persistence works — DockingSystem confirmed stable
 - [x] resize behavior stable — DPI-aware resize/maximize
 - [x] maximize behavior stable — WM_DPICHANGED handler wired
-- [x] minimum readable font/theme pass complete — centralized EditorTheme with Dark/Light/HighContrast; all panels wired
+- [x] minimum readable font/theme pass complete — embedded 8×14 bitmap font atlas replaces stb_easy_font; centralized EditorTheme with Dark/Light/HighContrast; all panels wired
 - [x] command feedback visible in status/log — StatusBarPanel reflects state
 - [x] preferences panel wired into dock — PreferencesPanel as tab in right dock; clickable theme cycle; Edit.Preferences command; INI persistence
 

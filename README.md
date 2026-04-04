@@ -34,6 +34,8 @@ All core editor systems are implemented and verified:
 - preferences panel with theme cycling (Dark/Light/HighContrast) and INI persistence
 - clean standalone game launch from editor with saved-state loading
 - collision-dirty and mesh-dirty flags separated for independent rebuild
+- embedded 8×14 bitmap font with texture atlas (replaced stb_easy_font)
+- normalized output directories (VS Debug/Release and CMake write to same path)
 - 326 tests passing
 
 ## What Is Already Present
@@ -55,8 +57,6 @@ All core editor systems are implemented and verified:
 ## Active Development
 
 Next focus areas:
-- output directory normalization across build workflows
-- bitmap font upgrade (replace stb_easy_font for better readability)
 - expanded mode-specific context shelf controls
 - additional panel polish and workflow improvements
 
