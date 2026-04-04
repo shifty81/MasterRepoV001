@@ -631,11 +631,10 @@ void EditorApp::RegisterEditorCommands()
     m_CommandRegistry.Register(nf::EditorCommand{
         "Edit.Preferences", "Preferences", nullptr,
         [this](EditorCommandContext&) {
-            // Toggle the Preferences panel visibility. When the panel is
-            // embedded in the dock as a tab it is always drawn, but this
-            // command is available from the Edit menu for discoverability.
-            m_PreferencesPanel.SetOpen(!m_PreferencesPanel.IsOpen());
-            Logger::Log(LogLevel::Info, "Editor", "Preferences panel toggled");
+            // The Preferences panel is a docked tab that is always visible
+            // when its tab is active (SetOpen(true) at init). This command
+            // exists in the Edit menu for discoverability.
+            Logger::Log(LogLevel::Info, "Editor", "Preferences — use the Preferences tab in the right dock");
         }
     });
 
@@ -1153,8 +1152,14 @@ void EditorApp::TickFrame(float dt)
     m_HUDPanel.Update(dt);
     m_WorldDebugPanel.Update(dt);
     m_PreferencesPanel.Update(dt);
-    // Apply theme changes from preferences panel each frame.
-    SetTheme(m_PreferencesPanel.GetData().theme);
+    // Apply theme changes from preferences only when the selection changes.
+    {
+        static EditorTheme s_LastAppliedTheme = m_PreferencesPanel.GetData().theme;
+        if (m_PreferencesPanel.GetData().theme != s_LastAppliedTheme) {
+            SetTheme(m_PreferencesPanel.GetData().theme);
+            s_LastAppliedTheme = m_PreferencesPanel.GetData().theme;
+        }
+    }
     if (m_Toolbar.IsPieActive())
         m_InteractionLoop.Tick(dt);
 
