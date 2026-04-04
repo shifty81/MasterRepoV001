@@ -19,6 +19,7 @@ int main(int argc, char* argv[])
         }
     }
 
+    NF::Logger::Init("Saved/Logs");
     NF::Logger::Log(NF::LogLevel::Info, "Editor", "Starting NovaForge Editor");
     NF::Editor::EditorApp app;
     if (!app.Init())
@@ -28,5 +29,6 @@ int main(int argc, char* argv[])
     }
     app.Run();
     app.Shutdown();
+    NF::Logger::Shutdown();
     return 0;
 }

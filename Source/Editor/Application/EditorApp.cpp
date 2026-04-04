@@ -1185,6 +1185,10 @@ void EditorApp::TickFrame(float dt)
                   static_cast<float>(m_ClientWidth), statusH);
 
     // Menu drop-downs drawn last so they render on top of all panels.
+    // Flush the accumulated rect + text batches first so that the dropdown
+    // background and text form a separate render pass that paints over
+    // everything drawn above.
+    m_UIRenderer.Flush();
     m_Toolbar.DrawDropdown();
 
     // Flush all batched UI draw calls to the GPU

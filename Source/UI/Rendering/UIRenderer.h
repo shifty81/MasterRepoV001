@@ -48,6 +48,16 @@ public:
     void DrawOutlineRect(const Rect& rect, uint32_t color);
     void DrawText(std::string_view text, float x, float y, uint32_t color,
                   float scale = 1.0f);
+
+    /// @brief Flush all batched rects and text to the GPU immediately.
+    ///
+    /// Call this between drawing passes when later draw calls must appear
+    /// visually on top of earlier ones (e.g. before rendering a dropdown
+    /// menu overlay).  Without an explicit flush, all rects are rendered
+    /// in one pass and all text in a second pass, which can cause text
+    /// from earlier draw calls to paint over backgrounds from later ones.
+    void Flush();
+
     void EndFrame();
 
 private:

@@ -479,6 +479,24 @@ void UIRenderer::FlushText() {
 #endif
 }
 
+void UIRenderer::Flush() {
+#ifdef NF_HAS_OPENGL
+    if (!m_Initialised) return;
+    if (m_Vertices.empty() && m_TextVertices.empty()) return;
+
+    // Ensure 2-D rendering state is active (same as EndFrame).
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    FlushRects();
+    FlushText();
+#endif
+
+    m_Vertices.clear();
+    m_TextVertices.clear();
+}
+
 void UIRenderer::EndFrame() {
 #ifdef NF_HAS_OPENGL
     if (!m_Initialised) return;
