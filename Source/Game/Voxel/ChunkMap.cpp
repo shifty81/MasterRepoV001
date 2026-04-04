@@ -83,6 +83,12 @@ std::vector<Chunk*> ChunkMap::GetCollisionDirtyChunks()
     return result;
 }
 
+void ChunkMap::ClearAllCollisionDirty() noexcept
+{
+    for (auto& [coord, chunk] : m_Chunks)
+        chunk->ClearCollisionDirty();
+}
+
 std::vector<ChunkCoord> ChunkMap::GetLoadedCoords() const
 {
     std::vector<ChunkCoord> coords;

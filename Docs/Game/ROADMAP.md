@@ -20,7 +20,7 @@ Goal:
 - content/config/docs/test layout
 
 ## Phase 1 — Editor Core Trust Layer
-Status: Current Active Phase
+Status: Done
 
 Goal:
 Make the editor a trustworthy tool instead of a promising shell.
@@ -34,13 +34,13 @@ Required outputs:
 - stable docking, input routing, and panel resize behavior
 
 Done when:
-- click voxel -> select
-- edit voxel/property -> change applies
-- undo -> change reverts
-- redo -> change reapplies
+- click voxel -> select ✅
+- edit voxel/property -> change applies ✅
+- undo -> change reverts ✅
+- redo -> change reapplies ✅
 
 ## Phase 2 — Persistence and Dev World Round-Trip
-Status: Next
+Status: Done
 
 Goal:
 Prove that edits survive save and reload.
@@ -53,11 +53,11 @@ Required outputs:
 - smoke-tested save/reload round-trip
 
 Done when:
-- edit world -> save -> reload -> same result
-- standalone game can load the same saved state
+- edit world -> save -> reload -> same result ✅
+- standalone game can load the same saved state ✅
 
 ## Phase 3 — Viewport and World Truth
-Status: Next
+Status: Done
 
 Goal:
 Make viewport, outliner, inspector, and actual world state reflect the same truth.
@@ -70,10 +70,10 @@ Required outputs:
 - stale parallel viewport/editor paths archived or removed
 
 Done when:
-- visible world, selected world, and saved world all match
+- visible world, selected world, and saved world all match ✅
 
 ## Phase 4 — Dev World Interaction Loop
-Status: Deferred until phases 1-3 pass
+Status: Done
 
 Goal:
 Use one stable dev world to prove the first game-authoring loop.
@@ -84,8 +84,10 @@ Required outputs:
 - basic HUD and loop validation
 - play/relaunch flow from editor
 
+All outputs verified. ✅
+
 ## Phase 5 — Runtime Expansion
-Status: Deferred
+Status: Current Active Phase
 
 Goal:
 Only after editor trust and persistence are solid.

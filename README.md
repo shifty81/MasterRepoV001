@@ -19,17 +19,21 @@ This repository is locked to one direction:
 
 ## Current Status
 
+Phases 1–4 complete ✅ — editor trust, persistence, viewport truth, and interaction loop all verified.
+
 Current milestone:
-**Editor trustworthiness and persistence** — Complete ✅
+**Phase 5 — Runtime Expansion** — polish and hardening before broader gameplay
 
 All core editor systems are implemented and verified:
 - authoritative viewport with OpenGL rendering and viewport-local picking
 - voxel authoring (select, inspect, add, remove) with undo/redo
 - inspector property editing with write-back to world state
 - save/load round-trip verified (entity + chunk persistence)
-- tabbed panel docking system (Inspector/VoxelInspector tabs, Console/ContentBrowser tabs)
+- tabbed panel docking system (Inspector/VoxelInspector/Preferences tabs, Console/ContentBrowser tabs)
 - full-width bottom dock, Unreal-like panel layout
-- clean standalone game launch from editor
+- preferences panel with theme cycling (Dark/Light/HighContrast) and INI persistence
+- clean standalone game launch from editor with saved-state loading
+- collision-dirty and mesh-dirty flags separated for independent rebuild
 - 326 tests passing
 
 ## What Is Already Present
@@ -51,9 +55,8 @@ All core editor systems are implemented and verified:
 ## Active Development
 
 Next focus areas:
-- wire PreferencesPanel into the dock (theme/UI scale controls at runtime)
 - output directory normalization across build workflows
-- standalone game loading saved world state
+- bitmap font upgrade (replace stb_easy_font for better readability)
 - expanded mode-specific context shelf controls
 - additional panel polish and workflow improvements
 

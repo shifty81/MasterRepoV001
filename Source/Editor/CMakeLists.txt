@@ -17,7 +17,6 @@ add_library(NFEditor STATIC
     Panels/VoxelInspector.cpp
     Panels/HUDPanel.cpp
     Panels/EditorToolbar.cpp
-    Panels/MenuBarPanel.cpp
     Panels/StatusBarPanel.cpp
     Panels/WorldDebugPanel.cpp
     Commands/EditorCommand.cpp

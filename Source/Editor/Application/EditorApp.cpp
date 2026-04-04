@@ -1086,6 +1086,8 @@ void EditorApp::TickFrame(float dt)
 
     // ---- Render 3D scene into viewport region ----
     m_MeshCache.RebuildDirty(m_GameWorld.GetChunkMap());
+    // Clear collision-dirty flags independently of mesh rebuild.
+    m_GameWorld.GetChunkMap().ClearAllCollisionDirty();
     if (hasViewport && vpW > 0.f && vpH > 0.f) {
         // OpenGL uses a bottom-left origin for glViewport/glScissor while the
         // UI coordinate system has Y=0 at the top of the window. Flip Y so

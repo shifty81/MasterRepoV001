@@ -12,6 +12,8 @@
 - [x] old reset payloads moved — 3 zips and builderrors moved to `to_remove/`
 - [x] error dumps isolated — builderrors moved to `to_remove/`
 - [x] stale source paths moved to Archive/_stale_source — EditorViewportNF moved to `to_remove/Archive_Examples_Editor_nf_layer/`
+- [x] `to_remove/` directory deleted — all stale archives, zips, and parallel implementations removed
+- [x] stale parallel panel removed — MenuBarPanel (nf::) removed from source and build
 
 ## Editor Trust Layer
 - [x] EditorCommandHistory authoritative — CommandHistory in EditorApp
@@ -68,3 +70,4 @@
 - [x] save works — saves entities + chunks; dirty flag resets
 - [x] reload works — loads saved chunk data; verified in round-trip test
 - [x] standalone game reflects saved state
+- [x] collision-dirty and mesh-dirty flags independently cleared — ChunkMap::ClearAllCollisionDirty() wired in Orchestrator::Tick and EditorApp::TickFrame

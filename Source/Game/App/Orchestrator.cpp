@@ -143,6 +143,12 @@ void Orchestrator::Tick(float dt)
         {
             m_PlayerMovement.Update(dt, m_GameWorld.GetChunkMap());
 
+            // Clear collision-dirty flags after movement resolution.
+            // The voxel collision system reads solidity directly from
+            // voxel data, so no separate collision structure rebuild is
+            // needed — just clear the flags so they don't accumulate.
+            m_GameWorld.GetChunkMap().ClearAllCollisionDirty();
+
             // Phase 8: tick chunk streamer with player position.
             if (m_Streamer)
             {
