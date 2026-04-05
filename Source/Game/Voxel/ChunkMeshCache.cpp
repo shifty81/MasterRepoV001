@@ -248,7 +248,7 @@ bool ChunkMeshCache::IsChunkVisible(const ChunkCoord& coord) const noexcept
     int32_t ox, oy, oz;
     ChunkOrigin(coord, ox, oy, oz);
 
-    const float half    = static_cast<float>(kChunkSize) * 0.5f; // 16 for 32^3 chunks
+    const float half    = static_cast<float>(kChunkSize) * 0.5f; // e.g. 16.0 when kChunkSize=32
     const float centerX = static_cast<float>(ox) + half;
     const float centerY = static_cast<float>(oy) + half;
     const float centerZ = static_cast<float>(oz) + half;
