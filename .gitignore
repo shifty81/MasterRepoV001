@@ -45,3 +45,5 @@ Thumbs.db
 # Logs
 *.log
 *.binlog
+Content/Worlds/DevWorld.nfck
+Content/Worlds/DevWorld.nfsv
