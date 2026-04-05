@@ -1113,6 +1113,7 @@ void EditorApp::TickFrame(float dt)
         Matrix4x4 proj = m_Viewport.GetProjectionMatrix();
         m_ForwardRenderer.BeginScene(view, proj);
         m_MeshCache.SetCameraPosition(m_Viewport.GetCameraEye());
+        m_MeshCache.SetViewProjection(proj * view);
         m_MeshCache.Render();
         m_ForwardRenderer.EndScene();
 
@@ -1151,6 +1152,7 @@ void EditorApp::TickFrame(float dt)
         Matrix4x4 proj = m_Viewport.GetProjectionMatrix();
         m_ForwardRenderer.BeginScene(view, proj);
         m_MeshCache.SetCameraPosition(m_Viewport.GetCameraEye());
+        m_MeshCache.SetViewProjection(proj * view);
         m_MeshCache.Render();
         m_ForwardRenderer.EndScene();
 

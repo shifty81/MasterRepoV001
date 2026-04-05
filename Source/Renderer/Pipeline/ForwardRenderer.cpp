@@ -39,14 +39,24 @@ void ForwardRenderer::EndScene() {
 
 void ForwardRenderer::Flush() {
 #ifdef NF_HAS_OPENGL
-    // Enable backface culling for the 3D scene pass.
-    // All voxel faces use CCW winding when viewed from outside, so culling
-    // back-facing polygons (GL_BACK) removes the dark interior faces that
-    // appear when the camera orbits under or around the terrain.  We restore
-    // the disabled state afterwards so the 2D UI pass is unaffected.
+    // Always establish the required 3-D rendering state before issuing draw
+    // calls.  UIRenderer::Flush() leaves GL_DEPTH_TEST disabled (it does not
+    // save/restore) so we cannot rely on whatever state was left by the
+    // previous UI pass.  Explicitly enabling here guarantees correct depth
+    // sorting regardless of frame ordering.
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glDepthMask(GL_TRUE);
+
+    // Backface culling: all voxel faces use CCW winding when viewed from
+    // outside, so GL_BACK removes invisible interior faces.  Disabled
+    // afterwards so the 2-D UI pass is unaffected.
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
+
+    // Transparency off for opaque 3-D geometry.
+    glDisable(GL_BLEND);
 #endif
 
     for (auto& cmd : m_Queue) {
@@ -69,6 +79,9 @@ void ForwardRenderer::Flush() {
 
 #ifdef NF_HAS_OPENGL
     glDisable(GL_CULL_FACE);
+    // Leave depth test enabled so DebugDraw (which runs after Flush) also
+    // benefits from correct depth.  UIRenderer::EndFrame saves/restores
+    // state, so the UI pass will temporarily disable it as needed.
 #endif
 }
 

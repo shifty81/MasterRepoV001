@@ -162,6 +162,10 @@ void ChunkMeshCache::Render()
 
     for (auto& [coord, cached] : m_Meshes) {
         if (!cached.GpuMesh) continue;
+
+        // Skip chunks that are entirely outside the camera frustum.
+        if (!IsChunkVisible(coord)) continue;
+
         // Chunk meshes are already in world space (origin baked into vertices).
         m_Renderer->Submit(*cached.GpuMesh, m_Material, Matrix4x4::Identity());
     }
@@ -188,6 +192,78 @@ int ChunkMeshCache::TotalTriangles() const noexcept
     for (const auto& [_, cached] : m_Meshes)
         total += cached.TriCount;
     return total;
+}
+
+// ---------------------------------------------------------------------------
+// Frustum culling
+// ---------------------------------------------------------------------------
+
+// Extracts the 6 world-space frustum planes from the combined view-projection
+// matrix using the Gribb-Hartmann method.
+//
+// Our Matrix4x4 is column-major: M.M[col][row].
+// The i-th row of the matrix is therefore: {M[0][i], M[1][i], M[2][i], M[3][i]}.
+//
+// A clip-space point P_clip = VP * P_world lies inside the frustum iff:
+//   -w <= x <= w,  -w <= y <= w,  -w <= z <= w  (OpenGL NDC convention)
+//
+// Each inequality can be expressed as a linear constraint on P_world:
+//   Left:    row3 + row0 (dot with P_world, in homogeneous form) >= 0
+//   Right:   row3 - row0 >= 0
+//   Bottom:  row3 + row1 >= 0
+//   Top:     row3 - row1 >= 0
+//   Near:    row3 + row2 >= 0
+//   Far:     row3 - row2 >= 0
+//
+// The resulting plane for each side is FrustumPlane{nx, ny, nz, d} such that
+// a point P is inside if  nx*P.x + ny*P.y + nz*P.z + d >= 0.
+void ChunkMeshCache::SetViewProjection(const Matrix4x4& vp) noexcept
+{
+    // Helper: extract a plane from two rows (op = +1 or -1).
+    auto extractPlane = [&](int row, float op) -> FrustumPlane {
+        // row3 +/- row_i, in column-major storage: M.M[col][row_index]
+        return FrustumPlane{
+            vp.M[0][3] + op * vp.M[0][row],  // nx
+            vp.M[1][3] + op * vp.M[1][row],  // ny
+            vp.M[2][3] + op * vp.M[2][row],  // nz
+            vp.M[3][3] + op * vp.M[3][row]   // d
+        };
+    };
+
+    m_FrustumPlanes[0] = extractPlane(0, +1.f);  // Left
+    m_FrustumPlanes[1] = extractPlane(0, -1.f);  // Right
+    m_FrustumPlanes[2] = extractPlane(1, +1.f);  // Bottom
+    m_FrustumPlanes[3] = extractPlane(1, -1.f);  // Top
+    m_FrustumPlanes[4] = extractPlane(2, +1.f);  // Near
+    m_FrustumPlanes[5] = extractPlane(2, -1.f);  // Far
+}
+
+// Tests the chunk AABB against the 6 frustum planes using the positive-vertex
+// (p-vertex) method.  For each plane, the p-vertex is the AABB corner that is
+// furthest in the direction of the plane normal.  If the p-vertex is on the
+// outside of any plane, the entire box is outside and the chunk is culled.
+bool ChunkMeshCache::IsChunkVisible(const ChunkCoord& coord) const noexcept
+{
+    // Compute the chunk AABB in world space.
+    int32_t ox, oy, oz;
+    ChunkOrigin(coord, ox, oy, oz);
+
+    const float half    = static_cast<float>(kChunkSize) * 0.5f; // e.g. 16.0 when kChunkSize=32
+    const float centerX = static_cast<float>(ox) + half;
+    const float centerY = static_cast<float>(oy) + half;
+    const float centerZ = static_cast<float>(oz) + half;
+
+    for (const auto& plane : m_FrustumPlanes) {
+        // P-vertex: the AABB corner furthest along the plane normal.
+        const float pvx = centerX + (plane.X >= 0.f ? half : -half);
+        const float pvy = centerY + (plane.Y >= 0.f ? half : -half);
+        const float pvz = centerZ + (plane.Z >= 0.f ? half : -half);
+
+        // If the p-vertex is outside this plane, the entire chunk is invisible.
+        if (plane.X * pvx + plane.Y * pvy + plane.Z * pvz + plane.W < 0.f)
+            return false;
+    }
+    return true;
 }
 
 } // namespace NF::Game

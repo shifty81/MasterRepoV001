@@ -7,6 +7,7 @@
 #include "Game/Voxel/VoxelMesher.h"
 #include "Core/Math/Matrix.h"
 #include "Core/Math/Vector.h"
+#include <array>
 #include <unordered_map>
 #include <memory>
 
@@ -76,7 +77,53 @@ public:
     /// @brief Total triangle count across all cached meshes.
     [[nodiscard]] int TotalTriangles() const noexcept;
 
+    // -------------------------------------------------------------------------
+    // Frustum culling
+    // -------------------------------------------------------------------------
+
+    /// @brief Supply the combined view-projection matrix used for frustum culling.
+    ///
+    /// Must be called once per frame (before @c Render()) whenever the camera
+    /// moves.  Extracts the 6 world-space frustum planes via the Gribb-Hartmann
+    /// method so that @c Render() can skip chunks outside the camera frustum.
+    ///
+    /// @param viewProj  The combined View × Projection matrix
+    ///                  (typically @c proj * view in column-major convention).
+    void SetViewProjection(const Matrix4x4& viewProj) noexcept;
+
 private:
+    // -------------------------------------------------------------------------
+    // Frustum plane storage
+    // -------------------------------------------------------------------------
+
+    /// @brief One clip-space half-plane: (nx, ny, nz) = normal, W = distance.
+    ///
+    /// A world-space point P is on the positive (inside) side when
+    /// nx*P.x + ny*P.y + nz*P.z + W ≥ 0.
+    using FrustumPlane = Vector4;
+
+    /// @brief 6 frustum planes extracted from the view-projection matrix.
+    ///        Initialised to an all-pass state (every chunk visible) until
+    ///        @c SetViewProjection() is called.
+    std::array<FrustumPlane, 6> m_FrustumPlanes{
+        FrustumPlane{ 0,0,1, 1e6f},  // left   — pass-all sentinel
+        FrustumPlane{ 0,0,1, 1e6f},  // right
+        FrustumPlane{ 0,0,1, 1e6f},  // bottom
+        FrustumPlane{ 0,0,1, 1e6f},  // top
+        FrustumPlane{ 0,0,1, 1e6f},  // near
+        FrustumPlane{ 0,0,1, 1e6f},  // far
+    };
+
+    /// @brief Test whether the axis-aligned box for @p coord intersects the frustum.
+    ///
+    /// Uses the positive-vertex test: for each plane, compute the corner of the
+    /// AABB that is furthest in the plane-normal direction.  If that corner is
+    /// on the negative side (outside), the whole box is outside and the chunk
+    /// can be skipped.
+    ///
+    /// @return true if the chunk may be visible (should be rendered).
+    [[nodiscard]] bool IsChunkVisible(const ChunkCoord& coord) const noexcept;
+
     struct CachedMesh {
         std::unique_ptr<Mesh> GpuMesh;
         int TriCount{0};
