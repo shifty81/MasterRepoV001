@@ -33,6 +33,7 @@
 #include "Editor/Panels/MaterialEditorPanel.h"
 #include "Editor/Panels/LiveProfilerBackend.h"
 #include "Editor/Panels/LiveProfilerPanel.h"
+#include "Game/Character/PlayerCharacterRenderer.h"
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -111,6 +112,7 @@ private:
     TransformGizmo              m_TransformGizmo;
     LiveProfilerBackend         m_ProfilerBackend;
     LiveProfilerPanel           m_ProfilerPanel;
+    NF::Game::PlayerCharacterRenderer m_CharacterRenderer;
 
     /// @brief Register all editor commands with the command registry.
     void RegisterEditorCommands();
