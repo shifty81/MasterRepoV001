@@ -1,12 +1,12 @@
 #pragma once
 #include "Core/Math/Matrix.h"
+#include "Renderer/Materials/Material.h"
 #include <vector>
 
 namespace NF {
 
 class RenderDevice;
 class Mesh;
-class Material;
 
 /// @brief Single-pass forward renderer; collects draw calls per-scene and flushes them in order.
 class ForwardRenderer {
@@ -38,7 +38,7 @@ public:
 private:
     struct DrawCommand {
         Mesh*      MeshPtr{nullptr};
-        Material*  MaterialPtr{nullptr};
+        Material   Mat{};
         Matrix4x4  Transform{Matrix4x4::Identity()};
     };
 

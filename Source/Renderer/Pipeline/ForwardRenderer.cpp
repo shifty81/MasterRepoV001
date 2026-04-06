@@ -30,7 +30,7 @@ void ForwardRenderer::BeginScene(const Matrix4x4& viewMatrix, const Matrix4x4& p
 }
 
 void ForwardRenderer::Submit(Mesh& mesh, Material& material, const Matrix4x4& transform) {
-    m_Queue.push_back({&mesh, &material, transform});
+    m_Queue.push_back({&mesh, material, transform});
 }
 
 void ForwardRenderer::EndScene() {
@@ -60,12 +60,12 @@ void ForwardRenderer::Flush() {
 #endif
 
     for (auto& cmd : m_Queue) {
-        cmd.MaterialPtr->Bind();
+        cmd.Mat.Bind();
 
         // Upload camera and model matrices to the active shader.
         // The material's Bind() activates its shader, so we can set
         // uniforms immediately after.
-        Shader* shader = cmd.MaterialPtr->GetShader();
+        Shader* shader = cmd.Mat.GetShader();
         if (shader) {
             shader->SetMat4("uView",       m_View);
             shader->SetMat4("uProjection", m_Proj);
