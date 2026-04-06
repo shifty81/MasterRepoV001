@@ -1,5 +1,6 @@
 #pragma once
 #include "Game/World/WorldDebugOverlay.h"
+#include "Game/Interaction/RigState.h"
 #include <string>
 #include <vector>
 
@@ -17,6 +18,9 @@ public:
     /// @brief Provide the debug overlay to display.
     void SetOverlay(NF::Game::WorldDebugOverlay* overlay) noexcept { m_Overlay = overlay; }
 
+    /// @brief Provide the rig state to display (may be null).
+    void SetRigState(const NF::Game::RigState* rig) noexcept { m_Rig = rig; }
+
     /// @brief Advance panel state.
     void Update(float dt);
 
@@ -24,8 +28,9 @@ public:
     void Draw(float x, float y, float w, float h);
 
 private:
-    UIRenderer*                  m_Renderer{nullptr};
-    NF::Game::WorldDebugOverlay* m_Overlay{nullptr};
+    UIRenderer*                   m_Renderer{nullptr};
+    NF::Game::WorldDebugOverlay*  m_Overlay{nullptr};
+    const NF::Game::RigState*     m_Rig{nullptr};
 };
 
 } // namespace NF::Editor

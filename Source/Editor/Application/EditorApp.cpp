@@ -316,6 +316,10 @@ bool EditorApp::Init() {
     m_MeshCache.Init(&m_ForwardRenderer);
     m_MeshCache.RebuildDirty(m_GameWorld.GetChunkMap());
 
+    // Initialise the low-poly player character renderer (Phase 5).
+    if (!m_CharacterRenderer.Init(m_RenderDevice.get()))
+        Logger::Log(LogLevel::Warning, "Editor", "PlayerCharacterRenderer init failed — character will not be visible");
+
     Logger::Log(LogLevel::Info, "Editor", "[6/6] EditorApp — wiring panels and layout");
     // Wire UIRenderer to all subsystems
     m_DockingSystem.SetUIRenderer(&m_UIRenderer);
@@ -336,6 +340,7 @@ bool EditorApp::Init() {
     // Wire WorldDebugPanel
     m_WorldDebugPanel.SetUIRenderer(&m_UIRenderer);
     m_WorldDebugPanel.SetOverlay(&m_GameWorld.GetDebugOverlay());
+    m_WorldDebugPanel.SetRigState(&m_InteractionLoop.GetRig());
 
     // Wire input state to interactive panels
     m_SceneOutliner.SetInputState(&m_Input);
@@ -1115,7 +1120,23 @@ void EditorApp::TickFrame(float dt)
         m_MeshCache.SetCameraPosition(m_Viewport.GetCameraEye());
         m_MeshCache.SetViewProjection(proj * view);
         m_MeshCache.Render();
+
+        // Render the low-poly player character at the world spawn position.
+        if (m_CharacterRenderer.IsReady()) {
+            const auto& sp = m_GameWorld.GetSpawnPoint();
+            m_CharacterRenderer.Render(m_ForwardRenderer, sp.Position, /* yawRadians= */ 0.f);
+        }
+
         m_ForwardRenderer.EndScene();
+
+        // Always draw a spawn-point marker so the character's feet position
+        // is visible even when the Chunks debug overlay is off.
+        {
+            const Matrix4x4 viewProj = proj * view;
+            const auto& sp = m_GameWorld.GetSpawnPoint();
+            NF::DebugDraw::Sphere(sp.Position, 0.5f, {1.f, 0.7f, 0.f}); // yellow-orange
+            NF::DebugDraw::Flush(*m_RenderDevice, viewProj);
+        }
 
         // Draw 6DOF chunk-border wireframes when the Debug/Chunks overlay is on.
         if (m_ToolContext.showChunkBorders) {
@@ -1201,8 +1222,9 @@ void EditorApp::TickFrame(float dt)
     // Sync the serialized docking layout so the next autosave captures any
     // split-ratio or tab changes the user made this frame.
     m_PreferencesPanel.GetData().dockLayout = m_DockingSystem.SerializeLayout();
-    if (m_Toolbar.IsPiePlaying())
-        m_InteractionLoop.Tick(dt);
+    // Tick the interaction loop every frame so RigState (energy recharge,
+    // tool state) stays live whether or not PIE is active.
+    m_InteractionLoop.Tick(dt);
 
     // ---- Band 1: Toolbar strip at the top ----
     m_Toolbar.Draw(0.f, 0.f, static_cast<float>(m_ClientWidth), toolbarH);
@@ -1303,6 +1325,7 @@ void EditorApp::Shutdown() {
     Logger::SetCallback(nullptr);
 
     m_MeshCache.Shutdown();
+    m_CharacterRenderer.Shutdown();
     m_ForwardRenderer.Shutdown();
     m_GameWorld.Shutdown();
     m_Level.Unload();
