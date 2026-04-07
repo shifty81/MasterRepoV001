@@ -64,8 +64,8 @@ public:
     [[nodiscard]] const ManufacturingQueue& GetFactory() const noexcept { return m_Factory; }
 
 private:
-    static constexpr float kRepairCostPerHp     = 0.5f;  ///< Credits per HP restored.
-    static constexpr float kRefuelCostPerUnit    = 0.3f;  ///< Credits per energy unit.
+    static constexpr float kRepairCostPerHp   = 0.5f;  ///< Credits per HP restored.
+    static constexpr float kRefuelCostPerUnit = 0.3f;  ///< Credits per energy unit.
 
     std::string        m_Name;
     bool               m_Docked{false};
