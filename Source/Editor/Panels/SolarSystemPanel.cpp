@@ -86,9 +86,37 @@ void SolarSystemPanel::DrawOrbitalMap(float x, float y, float w, float h) {
     const auto& theme = ActiveTheme();
     const float dpi = m_Renderer->GetDpiScale();
 
-    // Map centre
+    // ---- Toolbar: toggle buttons for Orbits and Items ----
+    {
+        const float btnH  = 14.f * dpi;
+        const float btnW  = 44.f * dpi;
+        const float gap   = 4.f  * dpi;
+        float bx = x + 4.f * dpi;
+        const float by = y + 2.f * dpi;
+
+        auto drawToggle = [&](const char* label, bool active, bool& flag) {
+            const bool hovered = m_Input &&
+                m_Input->mouseX >= bx && m_Input->mouseX < bx + btnW &&
+                m_Input->mouseY >= by && m_Input->mouseY < by + btnH;
+            if (hovered && m_Input && m_Input->leftJustPressed)
+                flag = !flag;
+            const uint32_t bg = active ? theme.worldAccent
+                               : hovered ? theme.hoverBg : theme.titleBarBg;
+            m_Renderer->DrawRect({bx, by, btnW, btnH}, bg);
+            m_Renderer->DrawOutlineRect({bx, by, btnW, btnH}, theme.panelBorder);
+            m_Renderer->DrawText(label, bx + 4.f * dpi, by + 2.f * dpi,
+                                 active ? 0xFFFFFFFF : theme.textSecondary, 1.f);
+            bx += btnW + gap;
+        };
+
+        drawToggle("Orbits", m_ShowOrbits, m_ShowOrbits);
+        drawToggle("Items",  m_ShowItems,  m_ShowItems);
+    }
+
+    // Map centre — offset down by toolbar height
+    const float toolbarH = 20.f * dpi;
     const float cx = x + w * 0.5f;
-    const float cy = y + h * 0.5f;
+    const float cy = y + toolbarH + (h - toolbarH) * 0.5f;
 
     // Scale: map AU to pixels.  Fit the widest orbit into the panel.
     float maxOrbit = 1.f;
@@ -168,6 +196,9 @@ void SolarSystemPanel::DrawOrbitalMap(float x, float y, float w, float h) {
             if (dx * dx + dy * dy <= hitR * hitR) {
                 m_SelectedBodyId = body.id;
                 m_SelectedItemId = 0;
+                // Notify editor that a celestial body was selected.
+                if (m_OnBodySelected)
+                    m_OnBodySelected(body.id);
             }
         }
     }
@@ -261,6 +292,26 @@ void SolarSystemPanel::DrawBodyInspector(float x, float y, float w, float h) {
     cy += lineH + 4.f * dpi;
     m_Renderer->DrawRect({x, cy, w, 1.f}, theme.separator);
     cy += 4.f * dpi;
+
+    // "Travel to Body" button
+    {
+        const float btnW = (w - padX * 2.f);
+        const float btnH = 14.f * dpi;
+        const bool hovered = m_Input &&
+            m_Input->mouseX >= x + padX && m_Input->mouseX < x + padX + btnW &&
+            m_Input->mouseY >= cy        && m_Input->mouseY < cy + btnH;
+        if (hovered && m_Input && m_Input->leftJustPressed && m_OnTravelToBody)
+            m_OnTravelToBody(m_SelectedBodyId);
+        const uint32_t bg = hovered ? theme.worldAccent : theme.titleBarBg;
+        m_Renderer->DrawRect({x + padX, cy, btnW, btnH}, bg);
+        m_Renderer->DrawOutlineRect({x + padX, cy, btnW, btnH}, theme.panelBorder);
+        m_Renderer->DrawText("Travel to Body",
+                             x + padX + 4.f * dpi, cy + 2.f * dpi,
+                             hovered ? 0xFFFFFFFF : theme.textSecondary, 1.f);
+        cy += btnH + 4.f * dpi;
+        m_Renderer->DrawRect({x, cy, w, 1.f}, theme.separator);
+        cy += 4.f * dpi;
+    }
 
     // Body properties
     auto drawProp = [&](const char* label, const std::string& value) {

@@ -417,6 +417,33 @@ bool EditorApp::Init() {
     m_SolarSystemPanel.SetSolarSystem(&m_DevSolarSystem);
     m_SolarSystemPanel.SetItemGen(&m_PCGItemGen);
 
+    // Wire solar system body-selection callback so clicking a body in the
+    // panel propagates to the global SelectionService and Inspector.
+    m_SolarSystemPanel.SetOnBodySelected([this](uint32_t bodyId) {
+        const auto* body = m_DevSolarSystem.FindBody(bodyId);
+        nf::SelectionHandle handle;
+        handle.kind  = nf::SelectionKind::CelestialBody;
+        handle.id    = static_cast<uint64_t>(bodyId);
+        handle.label = body ? body->name : "Body " + std::to_string(bodyId);
+        m_Selection.Select(handle);
+        BuildPropertySetForSelection(handle);
+        UpdateViewportHighlight();
+    });
+
+    // Wire "Travel to Body" — placeholder that logs intent.
+    m_SolarSystemPanel.SetOnTravelToBody([this](uint32_t bodyId) {
+        const auto* body = m_DevSolarSystem.FindBody(bodyId);
+        const std::string name = body ? body->name : std::to_string(bodyId);
+        Logger::Log(LogLevel::Info, "Editor",
+                    "Travel to Body requested: " + name
+                    + " (ExplorationSystem not yet implemented)");
+    });
+
+    // Wire world-changed callback to re-seed and regenerate solar system.
+    m_WorldSession.SetOnWorldChanged([this]() {
+        RegenerateSolarSystem();
+    });
+
     // Wire PropertyInspectorSystem to Inspector so it renders the property grid
     m_Inspector.SetPropertyInspectorSystem(&m_PropertyInspectorSystem);
     m_Inspector.SetOnPropertyEdited([this]() {
@@ -484,37 +511,36 @@ bool EditorApp::Init() {
             m_Viewport.Draw(x, y, w, h);
         });
 
-    // Camera mode toggle button — drawn in the Viewport panel title bar (top-right).
+    // "Snap to Spawn" button — drawn in the Viewport panel title bar (top-right).
+    // Replaces the old Focus/Orbit camera-mode toggle now that the viewport
+    // always uses the FPS player camera.
     m_DockingSystem.SetPanelHeaderExtras("Viewport",
         [this](float bx, float by, float bw, float bh) {
             if (!m_DockingSystem.GetUIRenderer()) return;
             UIRenderer* r   = m_DockingSystem.GetUIRenderer();
             const float dpi = r->GetDpiScale();
 
-            const bool  focusMode = (m_Viewport.GetCameraMode() == ViewportCameraMode::FocusOrbit);
-            const char* label     = focusMode ? "Focus" : "Orbit";
-
             // Button dimensions — right-aligned in the title bar with a small margin.
-            const float btnW  = 46.f * dpi;
+            const float btnW  = 72.f * dpi;
             const float btnH  = (bh - 4.f * dpi);
             const float btnX  = bx + bw - btnW - 4.f * dpi;
             const float btnY  = by + 2.f * dpi;
 
-            // Hit test against the raw input state (captured from the viewport).
+            // Hit test against the raw input state.
             const bool hovered = m_Input.mouseX >= btnX && m_Input.mouseX < btnX + btnW &&
                                  m_Input.mouseY >= btnY && m_Input.mouseY < btnY + btnH;
-            if (hovered && m_Input.leftJustPressed)
-                m_Viewport.SetCameraMode(focusMode ? ViewportCameraMode::Orbit
-                                                   : ViewportCameraMode::FocusOrbit);
+            if (hovered && m_Input.leftJustPressed) {
+                const auto& sp = m_GameWorld.GetSpawnPoint();
+                m_PiePlayer.SetPosition({sp.Position.X, sp.Position.Y + 2.f, sp.Position.Z});
+                Logger::Log(LogLevel::Info, "Editor", "Camera snapped to spawn");
+            }
 
             const auto& theme = ActiveTheme();
-            const uint32_t btnBg = focusMode ? theme.worldAccent
-                                 : hovered   ? theme.hoverBg
-                                             : theme.titleBarBg;
+            const uint32_t btnBg = hovered ? theme.worldAccent : theme.titleBarBg;
             r->DrawRect({btnX, btnY, btnW, btnH}, btnBg);
             r->DrawOutlineRect({btnX, btnY, btnW, btnH}, theme.panelBorder);
-            r->DrawText(label, btnX + 4.f * dpi, btnY + 3.f * dpi,
-                        focusMode ? 0xFFFFFFFF : theme.textSecondary, 1.f);
+            r->DrawText("Snap Spawn", btnX + 4.f * dpi, btnY + 3.f * dpi,
+                        hovered ? 0xFFFFFFFF : theme.textSecondary, 1.f);
         });
     m_DockingSystem.RegisterPanel("Inspector",
         [this](float x, float y, float w, float h) {
@@ -595,6 +621,20 @@ bool EditorApp::Init() {
     if (!m_PreferencesPanel.GetData().dockLayout.empty())
         m_DockingSystem.DeserializeLayout(m_PreferencesPanel.GetData().dockLayout);
 
+    // Place the always-on FPS editor player at the world spawn with noclip.
+    // In edit mode the player flies freely (ghost); noclip is disabled only
+    // when PIE is active so physics kick in for gameplay testing.
+    {
+        const auto& sp = m_GameWorld.GetSpawnPoint();
+        m_PiePlayer.SetPosition({sp.Position.X, sp.Position.Y + 2.f, sp.Position.Z});
+        m_PiePlayer.SetNoclip(true);
+        Logger::Log(LogLevel::Info, "Editor",
+                    "FPS editor player placed at spawn ("
+                    + std::to_string(sp.Position.X) + ", "
+                    + std::to_string(sp.Position.Y + 2.f) + ", "
+                    + std::to_string(sp.Position.Z) + ") — noclip ON");
+    }
+
     m_Running = true;
     Logger::Log(LogLevel::Info, "Editor", "EditorApp::Init complete -- editor-first boot to DevWorld");
     return true;
@@ -622,58 +662,34 @@ void EditorApp::RegisterEditorCommands()
         }
     });
 
-    // File.OpenWorld — load a world by name.
-    // The world definition file must exist in Content/Definitions/<name>.json.
-    // If a matching chunk file exists in Content/Worlds/<name>.nfck, saved
-    // voxel edits are restored on top of the procedural terrain.
+    // File.OpenWorld — show the world picker overlay.
+    // Lists all worlds found in Content/Definitions/*.json.
     m_CommandRegistry.Register(nf::EditorCommand{
         "File.OpenWorld",
         "Open World...",
         nullptr,
         [this](EditorCommandContext&) {
-            // List available world definitions.
             namespace fs = std::filesystem;
             const std::string defDir = m_WorldSession.GetContentRoot() + "/Definitions";
-            std::vector<std::string> worlds;
+            m_WorldPickerWorlds.clear();
             std::error_code ec;
             if (fs::is_directory(defDir, ec)) {
                 for (const auto& entry : fs::directory_iterator(defDir, ec)) {
-                    if (entry.path().extension() == ".json") {
-                        worlds.push_back(entry.path().stem().string());
-                    }
+                    if (entry.path().extension() == ".json")
+                        m_WorldPickerWorlds.push_back(entry.path().stem().string());
                 }
             }
-            std::sort(worlds.begin(), worlds.end());
+            std::sort(m_WorldPickerWorlds.begin(), m_WorldPickerWorlds.end());
 
-            if (worlds.empty()) {
+            if (m_WorldPickerWorlds.empty()) {
                 Logger::Log(LogLevel::Warning, "Editor",
                             "No world definitions found in " + defDir);
                 return;
             }
-
-            // Pick the next world that isn't the current one, or cycle back.
-            const std::string& current = m_WorldSession.GetWorldName();
-            std::string target = worlds[0];
-            for (size_t i = 0; i < worlds.size(); ++i) {
-                if (worlds[i] == current && i + 1 < worlds.size()) {
-                    target = worlds[i + 1];
-                    break;
-                }
-            }
-            // If only one world and it's the same, reload it.
-            if (target == current) {
-                Logger::Log(LogLevel::Info, "Editor",
-                            "Only one world definition available: " + current);
-            }
-
-            m_WorldSession.LoadWorld(target);
-            m_SceneOutliner.SetWorld(&m_Level.GetWorld());
-            m_MeshCache.RebuildDirty(m_GameWorld.GetChunkMap());
-            m_Selection.Clear();
-            m_ToolContext.worldDirty = false;
-            m_CommandHistory = CommandHistory{};
+            m_WorldPickerOpen = true;
             Logger::Log(LogLevel::Info, "Editor",
-                        "Opened world: " + target);
+                        "World picker opened — " + std::to_string(m_WorldPickerWorlds.size())
+                        + " world(s) found");
         }
     });
 
@@ -731,6 +747,16 @@ void EditorApp::RegisterEditorCommands()
         [this](EditorCommandContext&) {
             m_CommandHistory.Redo();
             Logger::Log(LogLevel::Info, "Editor", "Redo");
+        }
+    });
+
+    // World.RegenerateSolarSystem — force-regenerate from current seed.
+    m_CommandRegistry.Register(nf::EditorCommand{
+        "World.RegenerateSolarSystem",
+        "Regenerate Solar System",
+        nullptr,
+        [this](EditorCommandContext&) {
+            RegenerateSolarSystem();
         }
     });
 
@@ -972,8 +998,8 @@ void EditorApp::BuildPropertySetForSelection(const nf::SelectionHandle& handle)
                 cfg.DisplayName(), {}, true, false
             });
             ps.entries.push_back({
-                "Seed", nf::PropertyType::Int, nf::PropertyWidgetHint::ReadOnlyLabel,
-                static_cast<int>(cfg.Seed()), {}, true, false
+                "Seed", nf::PropertyType::Int, nf::PropertyWidgetHint::NumericField,
+                static_cast<int>(cfg.Seed()), {}, false, false
             });
             ps.entries.push_back({
                 "Gravity", nf::PropertyType::Float, nf::PropertyWidgetHint::NumericField,
@@ -1102,6 +1128,35 @@ void EditorApp::BuildPropertySetForSelection(const nf::SelectionHandle& handle)
             std::string("Asset"), {}, true, false
         });
         break;
+    case nf::SelectionKind::CelestialBody: {
+        ps.title = "Celestial Body";
+        ps.entries.push_back({
+            "Kind", nf::PropertyType::String, nf::PropertyWidgetHint::ReadOnlyLabel,
+            std::string("CelestialBody"), {}, true, false
+        });
+        const auto* body = m_DevSolarSystem.FindBody(static_cast<uint32_t>(handle.id));
+        if (body) {
+            ps.entries.push_back({"Name", nf::PropertyType::String,
+                nf::PropertyWidgetHint::ReadOnlyLabel, body->name, {}, true, false});
+            ps.entries.push_back({"Type", nf::PropertyType::String,
+                nf::PropertyWidgetHint::ReadOnlyLabel,
+                std::string(NF::Game::Gameplay::CelestialBodyTypeName(body->type)), {}, true, false});
+            ps.entries.push_back({"OrbitRadius", nf::PropertyType::Float,
+                nf::PropertyWidgetHint::NumericField, body->orbitRadius, {}, false, false});
+            ps.entries.push_back({"OrbitalPeriod", nf::PropertyType::Float,
+                nf::PropertyWidgetHint::NumericField, body->orbitalPeriod, {}, false, false});
+            ps.entries.push_back({"Mass", nf::PropertyType::Float,
+                nf::PropertyWidgetHint::NumericField, body->mass, {}, false, false});
+            ps.entries.push_back({"Radius", nf::PropertyType::Float,
+                nf::PropertyWidgetHint::NumericField, body->radius, {}, false, false});
+            ps.entries.push_back({"Temperature", nf::PropertyType::Float,
+                nf::PropertyWidgetHint::NumericField, body->temperature, {}, false, false});
+            ps.entries.push_back({"Deposits", nf::PropertyType::Int,
+                nf::PropertyWidgetHint::ReadOnlyLabel,
+                static_cast<int>(body->deposits.size()), {}, true, false});
+        }
+        break;
+    }
     default:
         break;
     }
@@ -1243,11 +1298,12 @@ void EditorApp::ApplyPropertyEditsToWorld()
         }
     }
 
-    // Handle world-root and player-entity property edits (spawn, gravity).
+    // Handle world-root and player-entity property edits (spawn, gravity, seed).
     if (handle.kind == nf::SelectionKind::WorldObject) {
         auto& cfg = m_GameWorld.GetMutableConfig();
         const auto& ps = m_PropertyInspectorSystem.GetPropertySet();
-        bool anyEdited = false;
+        bool anyEdited  = false;
+        bool seedChanged = false;
 
         // Retrieve spawn position once so multi-axis edits in the same
         // frame don't overwrite each other.
@@ -1259,6 +1315,14 @@ void EditorApp::ApplyPropertyEditsToWorld()
             if (entry.name == "Gravity" && std::holds_alternative<float>(entry.value)) {
                 cfg.SetGravity(std::get<float>(entry.value));
                 anyEdited = true;
+            }
+            if (entry.name == "Seed" && std::holds_alternative<int>(entry.value)) {
+                const uint32_t newSeed = static_cast<uint32_t>(std::get<int>(entry.value));
+                if (newSeed != cfg.Seed()) {
+                    cfg.SetSeed(newSeed);
+                    anyEdited  = true;
+                    seedChanged = true;
+                }
             }
             if (entry.name == "SpawnX" && std::holds_alternative<float>(entry.value)) {
                 spawnPos.X = std::get<float>(entry.value);
@@ -1281,6 +1345,148 @@ void EditorApp::ApplyPropertyEditsToWorld()
             Logger::Log(LogLevel::Info, "Editor",
                         "World properties edited via Inspector");
         }
+        if (seedChanged) {
+            RegenerateSolarSystem();
+        }
+    }
+
+    // Handle celestial body property edits.
+    if (handle.kind == nf::SelectionKind::CelestialBody) {
+        auto* body = m_DevSolarSystem.FindBody(static_cast<uint32_t>(handle.id));
+        if (body) {
+            const auto& ps = m_PropertyInspectorSystem.GetPropertySet();
+            bool anyEdited = false;
+            for (const auto& entry : ps.entries) {
+                if (!entry.dirty) continue;
+                if (entry.name == "OrbitRadius" && std::holds_alternative<float>(entry.value)) {
+                    body->orbitRadius = std::get<float>(entry.value);
+                    anyEdited = true;
+                }
+                if (entry.name == "OrbitalPeriod" && std::holds_alternative<float>(entry.value)) {
+                    body->orbitalPeriod = std::get<float>(entry.value);
+                    anyEdited = true;
+                }
+                if (entry.name == "Mass" && std::holds_alternative<float>(entry.value)) {
+                    body->mass = std::get<float>(entry.value);
+                    anyEdited = true;
+                }
+                if (entry.name == "Radius" && std::holds_alternative<float>(entry.value)) {
+                    body->radius = std::get<float>(entry.value);
+                    anyEdited = true;
+                }
+                if (entry.name == "Temperature" && std::holds_alternative<float>(entry.value)) {
+                    body->temperature = std::get<float>(entry.value);
+                    anyEdited = true;
+                }
+            }
+            if (anyEdited) {
+                m_WorldSession.MarkDirty();
+                Logger::Log(LogLevel::Info, "Editor",
+                            "Celestial body '" + body->name + "' properties edited via Inspector");
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// RegenerateSolarSystem
+// ---------------------------------------------------------------------------
+
+void EditorApp::RegenerateSolarSystem()
+{
+    const uint32_t seed = m_GameWorld.GetConfig().Seed();
+    m_DevSolarSystem.SetSeed(seed);
+    m_DevSolarSystem.Generate();
+    m_PCGItemGen.SetSeed(seed);
+    m_PCGItemGen.GenerateForSystem(m_DevSolarSystem);
+    m_WorldSession.MarkDirty();
+    Logger::Log(LogLevel::Info, "Editor",
+                "Solar system regenerated from seed " + std::to_string(seed)
+                + " — " + std::to_string(m_DevSolarSystem.BodyCount()) + " bodies");
+}
+
+// ---------------------------------------------------------------------------
+// DrawWorldPickerOverlay
+// ---------------------------------------------------------------------------
+
+void EditorApp::DrawWorldPickerOverlay()
+{
+    if (!m_WorldPickerOpen || m_WorldPickerWorlds.empty()) {
+        m_WorldPickerOpen = false;
+        return;
+    }
+
+    const auto& theme = ActiveTheme();
+    const float dpi   = m_UIRenderer.GetDpiScale();
+    const float sw    = static_cast<float>(m_ClientWidth);
+    const float sh    = static_cast<float>(m_ClientHeight);
+
+    // Dim the whole window.
+    m_UIRenderer.DrawRect({0.f, 0.f, sw, sh}, 0x00000099u);
+
+    // Modal panel centred on screen.
+    const float panelW = 300.f * dpi;
+    const float rowH   = 20.f  * dpi;
+    const float headerH = 28.f * dpi;
+    const float footerH = 28.f * dpi;
+    const float panelH = headerH + static_cast<float>(m_WorldPickerWorlds.size()) * rowH + footerH;
+    const float px = (sw - panelW) * 0.5f;
+    const float py = (sh - panelH) * 0.5f;
+
+    m_UIRenderer.DrawRect({px, py, panelW, panelH}, theme.panelBg);
+    m_UIRenderer.DrawOutlineRect({px, py, panelW, panelH}, theme.panelBorder);
+
+    // Title bar
+    m_UIRenderer.DrawRect({px, py, panelW, headerH}, theme.titleBarBg);
+    m_UIRenderer.DrawText("Open World", px + 8.f * dpi, py + 7.f * dpi, theme.textHeader, 1.f);
+
+    const std::string& current = m_WorldSession.GetWorldName();
+    float ry = py + headerH;
+
+    for (const auto& worldName : m_WorldPickerWorlds) {
+        const bool isCurrent = (worldName == current);
+        const bool hovered = m_Input.mouseX >= px && m_Input.mouseX < px + panelW &&
+                             m_Input.mouseY >= ry && m_Input.mouseY < ry + rowH;
+
+        const uint32_t bg = isCurrent ? theme.worldAccent
+                          : hovered   ? theme.hoverBg
+                                      : theme.panelBg;
+        m_UIRenderer.DrawRect({px, ry, panelW, rowH}, bg);
+
+        m_UIRenderer.DrawText(worldName,
+                              px + 12.f * dpi,
+                              ry + 4.f * dpi,
+                              isCurrent ? 0xFFFFFFFF : theme.textPrimary, 1.f);
+
+        if (hovered && m_Input.leftJustPressed && !isCurrent) {
+            m_WorldPickerOpen = false;
+            m_WorldSession.LoadWorld(worldName);
+            m_SceneOutliner.SetWorld(&m_Level.GetWorld());
+            m_MeshCache.RebuildDirty(m_GameWorld.GetChunkMap());
+            m_Selection.Clear();
+            m_ToolContext.worldDirty = false;
+            m_CommandHistory = CommandHistory{};
+            Logger::Log(LogLevel::Info, "Editor", "Opened world: " + worldName);
+            return;
+        }
+        ry += rowH;
+        m_UIRenderer.DrawRect({px, ry - 1.f, panelW, 1.f}, theme.separator);
+    }
+
+    // "Cancel" button in the footer.
+    const float btnW = 80.f * dpi;
+    const float btnH = 18.f * dpi;
+    const float bx   = px + (panelW - btnW) * 0.5f;
+    const float btnY = ry + (footerH - btnH) * 0.5f;
+    const bool cancelHovered = m_Input.mouseX >= bx && m_Input.mouseX < bx + btnW &&
+                               m_Input.mouseY >= btnY && m_Input.mouseY < btnY + btnH;
+    m_UIRenderer.DrawRect({bx, btnY, btnW, btnH}, cancelHovered ? theme.hoverBg : theme.titleBarBg);
+    m_UIRenderer.DrawOutlineRect({bx, btnY, btnW, btnH}, theme.panelBorder);
+    m_UIRenderer.DrawText("Cancel", bx + 16.f * dpi, btnY + 3.f * dpi, theme.textPrimary, 1.f);
+
+    if ((cancelHovered && m_Input.leftJustPressed) ||
+        m_Input.keysJustPressed[0x1B]) { // VK_ESCAPE
+        m_WorldPickerOpen = false;
     }
 }
 
@@ -1336,26 +1542,43 @@ void EditorApp::TickFrame(float dt)
     const bool isPiePlaying = m_Toolbar.IsPiePlaying();
     const bool isPiePaused  = m_Toolbar.IsPiePaused();
     if (isPiePlaying && !m_WasPiePlaying) {
-        // PIE just started — save camera state and place player at spawn.
-        m_PrePieCameraTarget = m_Viewport.GetCameraTarget();
-        m_PrePieCameraZoom   = m_Viewport.GetCameraZoom();
-        m_PrePieCameraPitch  = m_Viewport.GetCameraPitch();
-        m_PrePieCameraYaw    = m_Viewport.GetCameraYaw();
+        // PIE just started — snap player to spawn and enable physics.
         const auto& sp = m_GameWorld.GetSpawnPoint();
         m_PiePlayer.SetPosition({sp.Position.X, sp.Position.Y + 2.f, sp.Position.Z});
+        m_PiePlayer.SetNoclip(false); // enable physics for PIE
         Logger::Log(LogLevel::Info, "Editor", "PIE — player spawned at ("
             + std::to_string(sp.Position.X) + ", " + std::to_string(sp.Position.Y + 2.f)
             + ", " + std::to_string(sp.Position.Z) + ")");
     }
     if (!isPiePlaying && !isPiePaused && m_WasPiePlaying) {
-        // PIE just stopped — restore orbit camera.
-        m_Viewport.SetCameraTarget(m_PrePieCameraTarget);
-        m_Viewport.SetCameraZoom(m_PrePieCameraZoom);
-        m_Viewport.SetCameraPitch(m_PrePieCameraPitch);
-        m_Viewport.SetCameraYaw(m_PrePieCameraYaw);
-        Logger::Log(LogLevel::Info, "Editor", "PIE — orbit camera restored");
+        // PIE just stopped — re-enable noclip so the editor flies freely.
+        m_PiePlayer.SetNoclip(true);
+        Logger::Log(LogLevel::Info, "Editor", "PIE — noclip restored for editor fly mode");
     }
     m_WasPiePlaying = isPiePlaying || isPiePaused;
+
+    // ---- FPS cursor capture (Win32) ----
+    // When the user starts a right-drag inside the viewport, hide the cursor
+    // and confine it to the window so FPS mouse-look doesn't drift at edges.
+#ifdef _WIN32
+    if (m_Input.rightJustPressed && m_Viewport.IsMouseInside() && !m_FpsCursorHidden) {
+        ShowCursor(FALSE);
+        HWND hwnd = static_cast<HWND>(m_Hwnd);
+        RECT rc{};
+        GetClientRect(hwnd, &rc);
+        POINT tl{rc.left, rc.top}, br{rc.right, rc.bottom};
+        ClientToScreen(hwnd, &tl);
+        ClientToScreen(hwnd, &br);
+        RECT screen{tl.x, tl.y, br.x, br.y};
+        ClipCursor(&screen);
+        m_FpsCursorHidden = true;
+    }
+    if (!m_Input.rightDown && m_FpsCursorHidden) {
+        ClipCursor(nullptr);
+        ShowCursor(TRUE);
+        m_FpsCursorHidden = false;
+    }
+#endif
 
     // Query viewport panel bounds for 3D scene rendering.
     float vpX = 0.f, vpY = 0.f, vpW = 0.f, vpH = 0.f;
@@ -1379,32 +1602,33 @@ void EditorApp::TickFrame(float dt)
         m_RenderDevice->SetScissorRect(glX, glY, glW, glH);
         m_RenderDevice->Clear(0.12f, 0.12f, 0.14f, 1.f);
 
-        // During PIE Playing: use first-person camera from PIE player.
-        // During PIE Paused: keep last player camera but don't advance.
-        // Otherwise: use the orbit editor camera.
-        Matrix4x4 view, proj;
-        if (isPiePlaying || isPiePaused) {
-            if (isPiePlaying) {
-                HandlePieInput(dt);
-                m_PiePlayer.Update(dt, m_GameWorld.GetChunkMap());
-            }
-            view = GetPieViewMatrix();
-            proj = GetPieProjectionMatrix();
-        } else {
-            view = m_Viewport.GetViewMatrix();
-            proj = m_Viewport.GetProjectionMatrix();
+        // Always use the FPS editor player camera.
+        // In edit mode the player flies freely (noclip); during PIE normal
+        // physics apply.  HandlePieInput runs whenever the viewport has mouse
+        // focus or RMB is held, allowing WASD+look at any time.
+        if (m_Viewport.IsMouseInside() || m_Input.rightDown) {
+            HandlePieInput(dt);
         }
+        if (isPiePlaying) {
+            m_PiePlayer.Update(dt, m_GameWorld.GetChunkMap());
+        } else {
+            // Edit / paused: noclip fly — still call Update so input moves player.
+            m_PiePlayer.Update(dt, m_GameWorld.GetChunkMap());
+        }
+        const Matrix4x4 view = GetPieViewMatrix();
+        const Matrix4x4 proj = GetPieProjectionMatrix();
+
+        // Inject into viewport so PickRay stays correct with the FPS camera.
+        m_Viewport.SetExternalCamera(view, proj);
 
         m_ForwardRenderer.BeginScene(view, proj);
-        const Vector3 camEye = (isPiePlaying || isPiePaused)
-            ? m_PiePlayer.GetEyePosition()
-            : m_Viewport.GetCameraEye();
+        const Vector3 camEye = m_PiePlayer.GetEyePosition();
         m_MeshCache.SetCameraPosition(camEye);
         m_MeshCache.SetViewProjection(proj * view);
         m_MeshCache.Render();
 
         // Render the low-poly player character at the world spawn position
-        // (only in editor mode — during PIE the player IS at the character).
+        // in edit mode (so there's a reference model at the spawn marker).
         if (m_CharacterRenderer.IsReady() && !isPiePlaying && !isPiePaused) {
             const auto& sp = m_GameWorld.GetSpawnPoint();
             m_CharacterRenderer.Render(m_ForwardRenderer, sp.Position, /* yawRadians= */ 0.f);
@@ -1451,11 +1675,12 @@ void EditorApp::TickFrame(float dt)
 
         m_Viewport.SetSceneRendered(true);
     } else {
-        // No viewport panel visible — render full scene as fallback.
-        Matrix4x4 view = m_Viewport.GetViewMatrix();
-        Matrix4x4 proj = m_Viewport.GetProjectionMatrix();
+        // No viewport panel visible — render full scene as fallback using FPS camera.
+        const Matrix4x4 view = GetPieViewMatrix();
+        const Matrix4x4 proj = GetPieProjectionMatrix();
+        m_Viewport.SetExternalCamera(view, proj);
         m_ForwardRenderer.BeginScene(view, proj);
-        m_MeshCache.SetCameraPosition(m_Viewport.GetCameraEye());
+        m_MeshCache.SetCameraPosition(m_PiePlayer.GetEyePosition());
         m_MeshCache.SetViewProjection(proj * view);
         m_MeshCache.Render();
         m_ForwardRenderer.EndScene();
@@ -1486,7 +1711,6 @@ void EditorApp::TickFrame(float dt)
     m_Inspector.Update(dt);
     m_ContentBrowser.Update(dt);
     m_ConsolePanel.Update(dt);
-    m_Viewport.Update(dt);
     m_VoxelInspector.Update(dt);
     m_HUDPanel.Update(dt);
     m_WorldDebugPanel.Update(dt);
@@ -1535,6 +1759,10 @@ void EditorApp::TickFrame(float dt)
     // everything drawn above.
     m_UIRenderer.Flush();
     m_Toolbar.DrawDropdown();
+
+    // World picker overlay drawn on top of everything else.
+    if (m_WorldPickerOpen)
+        DrawWorldPickerOverlay();
 
     // Flush all batched UI draw calls to the GPU
     m_UIRenderer.EndFrame();

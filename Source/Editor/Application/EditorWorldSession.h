@@ -3,6 +3,7 @@
 #include "Game/World/GameWorld.h"
 #include "Game/Gameplay/SolarSystem/DevSolarSystem.h"
 #include "Engine/World/Level.h"
+#include <functional>
 #include <string>
 
 namespace NF::Editor {
@@ -24,6 +25,12 @@ public:
 
     /// @brief Set the solar system to save/load alongside the world.
     void SetSolarSystem(NF::Game::Gameplay::DevSolarSystem* sys) noexcept { m_SolarSystem = sys; }
+
+    /// @brief Register a callback invoked after any world change (load/reload/new).
+    ///
+    /// EditorApp uses this to re-seed and regenerate the solar system whenever
+    /// the active world changes without the session needing to know about PCG.
+    void SetOnWorldChanged(std::function<void()> cb) noexcept { m_OnWorldChanged = std::move(cb); }
 
     /// @brief Create a fresh world, discarding any unsaved state.
     void NewWorld();
@@ -71,6 +78,7 @@ private:
     NF::Game::GameWorld* m_World{nullptr};
     Level*               m_Level{nullptr};
     NF::Game::Gameplay::DevSolarSystem* m_SolarSystem{nullptr};
+    std::function<void()> m_OnWorldChanged;   ///< Fired after load/reload/new.
     std::string          m_ContentRoot;
     std::string          m_WorldName;
     std::string          m_EntityPath;

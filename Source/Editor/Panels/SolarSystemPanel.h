@@ -5,6 +5,7 @@
 #include "Game/Gameplay/SolarSystem/DevSolarSystem.h"
 #include "Game/Gameplay/PCG/PCGItemGen.h"
 #include <cstdint>
+#include <functional>
 
 namespace NF { class UIRenderer; }
 
@@ -31,6 +32,14 @@ public:
     /// @brief Set the PCG item generator for displaying placed items.
     void SetItemGen(NF::Game::Gameplay::PCGItemGen* gen) noexcept { m_ItemGen = gen; }
 
+    /// @brief Set a callback fired when the user selects a body.
+    ///        The argument is the body's uint32_t ID (0 = deselected).
+    void SetOnBodySelected(std::function<void(uint32_t)> cb) noexcept { m_OnBodySelected = std::move(cb); }
+
+    /// @brief Set a callback fired when the user clicks "Travel to Body".
+    ///        The argument is the body's uint32_t ID.
+    void SetOnTravelToBody(std::function<void(uint32_t)> cb) noexcept { m_OnTravelToBody = std::move(cb); }
+
     /// @brief Advance panel state.
     void Update(float dt);
 
@@ -45,6 +54,9 @@ private:
     const EditorInputState*                  m_Input{nullptr};
     NF::Game::Gameplay::DevSolarSystem*      m_System{nullptr};
     NF::Game::Gameplay::PCGItemGen*          m_ItemGen{nullptr};
+
+    std::function<void(uint32_t)>            m_OnBodySelected;  ///< Fired when a body is selected.
+    std::function<void(uint32_t)>            m_OnTravelToBody;  ///< Fired when "Travel" is clicked.
 
     uint32_t  m_SelectedBodyId{0};      ///< Currently selected body.
     uint32_t  m_SelectedItemId{0};      ///< Currently selected placed item.

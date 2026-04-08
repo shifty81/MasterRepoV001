@@ -154,7 +154,35 @@ void PlayerMovement::Update(float dt, const ChunkMap& map) noexcept
     // Clamp dt to avoid physics explosion on frame spikes.
     dt = std::min(dt, 0.05f);
 
-    // --- Horizontal movement ---
+    // -----------------------------------------------------------------------
+    // Noclip (editor ghost/fly) mode — no gravity, no collision.
+    // Movement aligns with the full view direction (pitch + yaw).
+    // -----------------------------------------------------------------------
+    if (m_Noclip) {
+        const NF::Vector3 viewDir  = GetViewDirection();
+        const NF::Vector3 rightDir = GetRightXZ();
+        const float speed = kMoveSpeed * (m_InputSprint ? kSprintMul : 1.f);
+
+        // Forward / back: move along view direction (includes pitch).
+        m_Position.X += viewDir.X * m_InputForward * speed * dt;
+        m_Position.Y += viewDir.Y * m_InputForward * speed * dt;
+        m_Position.Z += viewDir.Z * m_InputForward * speed * dt;
+
+        // Strafe: move along XZ-plane right vector.
+        m_Position.X += rightDir.X * m_InputRight * speed * dt;
+        m_Position.Z += rightDir.Z * m_InputRight * speed * dt;
+
+        // Clear per-frame input.
+        m_InputForward = 0.f;
+        m_InputRight   = 0.f;
+        m_InputJump    = false;
+        m_InputSprint  = false;
+        return;
+    }
+
+    // -----------------------------------------------------------------------
+    // Normal physics path.
+    // -----------------------------------------------------------------------
     const NF::Vector3 fwd   = GetForwardXZ();
     const NF::Vector3 right = GetRightXZ();
     const float speed = kMoveSpeed * (m_InputSprint ? kSprintMul : 1.f);

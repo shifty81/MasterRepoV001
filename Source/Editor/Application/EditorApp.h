@@ -41,6 +41,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace NF::Editor {
 
@@ -122,12 +123,13 @@ private:
     NF::Game::Gameplay::PCGItemGen     m_PCGItemGen;
 
     // ---- PIE (Play-In-Editor) state ----
-    NF::Game::PlayerMovement m_PiePlayer;   ///< First-person player used during PIE.
+    NF::Game::PlayerMovement m_PiePlayer;   ///< FPS player — always active; noclip in edit, physics in PIE.
     bool  m_WasPiePlaying{false};           ///< Tracks PIE state transitions.
-    Vector3 m_PrePieCameraTarget;           ///< Saved orbit pivot before PIE.
-    float   m_PrePieCameraZoom{80.f};       ///< Saved orbit distance before PIE.
-    float   m_PrePieCameraPitch{0.6f};      ///< Saved orbit pitch before PIE.
-    float   m_PrePieCameraYaw{0.f};         ///< Saved orbit yaw before PIE.
+    bool  m_FpsCursorHidden{false};         ///< True when cursor is hidden for FPS look.
+
+    // ---- World picker overlay ----
+    bool                     m_WorldPickerOpen{false};   ///< True when the world picker overlay is shown.
+    std::vector<std::string> m_WorldPickerWorlds;        ///< World names populated when picker opens.
 
     /// @brief Read keyboard/mouse input and forward to PIE PlayerMovement.
     void HandlePieInput(float dt);
@@ -171,6 +173,12 @@ private:
 
     /// @brief Active tool mode display name.
     [[nodiscard]] static const char* ToolModeName(nf::EditorToolMode mode) noexcept;
+
+    /// @brief Regenerate the dev solar system from the current world seed.
+    void RegenerateSolarSystem();
+
+    /// @brief Draw the world-picker modal overlay (populated by File.OpenWorld).
+    void DrawWorldPickerOverlay();
 };
 
 } // namespace NF::Editor

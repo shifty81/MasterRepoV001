@@ -11,7 +11,8 @@ namespace nf
         Asset,
         WorldObject,
         Chunk,
-        Voxel
+        Voxel,
+        CelestialBody  ///< A celestial body in the dev solar system.
     };
 
     struct SelectionHandle

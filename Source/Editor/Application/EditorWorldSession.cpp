@@ -35,6 +35,9 @@ void EditorWorldSession::NewWorld()
     m_Dirty = false;
     NF::Logger::Log(NF::LogLevel::Info, "EditorWorldSession",
                     "New world ready");
+
+    if (m_OnWorldChanged)
+        m_OnWorldChanged();
 }
 
 void EditorWorldSession::LoadWorld(const std::string& worldName)
@@ -59,6 +62,9 @@ void EditorWorldSession::LoadWorld(const std::string& worldName)
 
     NF::Logger::Log(NF::LogLevel::Info, "EditorWorldSession",
                     "World loaded: " + worldName);
+
+    if (m_OnWorldChanged)
+        m_OnWorldChanged();
 }
 
 bool EditorWorldSession::Save()
@@ -116,6 +122,9 @@ void EditorWorldSession::Reload()
     m_Dirty = false;
     NF::Logger::Log(NF::LogLevel::Info, "EditorWorldSession",
                     "World reloaded");
+
+    if (m_OnWorldChanged)
+        m_OnWorldChanged();
 }
 
 bool EditorWorldSession::LoadSavedChunks()

@@ -124,6 +124,18 @@ public:
     /// @brief Enable or disable the fallback grid overlay.
     void SetShowGrid(bool show) noexcept { m_ShowGrid = show; }
 
+    // ---- External camera override (FPS camera) ------------------------------
+
+    /// @brief Inject an external view / projection matrix pair.
+    ///
+    /// When set, PickRay() uses these matrices instead of the internal orbit
+    /// camera state.  Call this every frame after computing the FPS view+proj
+    /// so that viewport ray picks stay consistent with what is rendered.
+    void SetExternalCamera(const Matrix4x4& view, const Matrix4x4& proj) noexcept;
+
+    /// @brief Clear the external camera override; reverts to orbit camera.
+    void ClearExternalCamera() noexcept { m_UseExternalCamera = false; }
+
     /// @brief Cached viewport panel bounds (set each Draw call).
     [[nodiscard]] float GetBoundsX() const noexcept { return m_BoundsX; }
     [[nodiscard]] float GetBoundsY() const noexcept { return m_BoundsY; }
@@ -156,6 +168,11 @@ private:
     bool  m_ShowGrid{true};      ///< When false, suppress the fallback grid overlay.
 
     ViewportHighlightState m_HighlightState; ///< Current selection highlight, updated each frame.
+
+    // ---- External camera override (for FPS-always mode) --------------------
+    Matrix4x4 m_ExtView;              ///< External view matrix (when m_UseExternalCamera).
+    Matrix4x4 m_ExtProj;              ///< External projection matrix (when m_UseExternalCamera).
+    bool      m_UseExternalCamera{false}; ///< True when external camera matrices are set.
 };
 
 } // namespace NF::Editor
