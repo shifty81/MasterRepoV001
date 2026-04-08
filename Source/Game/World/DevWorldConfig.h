@@ -55,6 +55,7 @@ public:
 
     // -- Mutable setters (for editor use) ------------------------------------
     void SetGravity(float g) noexcept { m_Gravity = g; }
+    void SetSeed(uint32_t seed) noexcept { m_Seed = seed; }
     void SetSpawnPosition(const Vector3& pos) noexcept { m_Spawn.Position = pos; }
     void SetSpawnLookDirection(const Vector3& dir) noexcept { m_Spawn.LookDirection = dir; }
 

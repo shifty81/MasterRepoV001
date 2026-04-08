@@ -41,6 +41,12 @@ void EditorViewport::FocusOnPosition(const Vector3& worldPos) noexcept {
     m_Target = worldPos;
 }
 
+void EditorViewport::SetExternalCamera(const Matrix4x4& view, const Matrix4x4& proj) noexcept {
+    m_ExtView            = view;
+    m_ExtProj            = proj;
+    m_UseExternalCamera  = true;
+}
+
 void EditorViewport::Update(float dt) {
     if (!m_Input || m_BoundsW <= 0.f || m_BoundsH <= 0.f) return;
 
@@ -156,13 +162,33 @@ void EditorViewport::Draw(float x, float y, float w, float h) {
     auto toDeg = [](float rad) -> int {
         return static_cast<int>(rad * (180.f / std::numbers::pi_v<float>));
     };
-    const Vector3 eye = GetCameraEye();
-    std::string camStr = "Yaw "   + std::to_string(toDeg(m_Yaw))
-                       + "  Pitch " + std::to_string(toDeg(m_Pitch))
-                       + "  Zoom "  + std::to_string(static_cast<int>(m_Zoom))
-                       + "  Eye ("  + std::to_string(static_cast<int>(eye.X))
-                       + ", "       + std::to_string(static_cast<int>(eye.Y))
-                       + ", "       + std::to_string(static_cast<int>(eye.Z)) + ")";
+
+    std::string camStr;
+    if (m_UseExternalCamera) {
+        // Extract camera eye from the external view matrix (R^T * -t).
+        // View matrix convention: M[col][row], basis rows: right, up, -forward.
+        // eye = -(R^T * t) where t = [M[3][0], M[3][1], M[3][2]].
+        const float tx = m_ExtView.M[3][0];
+        const float ty = m_ExtView.M[3][1];
+        const float tz = m_ExtView.M[3][2];
+        const Vector3 fpsEye{
+            -(m_ExtView.M[0][0]*tx + m_ExtView.M[0][1]*ty + m_ExtView.M[0][2]*tz),
+            -(m_ExtView.M[1][0]*tx + m_ExtView.M[1][1]*ty + m_ExtView.M[1][2]*tz),
+            -(m_ExtView.M[2][0]*tx + m_ExtView.M[2][1]*ty + m_ExtView.M[2][2]*tz)
+        };
+        camStr = "FPS  Eye ("
+               + std::to_string(static_cast<int>(fpsEye.X)) + ", "
+               + std::to_string(static_cast<int>(fpsEye.Y)) + ", "
+               + std::to_string(static_cast<int>(fpsEye.Z)) + ")";
+    } else {
+        const Vector3 eye = GetCameraEye();
+        camStr = "Yaw "   + std::to_string(toDeg(m_Yaw))
+               + "  Pitch " + std::to_string(toDeg(m_Pitch))
+               + "  Zoom "  + std::to_string(static_cast<int>(m_Zoom))
+               + "  Eye ("  + std::to_string(static_cast<int>(eye.X))
+               + ", "       + std::to_string(static_cast<int>(eye.Y))
+               + ", "       + std::to_string(static_cast<int>(eye.Z)) + ")";
+    }
     m_Renderer->DrawText(camStr,
                          x + padX,
                          y + h - 18.f * dpi,
@@ -170,8 +196,11 @@ void EditorViewport::Draw(float x, float y, float w, float h) {
 
     // Controls hint (bottom-right)
     static constexpr uint32_t kHintColor = 0x505050FF;
-    m_Renderer->DrawText("RMB: Look+WASD/QE  Shift: Fast  MMB: Pan  Wheel: Zoom",
-                         x + w - 420.f * dpi,
+    const char* hint = m_UseExternalCamera
+        ? "RMB: Look+WASD  Shift: Fast  LMB: Tool"
+        : "RMB: Look+WASD/QE  Shift: Fast  MMB: Pan  Wheel: Zoom";
+    m_Renderer->DrawText(hint,
+                         x + w - 380.f * dpi,
                          y + h - 18.f * dpi,
                          kHintColor, 1.f);
 
@@ -206,6 +235,37 @@ bool EditorViewport::PickRay(float mouseX, float mouseY,
     // Y=0 at the top of the window while NDC has Y=+1 at the top.
     const float ndcX = (localX / m_BoundsW) * 2.f - 1.f;
     const float ndcY = 1.f - (localY / m_BoundsH) * 2.f;
+
+    if (m_UseExternalCamera) {
+        // ---- FPS / external camera pick ray ----
+        // Unproject NDC point using the external projection matrix.
+        // For a standard perspective proj: clip.x = proj[0][0] * view.x
+        const float viewX = ndcX / m_ExtProj.M[0][0];
+        const float viewY = ndcY / m_ExtProj.M[1][1];
+
+        // Recover camera eye from external view matrix via R^T * (-t).
+        // View convention M[col][row]: row 0=right, row 1=up, row 2=-forward.
+        // Translation stored in M[3][0..2].
+        const float tx = m_ExtView.M[3][0];
+        const float ty = m_ExtView.M[3][1];
+        const float tz = m_ExtView.M[3][2];
+        outOrigin = Vector3{
+            -(m_ExtView.M[0][0]*tx + m_ExtView.M[0][1]*ty + m_ExtView.M[0][2]*tz),
+            -(m_ExtView.M[1][0]*tx + m_ExtView.M[1][1]*ty + m_ExtView.M[1][2]*tz),
+            -(m_ExtView.M[2][0]*tx + m_ExtView.M[2][1]*ty + m_ExtView.M[2][2]*tz)
+        };
+
+        // Transform view-space direction (viewX, viewY, -1) to world space via R^T.
+        // Rotation rows in M[col][row]: right = (M[0][0],M[1][0],M[2][0]) etc.
+        outDirection = Vector3{
+            m_ExtView.M[0][0]*viewX + m_ExtView.M[0][1]*viewY - m_ExtView.M[0][2],
+            m_ExtView.M[1][0]*viewX + m_ExtView.M[1][1]*viewY - m_ExtView.M[1][2],
+            m_ExtView.M[2][0]*viewX + m_ExtView.M[2][1]*viewY - m_ExtView.M[2][2]
+        }.Normalized();
+        return true;
+    }
+
+    // ---- Orbit camera pick ray (legacy / when no external camera) ----
 
     // Get inverse projection to convert from clip space to view space.
     Matrix4x4 proj = GetProjectionMatrix();

@@ -81,6 +81,17 @@ public:
     /// @brief Set the position directly (e.g. for teleport or reset).
     void SetPosition(const NF::Vector3& pos) noexcept { m_Position = pos; m_VelocityY = 0.f; m_Grounded = false; }
 
+    /// @brief Enable or disable noclip (ghost) mode.
+    ///
+    /// When enabled, gravity and voxel collision are skipped.
+    /// Movement uses the full view direction (pitch + yaw) so the camera
+    /// flies freely in any direction.  Used by the editor's always-on FPS
+    /// camera so tool interactions don't fight the physics simulation.
+    void SetNoclip(bool noclip) noexcept { m_Noclip = noclip; }
+
+    /// @brief True when noclip mode is active.
+    [[nodiscard]] bool IsNoclip() const noexcept { return m_Noclip; }
+
     /// @brief Unit-length forward vector derived from yaw (XZ plane).
     [[nodiscard]] NF::Vector3 GetForwardXZ() const noexcept;
 
@@ -96,6 +107,7 @@ private:
     float       m_Pitch{0.f};
     float       m_VelocityY{0.f};
     bool        m_Grounded{false};
+    bool        m_Noclip{false}; ///< When true, skip gravity and collision.
 
     // Per-frame input (consumed in Update).
     float m_InputForward{0.f};
