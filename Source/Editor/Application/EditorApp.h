@@ -35,6 +35,7 @@
 #include "Editor/Panels/LiveProfilerPanel.h"
 #include "Editor/Panels/SolarSystemPanel.h"
 #include "Game/Character/PlayerCharacterRenderer.h"
+#include "Game/Movement/PlayerMovement.h"
 #include "Game/Gameplay/SolarSystem/DevSolarSystem.h"
 #include "Game/Gameplay/PCG/PCGItemGen.h"
 #include <cstdint>
@@ -119,6 +120,23 @@ private:
     NF::Game::PlayerCharacterRenderer m_CharacterRenderer;
     NF::Game::Gameplay::DevSolarSystem m_DevSolarSystem;
     NF::Game::Gameplay::PCGItemGen     m_PCGItemGen;
+
+    // ---- PIE (Play-In-Editor) state ----
+    NF::Game::PlayerMovement m_PiePlayer;   ///< First-person player used during PIE.
+    bool  m_WasPiePlaying{false};           ///< Tracks PIE state transitions.
+    Vector3 m_PrePieCameraTarget;           ///< Saved orbit pivot before PIE.
+    float   m_PrePieCameraZoom{80.f};       ///< Saved orbit distance before PIE.
+    float   m_PrePieCameraPitch{0.6f};      ///< Saved orbit pitch before PIE.
+    float   m_PrePieCameraYaw{0.f};         ///< Saved orbit yaw before PIE.
+
+    /// @brief Read keyboard/mouse input and forward to PIE PlayerMovement.
+    void HandlePieInput(float dt);
+
+    /// @brief Compute first-person view matrix from PIE player state.
+    [[nodiscard]] Matrix4x4 GetPieViewMatrix() const noexcept;
+
+    /// @brief Compute projection matrix for PIE first-person camera.
+    [[nodiscard]] Matrix4x4 GetPieProjectionMatrix() const noexcept;
 
     /// @brief Register all editor commands with the command registry.
     void RegisterEditorCommands();

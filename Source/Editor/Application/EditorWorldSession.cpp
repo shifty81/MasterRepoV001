@@ -27,12 +27,34 @@ void EditorWorldSession::NewWorld()
     NF::Logger::Log(NF::LogLevel::Info, "EditorWorldSession",
                     "Creating new world");
     m_World->Shutdown();
-    m_World->Initialize(m_ContentRoot);
+    m_World->Initialize(m_ContentRoot, m_WorldName);
     m_Level->Unload();
     m_Level->Load(m_WorldName);
     m_Dirty = false;
     NF::Logger::Log(NF::LogLevel::Info, "EditorWorldSession",
                     "New world ready");
+}
+
+void EditorWorldSession::LoadWorld(const std::string& worldName)
+{
+    if (!m_World || !m_Level) return;
+
+    NF::Logger::Log(NF::LogLevel::Info, "EditorWorldSession",
+                    "Loading world: " + worldName);
+
+    m_World->Shutdown();
+    m_WorldName  = worldName;
+    m_EntityPath = m_ContentRoot + "/Worlds/" + worldName + ".nfsv";
+    m_ChunkPath  = m_ContentRoot + "/Worlds/" + worldName + ".nfck";
+
+    m_World->Initialize(m_ContentRoot, worldName);
+    LoadSavedChunks();
+    m_Level->Unload();
+    m_Level->Load(worldName);
+    m_Dirty = false;
+
+    NF::Logger::Log(NF::LogLevel::Info, "EditorWorldSession",
+                    "World loaded: " + worldName);
 }
 
 bool EditorWorldSession::Save()
@@ -66,7 +88,7 @@ void EditorWorldSession::Reload()
     NF::Logger::Log(NF::LogLevel::Info, "EditorWorldSession",
                     "Reloading world...");
     m_World->Shutdown();
-    m_World->Initialize(m_ContentRoot);
+    m_World->Initialize(m_ContentRoot, m_WorldName);
     LoadSavedChunks();
     m_Level->Unload();
     m_Level->Load(m_WorldName);

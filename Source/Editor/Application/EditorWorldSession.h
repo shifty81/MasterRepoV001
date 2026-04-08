@@ -24,6 +24,10 @@ public:
     /// @brief Create a fresh world, discarding any unsaved state.
     void NewWorld();
 
+    /// @brief Load a world by name (e.g. "DevWorld", "TestWorld").
+    /// @param worldName Name of the world definition file (without extension).
+    void LoadWorld(const std::string& worldName);
+
     /// @brief Save the current world (entities + chunks) to disk.
     /// @return True if both entity and chunk saves succeed.
     bool Save();

@@ -48,6 +48,7 @@ struct MenuDef {
 
 static const MenuItemDef kFileItems[] = {
     { "New World",    "File.NewWorld"        },
+    { "Open World...", "File.OpenWorld"      },
     { "Save World",   "World.SaveDevWorld"   },
     { "Reload World", "World.ReloadDevWorld" },
     { nullptr,        nullptr                },  // separator
@@ -62,7 +63,7 @@ static const MenuItemDef kEditItems[] = {
 };
 
 static const MenuDef kMenus[] = {
-    { "File", kFileItems, 5 },
+    { "File", kFileItems, 6 },
     { "Edit", kEditItems, 4 },
 };
 
