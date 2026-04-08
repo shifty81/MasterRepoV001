@@ -7,6 +7,7 @@
 #include "Game/Net/GameServer.h"
 #include "Game/Net/GameClient.h"
 #include "Game/Voxel/ChunkStreamer.h"
+#include "Game/Gameplay/SolarSystem/DevSolarSystem.h"
 #include "Audio/Core/AudioDevice.h"
 #include "Audio/Core/SoundBank.h"
 #include "Audio/Mixer/AudioMixer.h"
@@ -103,6 +104,10 @@ public:
     [[nodiscard]] SpatialAudio&       GetSpatialAudio()       noexcept { return m_SpatialAudio; }
     [[nodiscard]] const SpatialAudio& GetSpatialAudio() const noexcept { return m_SpatialAudio; }
 
+    /// @brief Returns the solar system (loaded from editor data or generated).
+    [[nodiscard]] NF::Game::Gameplay::DevSolarSystem&       GetSolarSystem()       noexcept { return m_SolarSystem; }
+    [[nodiscard]] const NF::Game::Gameplay::DevSolarSystem& GetSolarSystem() const noexcept { return m_SolarSystem; }
+
     /// @brief Returns the GameServer (non-null when Solo/ListenServer/Dedicated).
     [[nodiscard]] GameServer* GetServer() noexcept { return m_Server.get(); }
     /// @brief Returns the GameClient (non-null when ListenServer/Client).
@@ -128,6 +133,9 @@ private:
 
     // Phase 8 chunk streaming
     std::unique_ptr<ChunkStreamer> m_Streamer;
+
+    // Solar system — loaded from editor data or procedurally generated.
+    NF::Game::Gameplay::DevSolarSystem m_SolarSystem;
 
     // Phase 9 audio
     AudioDevice  m_AudioDevice;

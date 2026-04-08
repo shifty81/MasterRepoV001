@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Game/World/GameWorld.h"
+#include "Game/Gameplay/SolarSystem/DevSolarSystem.h"
 #include "Engine/World/Level.h"
 #include <string>
 
@@ -21,6 +22,9 @@ public:
     void Init(NF::Game::GameWorld& world, Level& level,
               const std::string& contentRoot, const std::string& worldName);
 
+    /// @brief Set the solar system to save/load alongside the world.
+    void SetSolarSystem(NF::Game::Gameplay::DevSolarSystem* sys) noexcept { m_SolarSystem = sys; }
+
     /// @brief Create a fresh world, discarding any unsaved state.
     void NewWorld();
 
@@ -28,8 +32,8 @@ public:
     /// @param worldName Name of the world definition file (without extension).
     void LoadWorld(const std::string& worldName);
 
-    /// @brief Save the current world (entities + chunks) to disk.
-    /// @return True if both entity and chunk saves succeed.
+    /// @brief Save the current world (entities + chunks + config + solar system) to disk.
+    /// @return True if all saves succeed.
     bool Save();
 
     /// @brief Reload the world from the last saved state on disk.
@@ -66,10 +70,13 @@ public:
 private:
     NF::Game::GameWorld* m_World{nullptr};
     Level*               m_Level{nullptr};
+    NF::Game::Gameplay::DevSolarSystem* m_SolarSystem{nullptr};
     std::string          m_ContentRoot;
     std::string          m_WorldName;
     std::string          m_EntityPath;
     std::string          m_ChunkPath;
+    std::string          m_SolarSystemPath;
+    std::string          m_ConfigPath;
     bool                 m_Dirty{false};
 };
 

@@ -148,6 +148,51 @@ bool DevWorldConfig::LoadFromFile(const std::string& path)
 }
 
 // ---------------------------------------------------------------------------
+// SaveToFile
+// ---------------------------------------------------------------------------
+
+bool DevWorldConfig::SaveToFile(const std::string& path) const
+{
+    std::ofstream file(path);
+    if (!file.is_open()) {
+        Logger::Log(LogLevel::Warning, "DevWorld",
+                    "Cannot write DevWorld config: " + path);
+        return false;
+    }
+
+    file << "{\n";
+    file << "  \"world\": {\n";
+    file << "    \"id\": \"" << m_WorldId << "\",\n";
+    file << "    \"displayName\": \"" << m_DisplayName << "\",\n";
+    file << "    \"description\": \"" << m_Description << "\",\n";
+    file << "    \"seed\": " << m_Seed << ",\n";
+    file << "    \"terrainSize\": [" << m_TerrainSize.X << ", " << m_TerrainSize.Y << ", " << m_TerrainSize.Z << "],\n";
+    file << "    \"gravity\": " << m_Gravity << "\n";
+    file << "  },\n";
+
+    file << "  \"spawn\": {\n";
+    file << "    \"position\": [" << m_Spawn.Position.X << ", " << m_Spawn.Position.Y << ", " << m_Spawn.Position.Z << "],\n";
+    file << "    \"rotation\": [" << m_Spawn.Rotation.X << ", " << m_Spawn.Rotation.Y << ", " << m_Spawn.Rotation.Z << ", " << m_Spawn.Rotation.W << "],\n";
+    file << "    \"lookDirection\": [" << m_Spawn.LookDirection.X << ", " << m_Spawn.LookDirection.Y << ", " << m_Spawn.LookDirection.Z << "]\n";
+    file << "  },\n";
+
+    file << "  \"camera\": {\n";
+    file << "    \"fov\": " << m_Camera.FOV << ",\n";
+    file << "    \"nearClip\": " << m_Camera.NearClip << ",\n";
+    file << "    \"farClip\": " << m_Camera.FarClip << ",\n";
+    file << "    \"moveSpeed\": " << m_Camera.MoveSpeed << ",\n";
+    file << "    \"lookSensitivity\": " << m_Camera.LookSensitivity << "\n";
+    file << "  }\n";
+
+    file << "}\n";
+
+    Logger::Log(LogLevel::Info, "DevWorld",
+                "Saved DevWorld config: " + m_DisplayName
+                + " (seed=" + std::to_string(m_Seed) + ") to " + path);
+    return true;
+}
+
+// ---------------------------------------------------------------------------
 // Defaults
 // ---------------------------------------------------------------------------
 

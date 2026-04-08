@@ -48,15 +48,26 @@ public:
     /// @brief Return the currently selected entity.
     [[nodiscard]] EntityId GetSelectedEntity() const noexcept { return m_SelectedEntity; }
 
-    /// @brief Register a callback invoked whenever the selection changes.
+    /// @brief Register a callback invoked whenever the entity selection changes.
     void SetOnSelectionChanged(std::function<void(EntityId)> cb) { m_OnSelectionChanged = std::move(cb); }
+
+    /// @brief Register a callback invoked when a chunk row is clicked.
+    void SetOnChunkSelected(std::function<void(const RuntimeChunkMetadata&)> cb) { m_OnChunkSelected = std::move(cb); }
+
+    /// @brief Register a callback invoked when the world root node is clicked.
+    void SetOnWorldSelected(std::function<void()> cb) { m_OnWorldSelected = std::move(cb); }
 
 private:
     World*                        m_World{nullptr};
     UIRenderer*                   m_Renderer{nullptr};
     const EditorInputState*       m_Input{nullptr};
     EntityId                      m_SelectedEntity{NullEntity};
-    std::function<void(EntityId)> m_OnSelectionChanged;
+    std::function<void(EntityId)>                   m_OnSelectionChanged;
+    std::function<void(const RuntimeChunkMetadata&)> m_OnChunkSelected;
+    std::function<void()>                            m_OnWorldSelected;
+
+    std::uint64_t                    m_SelectedChunkId{0}; ///< 0 = no chunk selected.
+    bool                             m_WorldNodeSelected{false};
 
     // World / chunk tree data (updated each frame via SetChunkData)
     std::string                      m_WorldName;

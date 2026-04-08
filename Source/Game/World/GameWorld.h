@@ -82,8 +82,11 @@ public:
     /// @copydoc GetLevel()
     [[nodiscard]] const Level& GetLevel() const noexcept { return m_Level; }
 
-    /// @brief Returns the dev world configuration.
+    /// @brief Returns the dev world configuration (read-only).
     [[nodiscard]] const DevWorldConfig& GetConfig() const noexcept { return m_Config; }
+
+    /// @brief Returns the dev world configuration (mutable, for editor use).
+    [[nodiscard]] DevWorldConfig& GetMutableConfig() noexcept { return m_Config; }
 
     /// @brief Returns the player entity id, or NullEntity if none.
     [[nodiscard]] EntityId GetPlayerEntity() const noexcept { return m_PlayerEntity; }

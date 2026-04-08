@@ -35,10 +35,30 @@ void SceneOutliner::Draw(float x, float y, float w, float h) {
 
     // ---- World / chunk tree section -----------------------------------------
     if (!m_WorldName.empty()) {
-        // World root node
-        m_Renderer->DrawText(m_WorldName,
-                             x + padX, cy, kWorldColor, scale);
-        cy += lineH;
+        // World root node — clickable
+        {
+            const bool hovered = m_Input &&
+                                 m_Input->mouseX >= x           && m_Input->mouseX < x + w &&
+                                 m_Input->mouseY >= cy          && m_Input->mouseY < cy + lineH;
+            const bool selected = m_WorldNodeSelected && m_SelectedEntity == NullEntity && m_SelectedChunkId == 0;
+
+            if (selected) {
+                m_Renderer->DrawRect({x, cy, w, lineH}, kSelectColor);
+            } else if (hovered) {
+                m_Renderer->DrawRect({x, cy, w, lineH}, kHoverColor);
+            }
+
+            if (hovered && m_Input->leftJustPressed) {
+                m_WorldNodeSelected = true;
+                m_SelectedEntity    = NullEntity;
+                m_SelectedChunkId   = 0;
+                if (m_OnWorldSelected) m_OnWorldSelected();
+            }
+
+            m_Renderer->DrawText(m_WorldName,
+                                 x + padX, cy, kWorldColor, scale);
+            cy += lineH;
+        }
 
         if (!m_Chunks.empty()) {
             // "Chunks" folder node
@@ -50,11 +70,30 @@ void SceneOutliner::Draw(float x, float y, float w, float h) {
             for (const auto& meta : m_Chunks) {
                 if (cy + lineH > y + h) break;
 
+                const bool hovered  = m_Input &&
+                                      m_Input->mouseX >= x           && m_Input->mouseX < x + w &&
+                                      m_Input->mouseY >= cy          && m_Input->mouseY < cy + lineH;
+                const bool selected = (meta.id == m_SelectedChunkId);
+
+                if (selected) {
+                    m_Renderer->DrawRect({x, cy, w, lineH}, kSelectColor);
+                } else if (hovered) {
+                    m_Renderer->DrawRect({x, cy, w, lineH}, kHoverColor);
+                }
+
+                if (hovered && m_Input->leftJustPressed) {
+                    m_SelectedChunkId   = meta.id;
+                    m_SelectedEntity    = NullEntity;
+                    m_WorldNodeSelected = false;
+                    if (m_OnChunkSelected) m_OnChunkSelected(meta);
+                }
+
                 std::string label = "    " + meta.label;
                 if (meta.dirty) label += " [*]";
 
-                const uint32_t col = meta.dirty ? kDirtyColor : kTextColor;
-                m_Renderer->DrawText(label, x + padX, cy, col, scale);
+                const uint32_t rowTextCol = selected ? 0xFFFFFFFF
+                                          : (meta.dirty ? kDirtyColor : kTextColor);
+                m_Renderer->DrawText(label, x + padX, cy, rowTextCol, scale);
                 cy += lineH;
             }
         } else {
@@ -96,7 +135,9 @@ void SceneOutliner::Draw(float x, float y, float w, float h) {
         }
 
         if (hovered && m_Input->leftJustPressed) {
-            m_SelectedEntity = e;
+            m_SelectedEntity    = e;
+            m_SelectedChunkId   = 0;
+            m_WorldNodeSelected = false;
             if (m_OnSelectionChanged) m_OnSelectionChanged(e);
         }
 

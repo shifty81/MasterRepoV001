@@ -279,6 +279,7 @@ bool EditorApp::Init() {
         const std::string worldName =
             manifest.IsValid() ? manifest.DefaultWorld : "DevWorld";
         m_WorldSession.Init(m_GameWorld, m_Level, contentRoot, worldName);
+        m_WorldSession.SetSolarSystem(&m_DevSolarSystem);
         m_GameWorld.Initialize(contentRoot, worldName);
         m_WorldSession.LoadSavedChunks();
     }
@@ -442,6 +443,30 @@ bool EditorApp::Init() {
         UpdateViewportHighlight();
         // Sync gizmo to the selected entity.
         m_TransformGizmo.SetSelectedEntity(id);
+    });
+
+    // Chunk selection from SceneOutliner
+    m_SceneOutliner.SetOnChunkSelected([this](const RuntimeChunkMetadata& meta) {
+        nf::SelectionHandle handle;
+        handle.kind  = nf::SelectionKind::Chunk;
+        handle.id    = meta.id;
+        handle.label = meta.label;
+        m_Selection.Select(handle);
+        m_Inspector.SetSelectedEntity(NullEntity, nullptr);
+        BuildPropertySetForSelection(handle);
+        UpdateViewportHighlight();
+    });
+
+    // World root selection from SceneOutliner — shows world properties
+    m_SceneOutliner.SetOnWorldSelected([this]() {
+        nf::SelectionHandle handle;
+        handle.kind  = nf::SelectionKind::WorldObject;
+        handle.id    = 0; // 0 indicates the world root itself, not an entity
+        handle.label = m_WorldSession.GetWorldName();
+        m_Selection.Select(handle);
+        m_Inspector.SetSelectedEntity(NullEntity, nullptr);
+        BuildPropertySetForSelection(handle);
+        UpdateViewportHighlight();
     });
 
     // Use manifest content root if available, else default
@@ -932,21 +957,123 @@ void EditorApp::BuildPropertySetForSelection(const nf::SelectionHandle& handle)
 
     switch (handle.kind) {
     case nf::SelectionKind::WorldObject:
-        ps.entries.push_back({
-            "Kind", nf::PropertyType::String, nf::PropertyWidgetHint::ReadOnlyLabel,
-            std::string("WorldObject"), {}, true, false
-        });
+        if (handle.id == 0) {
+            // World root selected — show world definition properties.
+            ps.title = "World Properties";
+            ps.entries.clear(); // Replace default entries with world-specific ones.
+
+            const auto& cfg = m_GameWorld.GetConfig();
+            ps.entries.push_back({
+                "WorldId", nf::PropertyType::String, nf::PropertyWidgetHint::ReadOnlyLabel,
+                cfg.WorldId(), {}, true, false
+            });
+            ps.entries.push_back({
+                "DisplayName", nf::PropertyType::String, nf::PropertyWidgetHint::ReadOnlyLabel,
+                cfg.DisplayName(), {}, true, false
+            });
+            ps.entries.push_back({
+                "Seed", nf::PropertyType::Int, nf::PropertyWidgetHint::ReadOnlyLabel,
+                static_cast<int>(cfg.Seed()), {}, true, false
+            });
+            ps.entries.push_back({
+                "Gravity", nf::PropertyType::Float, nf::PropertyWidgetHint::NumericField,
+                cfg.Gravity(), {}, false, false
+            });
+
+            const auto& sp = cfg.GetSpawnPoint();
+            ps.entries.push_back({
+                "SpawnX", nf::PropertyType::Float, nf::PropertyWidgetHint::NumericField,
+                sp.Position.X, {}, false, false
+            });
+            ps.entries.push_back({
+                "SpawnY", nf::PropertyType::Float, nf::PropertyWidgetHint::NumericField,
+                sp.Position.Y, {}, false, false
+            });
+            ps.entries.push_back({
+                "SpawnZ", nf::PropertyType::Float, nf::PropertyWidgetHint::NumericField,
+                sp.Position.Z, {}, false, false
+            });
+
+            ps.entries.push_back({
+                "TerrainW", nf::PropertyType::Float, nf::PropertyWidgetHint::ReadOnlyLabel,
+                cfg.TerrainSize().X, {}, true, false
+            });
+            ps.entries.push_back({
+                "TerrainH", nf::PropertyType::Float, nf::PropertyWidgetHint::ReadOnlyLabel,
+                cfg.TerrainSize().Y, {}, true, false
+            });
+            ps.entries.push_back({
+                "TerrainD", nf::PropertyType::Float, nf::PropertyWidgetHint::ReadOnlyLabel,
+                cfg.TerrainSize().Z, {}, true, false
+            });
+
+            ps.entries.push_back({
+                "Chunks", nf::PropertyType::Int, nf::PropertyWidgetHint::ReadOnlyLabel,
+                m_GameWorld.GetLoadedChunkCount(), {}, true, false
+            });
+        } else {
+            // Entity selected.
+            ps.entries.push_back({
+                "Kind", nf::PropertyType::String, nf::PropertyWidgetHint::ReadOnlyLabel,
+                std::string("Entity"), {}, true, false
+            });
+            // Show whether this is the player entity.
+            const bool isPlayer = (static_cast<EntityId>(handle.id) == m_GameWorld.GetPlayerEntity());
+            ps.entries.push_back({
+                "IsPlayer", nf::PropertyType::Bool, nf::PropertyWidgetHint::ReadOnlyLabel,
+                isPlayer, {}, true, false
+            });
+            // Show the spawn position for the player entity (editable).
+            if (isPlayer) {
+                const auto& sp = m_GameWorld.GetSpawnPoint();
+                ps.entries.push_back({
+                    "SpawnX", nf::PropertyType::Float, nf::PropertyWidgetHint::NumericField,
+                    sp.Position.X, {}, false, false
+                });
+                ps.entries.push_back({
+                    "SpawnY", nf::PropertyType::Float, nf::PropertyWidgetHint::NumericField,
+                    sp.Position.Y, {}, false, false
+                });
+                ps.entries.push_back({
+                    "SpawnZ", nf::PropertyType::Float, nf::PropertyWidgetHint::NumericField,
+                    sp.Position.Z, {}, false, false
+                });
+            }
+        }
         break;
-    case nf::SelectionKind::Chunk:
+    case nf::SelectionKind::Chunk: {
+        ps.title = "Chunk";
         ps.entries.push_back({
             "Kind", nf::PropertyType::String, nf::PropertyWidgetHint::ReadOnlyLabel,
             std::string("Chunk"), {}, true, false
+        });
+        // Decode the packed chunk coordinate.
+        const int32_t cx = nf::UnpackVoxelCoord(handle.id, 0);
+        const int32_t cy = nf::UnpackVoxelCoord(handle.id, nf::kVoxelCoordBits);
+        const int32_t cz = nf::UnpackVoxelCoord(handle.id, nf::kVoxelCoordBits * 2);
+        ps.entries.push_back({"ChunkX", nf::PropertyType::Int, nf::PropertyWidgetHint::ReadOnlyLabel,
+            static_cast<int>(cx), {}, true, false});
+        ps.entries.push_back({"ChunkY", nf::PropertyType::Int, nf::PropertyWidgetHint::ReadOnlyLabel,
+            static_cast<int>(cy), {}, true, false});
+        ps.entries.push_back({"ChunkZ", nf::PropertyType::Int, nf::PropertyWidgetHint::ReadOnlyLabel,
+            static_cast<int>(cz), {}, true, false});
+        // Show whether the chunk is dirty.
+        NF::Game::ChunkCoord coord{cx, cy, cz};
+        const auto* chunk = m_GameWorld.GetChunkMap().GetChunk(coord);
+        ps.entries.push_back({
+            "Loaded", nf::PropertyType::Bool, nf::PropertyWidgetHint::ReadOnlyLabel,
+            (chunk != nullptr), {}, true, false
+        });
+        ps.entries.push_back({
+            "Dirty", nf::PropertyType::Bool, nf::PropertyWidgetHint::ReadOnlyLabel,
+            (chunk != nullptr && chunk->IsDirty()), {}, true, false
         });
         ps.entries.push_back({
             "Visible", nf::PropertyType::Bool, nf::PropertyWidgetHint::Checkbox,
             true, {}, false, false
         });
         break;
+    }
     case nf::SelectionKind::Voxel: {
         ps.entries.push_back({
             "Kind", nf::PropertyType::String, nf::PropertyWidgetHint::ReadOnlyLabel,
@@ -1113,6 +1240,47 @@ void EditorApp::ApplyPropertyEditsToWorld()
                 }
                 break;
             }
+        }
+    }
+
+    // Handle world-root and player-entity property edits (spawn, gravity).
+    if (handle.kind == nf::SelectionKind::WorldObject) {
+        auto& cfg = m_GameWorld.GetMutableConfig();
+        const auto& ps = m_PropertyInspectorSystem.GetPropertySet();
+        bool anyEdited = false;
+
+        for (const auto& entry : ps.entries) {
+            if (!entry.dirty) continue;
+
+            if (entry.name == "Gravity" && std::holds_alternative<float>(entry.value)) {
+                cfg.SetGravity(std::get<float>(entry.value));
+                anyEdited = true;
+            }
+            if (entry.name == "SpawnX" && std::holds_alternative<float>(entry.value)) {
+                auto sp = cfg.GetSpawnPoint().Position;
+                sp.X = std::get<float>(entry.value);
+                cfg.SetSpawnPosition(sp);
+                anyEdited = true;
+            }
+            if (entry.name == "SpawnY" && std::holds_alternative<float>(entry.value)) {
+                auto sp = cfg.GetSpawnPoint().Position;
+                sp.Y = std::get<float>(entry.value);
+                cfg.SetSpawnPosition(sp);
+                anyEdited = true;
+            }
+            if (entry.name == "SpawnZ" && std::holds_alternative<float>(entry.value)) {
+                auto sp = cfg.GetSpawnPoint().Position;
+                sp.Z = std::get<float>(entry.value);
+                cfg.SetSpawnPosition(sp);
+                anyEdited = true;
+            }
+        }
+
+        if (anyEdited) {
+            m_ToolContext.worldDirty = true;
+            m_WorldSession.MarkDirty();
+            Logger::Log(LogLevel::Info, "Editor",
+                        "World properties edited via Inspector");
         }
     }
 }
