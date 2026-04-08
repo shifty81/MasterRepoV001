@@ -1171,9 +1171,9 @@ void EditorApp::TickFrame(float dt)
     if (isPiePlaying && !m_WasPiePlaying) {
         // PIE just started — save camera state and place player at spawn.
         m_PrePieCameraTarget = m_Viewport.GetCameraTarget();
-        m_PrePieCameraZoom   = m_Viewport.GetCameraEye().Y; // approximate
-        m_PrePieCameraPitch  = 0.6f;
-        m_PrePieCameraYaw    = 0.f;
+        m_PrePieCameraZoom   = m_Viewport.GetCameraZoom();
+        m_PrePieCameraPitch  = m_Viewport.GetCameraPitch();
+        m_PrePieCameraYaw    = m_Viewport.GetCameraYaw();
         const auto& sp = m_GameWorld.GetSpawnPoint();
         m_PiePlayer.SetPosition({sp.Position.X, sp.Position.Y + 2.f, sp.Position.Z});
         Logger::Log(LogLevel::Info, "Editor", "PIE — player spawned at ("
@@ -1183,6 +1183,9 @@ void EditorApp::TickFrame(float dt)
     if (!isPiePlaying && !isPiePaused && m_WasPiePlaying) {
         // PIE just stopped — restore orbit camera.
         m_Viewport.SetCameraTarget(m_PrePieCameraTarget);
+        m_Viewport.SetCameraZoom(m_PrePieCameraZoom);
+        m_Viewport.SetCameraPitch(m_PrePieCameraPitch);
+        m_Viewport.SetCameraYaw(m_PrePieCameraYaw);
         Logger::Log(LogLevel::Info, "Editor", "PIE — orbit camera restored");
     }
     m_WasPiePlaying = isPiePlaying || isPiePaused;
