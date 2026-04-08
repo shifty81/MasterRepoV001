@@ -9,6 +9,9 @@
 #include "Editor/Commands/VoxelEditCommands.h"
 #include <algorithm>
 #include <chrono>
+#include <cmath>
+#include <filesystem>
+#include <vector>
 
 #ifdef _WIN32
 // Require Windows 10 minimum for per-monitor V2 DPI awareness and GetDpiForWindow.
@@ -268,15 +271,15 @@ bool EditorApp::Init() {
         return false;
     }
 
-    Logger::Log(LogLevel::Info, "Editor", "[4/6] EditorApp — loading dev world");
-    // Load the dev world via GameWorld (Phase 1: wired editor load path)
+    Logger::Log(LogLevel::Info, "Editor", "[4/6] EditorApp — loading world");
+    // Load the world via GameWorld
     {
         const std::string contentRoot =
             manifest.IsValid() ? manifest.ContentRoot : "Content";
         const std::string worldName =
             manifest.IsValid() ? manifest.DefaultWorld : "DevWorld";
         m_WorldSession.Init(m_GameWorld, m_Level, contentRoot, worldName);
-        m_GameWorld.Initialize(contentRoot);
+        m_GameWorld.Initialize(contentRoot, worldName);
         m_WorldSession.LoadSavedChunks();
     }
     m_Level.Load(manifest.IsValid() ? manifest.DefaultWorld : "DevWorld");
@@ -594,6 +597,61 @@ void EditorApp::RegisterEditorCommands()
         }
     });
 
+    // File.OpenWorld — load a world by name.
+    // The world definition file must exist in Content/Definitions/<name>.json.
+    // If a matching chunk file exists in Content/Worlds/<name>.nfck, saved
+    // voxel edits are restored on top of the procedural terrain.
+    m_CommandRegistry.Register(nf::EditorCommand{
+        "File.OpenWorld",
+        "Open World...",
+        nullptr,
+        [this](EditorCommandContext&) {
+            // List available world definitions.
+            namespace fs = std::filesystem;
+            const std::string defDir = m_WorldSession.GetContentRoot() + "/Definitions";
+            std::vector<std::string> worlds;
+            std::error_code ec;
+            if (fs::is_directory(defDir, ec)) {
+                for (const auto& entry : fs::directory_iterator(defDir, ec)) {
+                    if (entry.path().extension() == ".json") {
+                        worlds.push_back(entry.path().stem().string());
+                    }
+                }
+            }
+            std::sort(worlds.begin(), worlds.end());
+
+            if (worlds.empty()) {
+                Logger::Log(LogLevel::Warning, "Editor",
+                            "No world definitions found in " + defDir);
+                return;
+            }
+
+            // Pick the next world that isn't the current one, or cycle back.
+            const std::string& current = m_WorldSession.GetWorldName();
+            std::string target = worlds[0];
+            for (size_t i = 0; i < worlds.size(); ++i) {
+                if (worlds[i] == current && i + 1 < worlds.size()) {
+                    target = worlds[i + 1];
+                    break;
+                }
+            }
+            // If only one world and it's the same, reload it.
+            if (target == current) {
+                Logger::Log(LogLevel::Info, "Editor",
+                            "Only one world definition available: " + current);
+            }
+
+            m_WorldSession.LoadWorld(target);
+            m_SceneOutliner.SetWorld(&m_Level.GetWorld());
+            m_MeshCache.RebuildDirty(m_GameWorld.GetChunkMap());
+            m_Selection.Clear();
+            m_ToolContext.worldDirty = false;
+            m_CommandHistory = CommandHistory{};
+            Logger::Log(LogLevel::Info, "Editor",
+                        "Opened world: " + target);
+        }
+    });
+
     // File.Exit
     m_CommandRegistry.Register(nf::EditorCommand{
         "File.Exit",
@@ -719,7 +777,7 @@ void EditorApp::ProcessHotkeys()
 void EditorApp::UpdateStatusBar()
 {
     nf::StatusBarState state;
-    state.activeWorld     = m_GameWorld.IsReady() ? "DevWorld" : "No World";
+    state.activeWorld     = m_GameWorld.IsReady() ? m_WorldSession.GetWorldName() : "No World";
     state.activeTool      = ToolModeName(m_ToolContext.activeMode);
     state.selectionSummary = m_Selection.GetSelectionLabel();
     state.worldReadiness  = m_GameWorld.IsReady() ? "Ready" : "Not Ready";
@@ -1013,7 +1071,7 @@ void EditorApp::RebuildWorldOutliner()
     }
 
     m_SceneOutliner.SetChunkData(
-        m_GameWorld.IsReady() ? "DevWorld" : "No World",
+        m_GameWorld.IsReady() ? m_WorldSession.GetWorldName() : "No World",
         std::move(chunks));
 }
 
@@ -1107,6 +1165,31 @@ void EditorApp::TickFrame(float dt)
 
     m_DockingSystem.BuildLayout(0.f, dockY, dockW, dockH);
 
+    // ---- PIE state transitions ----
+    const bool isPiePlaying = m_Toolbar.IsPiePlaying();
+    const bool isPiePaused  = m_Toolbar.IsPiePaused();
+    if (isPiePlaying && !m_WasPiePlaying) {
+        // PIE just started — save camera state and place player at spawn.
+        m_PrePieCameraTarget = m_Viewport.GetCameraTarget();
+        m_PrePieCameraZoom   = m_Viewport.GetCameraZoom();
+        m_PrePieCameraPitch  = m_Viewport.GetCameraPitch();
+        m_PrePieCameraYaw    = m_Viewport.GetCameraYaw();
+        const auto& sp = m_GameWorld.GetSpawnPoint();
+        m_PiePlayer.SetPosition({sp.Position.X, sp.Position.Y + 2.f, sp.Position.Z});
+        Logger::Log(LogLevel::Info, "Editor", "PIE — player spawned at ("
+            + std::to_string(sp.Position.X) + ", " + std::to_string(sp.Position.Y + 2.f)
+            + ", " + std::to_string(sp.Position.Z) + ")");
+    }
+    if (!isPiePlaying && !isPiePaused && m_WasPiePlaying) {
+        // PIE just stopped — restore orbit camera.
+        m_Viewport.SetCameraTarget(m_PrePieCameraTarget);
+        m_Viewport.SetCameraZoom(m_PrePieCameraZoom);
+        m_Viewport.SetCameraPitch(m_PrePieCameraPitch);
+        m_Viewport.SetCameraYaw(m_PrePieCameraYaw);
+        Logger::Log(LogLevel::Info, "Editor", "PIE — orbit camera restored");
+    }
+    m_WasPiePlaying = isPiePlaying || isPiePaused;
+
     // Query viewport panel bounds for 3D scene rendering.
     float vpX = 0.f, vpY = 0.f, vpW = 0.f, vpH = 0.f;
     const bool hasViewport = m_DockingSystem.GetPanelRect("Viewport", vpX, vpY, vpW, vpH);
@@ -1129,15 +1212,33 @@ void EditorApp::TickFrame(float dt)
         m_RenderDevice->SetScissorRect(glX, glY, glW, glH);
         m_RenderDevice->Clear(0.12f, 0.12f, 0.14f, 1.f);
 
-        Matrix4x4 view = m_Viewport.GetViewMatrix();
-        Matrix4x4 proj = m_Viewport.GetProjectionMatrix();
+        // During PIE Playing: use first-person camera from PIE player.
+        // During PIE Paused: keep last player camera but don't advance.
+        // Otherwise: use the orbit editor camera.
+        Matrix4x4 view, proj;
+        if (isPiePlaying || isPiePaused) {
+            if (isPiePlaying) {
+                HandlePieInput(dt);
+                m_PiePlayer.Update(dt, m_GameWorld.GetChunkMap());
+            }
+            view = GetPieViewMatrix();
+            proj = GetPieProjectionMatrix();
+        } else {
+            view = m_Viewport.GetViewMatrix();
+            proj = m_Viewport.GetProjectionMatrix();
+        }
+
         m_ForwardRenderer.BeginScene(view, proj);
-        m_MeshCache.SetCameraPosition(m_Viewport.GetCameraEye());
+        const Vector3 camEye = (isPiePlaying || isPiePaused)
+            ? m_PiePlayer.GetEyePosition()
+            : m_Viewport.GetCameraEye();
+        m_MeshCache.SetCameraPosition(camEye);
         m_MeshCache.SetViewProjection(proj * view);
         m_MeshCache.Render();
 
-        // Render the low-poly player character at the world spawn position.
-        if (m_CharacterRenderer.IsReady()) {
+        // Render the low-poly player character at the world spawn position
+        // (only in editor mode — during PIE the player IS at the character).
+        if (m_CharacterRenderer.IsReady() && !isPiePlaying && !isPiePaused) {
             const auto& sp = m_GameWorld.GetSpawnPoint();
             m_CharacterRenderer.Render(m_ForwardRenderer, sp.Position, /* yawRadians= */ 0.f);
         }
@@ -1238,9 +1339,9 @@ void EditorApp::TickFrame(float dt)
     // Sync the serialized docking layout so the next autosave captures any
     // split-ratio or tab changes the user made this frame.
     m_PreferencesPanel.GetData().dockLayout = m_DockingSystem.SerializeLayout();
-    // Tick the interaction loop every frame so RigState (energy recharge,
-    // tool state) stays live whether or not PIE is active.
-    m_InteractionLoop.Tick(dt);
+    // Tick the interaction loop only while PIE is actively playing.
+    if (isPiePlaying)
+        m_InteractionLoop.Tick(dt);
 
     // ---- Band 1: Toolbar strip at the top ----
     m_Toolbar.Draw(0.f, 0.f, static_cast<float>(m_ClientWidth), toolbarH);
@@ -1354,6 +1455,66 @@ void EditorApp::Shutdown() {
     m_Hwnd = nullptr;
     UnregisterClassW(L"NovaForgeEditor", GetModuleHandleW(nullptr));
 #endif
+}
+
+// ---------------------------------------------------------------------------
+// PIE (Play-In-Editor) helpers
+// ---------------------------------------------------------------------------
+
+void EditorApp::HandlePieInput(float /*dt*/)
+{
+#ifdef _WIN32
+    float forward = 0.f, right = 0.f;
+    if (m_Input.keysDown[0x57]) forward += 1.f; // W
+    if (m_Input.keysDown[0x53]) forward -= 1.f; // S
+    if (m_Input.keysDown[0x44]) right   += 1.f; // D
+    if (m_Input.keysDown[0x41]) right   -= 1.f; // A
+
+    const bool jump   = m_Input.keysJustPressed[0x20]; // Space
+    const bool sprint = m_Input.keysDown[0x10];         // Shift
+
+    m_PiePlayer.SetMoveInput(forward, right, jump, sprint);
+
+    // Apply mouse look only when right mouse button is held (matching game controls).
+    if (m_Input.rightDown && (m_Input.mouseDeltaX != 0.f || m_Input.mouseDeltaY != 0.f))
+        m_PiePlayer.ApplyMouseLook(m_Input.mouseDeltaX, m_Input.mouseDeltaY);
+#endif
+}
+
+Matrix4x4 EditorApp::GetPieViewMatrix() const noexcept
+{
+    const Vector3 eye = m_PiePlayer.GetEyePosition();
+    const Vector3 viewDir = m_PiePlayer.GetViewDirection();
+
+    Vector3 forward = viewDir;
+    Vector3 right   = forward.Cross({0.f, 1.f, 0.f}).Normalized();
+    Vector3 up      = right.Cross(forward);
+
+    Matrix4x4 v = Matrix4x4::Identity();
+    v.M[0][0] = right.X;    v.M[1][0] = right.Y;    v.M[2][0] = right.Z;
+    v.M[0][1] = up.X;       v.M[1][1] = up.Y;       v.M[2][1] = up.Z;
+    v.M[0][2] = -forward.X; v.M[1][2] = -forward.Y; v.M[2][2] = -forward.Z;
+    v.M[3][0] = -right.Dot(eye);
+    v.M[3][1] = -up.Dot(eye);
+    v.M[3][2] =  forward.Dot(eye);
+    return v;
+}
+
+Matrix4x4 EditorApp::GetPieProjectionMatrix() const noexcept
+{
+    const float aspect = (m_ClientHeight > 0)
+        ? static_cast<float>(m_ClientWidth) / static_cast<float>(m_ClientHeight) : 1.f;
+    const float fovY  = 0.7854f; // ~45 degrees
+    const float nearZ = 0.1f, farZ = 1000.f;
+    const float f     = 1.f / std::tan(fovY * 0.5f);
+
+    Matrix4x4 p{};
+    p.M[0][0] = f / aspect;
+    p.M[1][1] = f;
+    p.M[2][2] = (farZ + nearZ) / (nearZ - farZ);
+    p.M[2][3] = -1.f;
+    p.M[3][2] = (2.f * farZ * nearZ) / (nearZ - farZ);
+    return p;
 }
 
 } // namespace NF::Editor

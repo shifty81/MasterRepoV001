@@ -27,8 +27,11 @@ public:
 
     /// @brief Initialise the game world using the dev world configuration.
     /// @param contentRoot Project-relative or absolute path to the Content directory.
+    /// @param worldName   Name of the world definition to load (e.g. "DevWorld").
+    ///                     If empty, defaults to "DevWorld".
     /// @return True on success.
-    bool Initialize(const std::string& contentRoot = "Content");
+    bool Initialize(const std::string& contentRoot = "Content",
+                    const std::string& worldName = "DevWorld");
 
     /// @brief Advance the world simulation by one variable-rate tick.
     /// @param dt Elapsed seconds since the last frame.

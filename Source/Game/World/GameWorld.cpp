@@ -5,14 +5,15 @@
 
 namespace NF::Game {
 
-bool GameWorld::Initialize(const std::string& contentRoot)
+bool GameWorld::Initialize(const std::string& contentRoot,
+                           const std::string& worldName)
 {
-    // Load dev world config
-    const std::string configPath = contentRoot + "/Definitions/DevWorld.json";
+    // Load world config from the definitions folder
+    const std::string configPath = contentRoot + "/Definitions/" + worldName + ".json";
     m_UsedFallbackDefinition = false;
     if (!m_Config.LoadFromFile(configPath)) {
         Logger::Log(LogLevel::Warning, "GameWorld",
-                    "DevWorld config not found at " + configPath + "; using defaults");
+                    "World config not found at " + configPath + "; using defaults");
         m_Config = DevWorldConfig::Defaults();
         m_UsedFallbackDefinition = true;
     }

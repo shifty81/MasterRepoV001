@@ -180,14 +180,6 @@ void Orchestrator::Tick(float dt)
 
     // Phase 9: advance audio mixer.
     m_AudioMixer.Update(dt);
-
-    // Render.
-    if (m_RenderDevice)
-    {
-        m_RenderDevice->BeginFrame();
-        m_RenderDevice->Clear(0.05f, 0.05f, 0.08f, 1.0f);
-        m_RenderDevice->EndFrame();
-    }
 }
 
 // ---------------------------------------------------------------------------

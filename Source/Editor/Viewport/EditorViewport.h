@@ -88,11 +88,20 @@ public:
     /// @brief Set the orbit distance (zoom) from the target.
     void SetCameraZoom(float zoom) noexcept { m_Zoom = zoom; }
 
+    /// @brief Return the current orbit distance (zoom) from the target.
+    [[nodiscard]] float GetCameraZoom() const noexcept { return m_Zoom; }
+
     /// @brief Set the vertical orbit angle in radians.
     void SetCameraPitch(float pitch) noexcept { m_Pitch = pitch; }
 
+    /// @brief Return the current vertical orbit angle in radians.
+    [[nodiscard]] float GetCameraPitch() const noexcept { return m_Pitch; }
+
     /// @brief Set the horizontal orbit angle in radians.
     void SetCameraYaw(float yaw) noexcept { m_Yaw = yaw; }
+
+    /// @brief Return the current horizontal orbit angle in radians.
+    [[nodiscard]] float GetCameraYaw() const noexcept { return m_Yaw; }
 
     /// @brief Return the current camera eye position in world space.
     [[nodiscard]] Vector3 GetCameraEye() const noexcept;
