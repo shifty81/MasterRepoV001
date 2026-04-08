@@ -403,6 +403,16 @@ bool EditorApp::Init() {
     m_ProfilerPanel.SetInputState(&m_Input);
     m_ProfilerPanel.SetBackend(&m_ProfilerBackend);
 
+    // Wire SolarSystemPanel + generate the dev solar system and PCG items
+    m_SolarSystemPanel.SetUIRenderer(&m_UIRenderer);
+    m_SolarSystemPanel.SetInputState(&m_Input);
+    m_DevSolarSystem.SetSeed(m_GameWorld.GetConfig().Seed());
+    m_DevSolarSystem.Generate();
+    m_PCGItemGen.SetSeed(m_DevSolarSystem.GetSeed());
+    m_PCGItemGen.GenerateForSystem(m_DevSolarSystem);
+    m_SolarSystemPanel.SetSolarSystem(&m_DevSolarSystem);
+    m_SolarSystemPanel.SetItemGen(&m_PCGItemGen);
+
     // Wire PropertyInspectorSystem to Inspector so it renders the property grid
     m_Inspector.SetPropertyInspectorSystem(&m_PropertyInspectorSystem);
     m_Inspector.SetOnPropertyEdited([this]() {
@@ -510,6 +520,10 @@ bool EditorApp::Init() {
         [this](float x, float y, float w, float h) {
             m_ProfilerPanel.Draw(x, y, w, h);
         });
+    m_DockingSystem.RegisterPanel("SolarSystem",
+        [this](float x, float y, float w, float h) {
+            m_SolarSystemPanel.Draw(x, y, w, h);
+        });
 
     // ---- Unreal-like layout with tabbed regions and full-width bottom dock ----
     //
@@ -537,11 +551,12 @@ bool EditorApp::Init() {
     // Tabs on the right: Inspector + VoxelInspector + Preferences
     m_DockingSystem.AddTab("Inspector", "VoxelInspector");
     m_DockingSystem.AddTab("Inspector", "Preferences");
-    // Tabs on the bottom: Console + ContentBrowser + WorldDebug + MaterialEditor + Profiler
+    // Tabs on the bottom: Console + ContentBrowser + WorldDebug + MaterialEditor + Profiler + SolarSystem
     m_DockingSystem.AddTab("Console", "ContentBrowser");
     m_DockingSystem.AddTab("Console", "WorldDebug");
     m_DockingSystem.AddTab("Console", "MaterialEditor");
     m_DockingSystem.AddTab("Console", "Profiler");
+    m_DockingSystem.AddTab("Console", "SolarSystem");
 
     // The Viewport panel sits directly over the OpenGL 3-D render target.
     // Skip drawing an opaque 2-D background for it so the scene is visible.
@@ -1209,6 +1224,7 @@ void EditorApp::TickFrame(float dt)
     m_WorldDebugPanel.Update(dt);
     m_PreferencesPanel.Update(dt);
     m_ProfilerPanel.Update(dt);
+    m_SolarSystemPanel.Update(dt);
     // Apply theme changes from preferences only when the selection changes.
     {
         static EditorTheme s_LastAppliedTheme = m_PreferencesPanel.GetData().theme;

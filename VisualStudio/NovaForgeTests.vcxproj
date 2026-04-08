@@ -345,6 +345,7 @@
     <ClCompile Include="..\Tests\Engine\BehaviorTreeTests.cpp" />
     <ClCompile Include="..\Tests\Engine\ECSTests.cpp" />
     <ClCompile Include="..\Tests\Gameplay\GameplayTests.cpp" />
+    <ClCompile Include="..\Tests\SolarSystem\SolarSystemTests.cpp" />
     <ClCompile Include="..\Tests\Input\GamepadTests.cpp" />
     <ClCompile Include="..\Tests\Interaction\InteractionTests.cpp" />
     <ClCompile Include="..\Tests\Movement\MovementTests.cpp" />

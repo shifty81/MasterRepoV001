@@ -33,7 +33,10 @@
 #include "Editor/Panels/MaterialEditorPanel.h"
 #include "Editor/Panels/LiveProfilerBackend.h"
 #include "Editor/Panels/LiveProfilerPanel.h"
+#include "Editor/Panels/SolarSystemPanel.h"
 #include "Game/Character/PlayerCharacterRenderer.h"
+#include "Game/Gameplay/SolarSystem/DevSolarSystem.h"
+#include "Game/Gameplay/PCG/PCGItemGen.h"
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -112,7 +115,10 @@ private:
     TransformGizmo              m_TransformGizmo;
     LiveProfilerBackend         m_ProfilerBackend;
     LiveProfilerPanel           m_ProfilerPanel;
+    SolarSystemPanel            m_SolarSystemPanel;
     NF::Game::PlayerCharacterRenderer m_CharacterRenderer;
+    NF::Game::Gameplay::DevSolarSystem m_DevSolarSystem;
+    NF::Game::Gameplay::PCGItemGen     m_PCGItemGen;
 
     /// @brief Register all editor commands with the command registry.
     void RegisterEditorCommands();
