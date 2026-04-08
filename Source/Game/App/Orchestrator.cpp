@@ -1,6 +1,7 @@
 #include "Game/App/Orchestrator.h"
 #include "Game/World/DevWorldConfig.h"
 #include "Game/Voxel/ChunkCoord.h"
+#include "Core/Config/ProjectManifest.h"
 #include "Core/Logging/Log.h"
 
 namespace NF::Game {
@@ -31,13 +32,35 @@ bool Orchestrator::Init(RenderDevice* renderDevice, const NetParams& params)
 
     if (m_NetMode != NetMode::Client)
     {
-        m_GameWorld.Initialize("Content");
+        // Read world name and content root from the project manifest so
+        // the game automatically picks up whatever the editor last saved.
+        NF::ProjectManifest manifest;
+        manifest.LoadFromFile("Config/novaforge.project.json");
+
+        const std::string contentRoot =
+            manifest.IsValid() ? manifest.ContentRoot : "Content";
+        const std::string worldName =
+            manifest.IsValid() ? manifest.DefaultWorld : "DevWorld";
+
+        m_GameWorld.Initialize(contentRoot, worldName);
 
         // Load any previously saved chunk data so the game reflects the
         // same world state that was last saved in the editor.
-        m_GameWorld.LoadChunks("Content/Worlds/DevWorld.nfck");
+        m_GameWorld.LoadChunks(contentRoot + "/Worlds/" + worldName + ".nfck");
 
-        m_Level.Load("DevWorld");
+        // Load solar system data if the editor saved one.
+        const std::string solarPath = contentRoot + "/Worlds/" + worldName + ".nfss";
+        if (m_SolarSystem.LoadFromFile(solarPath)) {
+            NF::Logger::Log(NF::LogLevel::Info, "Game",
+                            "Loaded solar system from " + solarPath
+                            + " (" + std::to_string(m_SolarSystem.BodyCount()) + " bodies)");
+        } else {
+            // Fall back to procedural generation from the world seed.
+            m_SolarSystem.SetSeed(m_GameWorld.GetConfig().Seed());
+            m_SolarSystem.Generate();
+        }
+
+        m_Level.Load(worldName);
         m_InteractionLoop.Init(&m_GameWorld.GetVoxelEditApi());
 
         // Phase 8: initialise chunk streamer.

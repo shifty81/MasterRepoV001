@@ -7,6 +7,8 @@
 #include "Game/Gameplay/SolarSystem/DevSolarSystem.h"
 #include <cmath>
 #include <algorithm>
+#include <fstream>
+#include <sstream>
 
 namespace NF::Game::Gameplay {
 
@@ -156,6 +158,167 @@ void DevSolarSystem::RegenerateDeposits() {
     for (size_t i = 0; i < m_Bodies.size(); ++i) {
         GenerateDepositsForBody(m_Bodies[i], Hash(m_Seed + 100 + static_cast<uint32_t>(i)));
     }
+}
+
+// ---------------------------------------------------------------------------
+// SaveToFile — write solar system state to a simple JSON file
+// ---------------------------------------------------------------------------
+
+bool DevSolarSystem::SaveToFile(const std::string& path) const {
+    std::ofstream file(path);
+    if (!file.is_open()) return false;
+
+    file << "{\n  \"seed\": " << m_Seed << ",\n  \"bodies\": [\n";
+    for (size_t i = 0; i < m_Bodies.size(); ++i) {
+        const auto& b = m_Bodies[i];
+        file << "    {\n";
+        file << "      \"id\": " << b.id << ",\n";
+        file << "      \"name\": \"" << b.name << "\",\n";
+        file << "      \"type\": " << static_cast<int>(b.type) << ",\n";
+        file << "      \"orbitRadius\": " << b.orbitRadius << ",\n";
+        file << "      \"orbitalPeriod\": " << b.orbitalPeriod << ",\n";
+        file << "      \"orbitAngle\": " << b.orbitAngle << ",\n";
+        file << "      \"mass\": " << b.mass << ",\n";
+        file << "      \"radius\": " << b.radius << ",\n";
+        file << "      \"temperature\": " << b.temperature << ",\n";
+        file << "      \"color\": " << b.color << ",\n";
+        file << "      \"parentId\": " << b.parentId << ",\n";
+        file << "      \"deposits\": [\n";
+        for (size_t d = 0; d < b.deposits.size(); ++d) {
+            const auto& dep = b.deposits[d];
+            file << "        { \"type\": " << static_cast<int>(dep.type)
+                 << ", \"abundance\": " << dep.abundance
+                 << ", \"worldX\": " << dep.worldX
+                 << ", \"worldZ\": " << dep.worldZ << " }";
+            if (d + 1 < b.deposits.size()) file << ",";
+            file << "\n";
+        }
+        file << "      ]\n";
+        file << "    }";
+        if (i + 1 < m_Bodies.size()) file << ",";
+        file << "\n";
+    }
+    file << "  ]\n}\n";
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+// LoadFromFile — read solar system state from JSON
+// ---------------------------------------------------------------------------
+
+namespace {
+
+// Minimal JSON helpers for loading solar system data.
+
+std::string SSJsonString(const std::string& json, const std::string& key) {
+    const std::string needle = "\"" + key + "\"";
+    auto pos = json.find(needle);
+    if (pos == std::string::npos) return {};
+    pos = json.find(':', pos + needle.size());
+    if (pos == std::string::npos) return {};
+    pos = json.find('"', pos + 1);
+    if (pos == std::string::npos) return {};
+    auto end = json.find('"', pos + 1);
+    if (end == std::string::npos) return {};
+    return json.substr(pos + 1, end - pos - 1);
+}
+
+float SSJsonFloat(const std::string& json, const std::string& key, float fallback) {
+    const std::string needle = "\"" + key + "\"";
+    auto pos = json.find(needle);
+    if (pos == std::string::npos) return fallback;
+    pos = json.find(':', pos + needle.size());
+    if (pos == std::string::npos) return fallback;
+    ++pos;
+    while (pos < json.size() && (json[pos] == ' ' || json[pos] == '\t')) ++pos;
+    try { return std::stof(json.substr(pos)); }
+    catch (...) { return fallback; }
+}
+
+uint32_t SSJsonUInt(const std::string& json, const std::string& key, uint32_t fallback) {
+    return static_cast<uint32_t>(SSJsonFloat(json, key, static_cast<float>(fallback)));
+}
+
+} // anonymous namespace
+
+bool DevSolarSystem::LoadFromFile(const std::string& path) {
+    std::ifstream file(path);
+    if (!file.is_open()) return false;
+
+    std::ostringstream ss;
+    ss << file.rdbuf();
+    const std::string json = ss.str();
+
+    m_Seed = SSJsonUInt(json, "seed", m_Seed);
+
+    // Parse bodies array — find each body block delimited by { }
+    m_Bodies.clear();
+    m_NextId = 1;
+
+    const std::string bodiesKey = "\"bodies\"";
+    auto arrStart = json.find(bodiesKey);
+    if (arrStart == std::string::npos) return false;
+    arrStart = json.find('[', arrStart);
+    if (arrStart == std::string::npos) return false;
+
+    size_t searchPos = arrStart + 1;
+    while (searchPos < json.size()) {
+        auto objStart = json.find('{', searchPos);
+        if (objStart == std::string::npos) break;
+
+        // Find matching close brace (handle nested deposits array)
+        int depth = 0;
+        size_t objEnd = objStart;
+        for (size_t p = objStart; p < json.size(); ++p) {
+            if (json[p] == '{') ++depth;
+            else if (json[p] == '}') { --depth; if (depth == 0) { objEnd = p; break; } }
+        }
+        if (objEnd <= objStart) break;
+
+        const std::string block = json.substr(objStart, objEnd - objStart + 1);
+
+        CelestialBody body;
+        body.id            = SSJsonUInt(block, "id", 0);
+        body.name          = SSJsonString(block, "name");
+        body.type          = static_cast<CelestialBodyType>(SSJsonUInt(block, "type", 1));
+        body.orbitRadius   = SSJsonFloat(block, "orbitRadius", 0.f);
+        body.orbitalPeriod = SSJsonFloat(block, "orbitalPeriod", 1.f);
+        body.orbitAngle    = SSJsonFloat(block, "orbitAngle", 0.f);
+        body.mass          = SSJsonFloat(block, "mass", 1.f);
+        body.radius        = SSJsonFloat(block, "radius", 1.f);
+        body.temperature   = SSJsonFloat(block, "temperature", 288.f);
+        body.color         = SSJsonUInt(block, "color", 0xCCCCCCFF);
+        body.parentId      = SSJsonUInt(block, "parentId", 0);
+
+        // Parse deposits sub-array
+        auto depStart = block.find("\"deposits\"");
+        if (depStart != std::string::npos) {
+            depStart = block.find('[', depStart);
+            if (depStart != std::string::npos) {
+                size_t depSearch = depStart + 1;
+                while (depSearch < block.size()) {
+                    auto ds = block.find('{', depSearch);
+                    if (ds == std::string::npos) break;
+                    auto de = block.find('}', ds);
+                    if (de == std::string::npos) break;
+                    const std::string depBlock = block.substr(ds, de - ds + 1);
+                    ResourceDeposit dep;
+                    dep.type      = static_cast<NF::Game::ResourceType>(SSJsonUInt(depBlock, "type", 0));
+                    dep.abundance = SSJsonFloat(depBlock, "abundance", 0.f);
+                    dep.worldX    = SSJsonFloat(depBlock, "worldX", 0.f);
+                    dep.worldZ    = SSJsonFloat(depBlock, "worldZ", 0.f);
+                    body.deposits.push_back(dep);
+                    depSearch = de + 1;
+                }
+            }
+        }
+
+        if (body.id >= m_NextId) m_NextId = body.id + 1;
+        m_Bodies.push_back(std::move(body));
+        searchPos = objEnd + 1;
+    }
+
+    return !m_Bodies.empty();
 }
 
 } // namespace NF::Game::Gameplay

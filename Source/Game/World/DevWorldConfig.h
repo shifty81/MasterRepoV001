@@ -35,6 +35,11 @@ public:
     /// @return True on success.
     bool LoadFromFile(const std::string& path);
 
+    /// @brief Save configuration back to a JSON file on disk.
+    /// @param path Absolute or project-relative path to the JSON file.
+    /// @return True on success.
+    bool SaveToFile(const std::string& path) const;
+
     /// @brief Return a config populated with compiled-in defaults.
     static DevWorldConfig Defaults();
 
@@ -47,6 +52,11 @@ public:
     [[nodiscard]] uint32_t Seed()       const noexcept { return m_Seed; }
     [[nodiscard]] Vector3  TerrainSize() const noexcept { return m_TerrainSize; }
     [[nodiscard]] float    Gravity()     const noexcept { return m_Gravity; }
+
+    // -- Mutable setters (for editor use) ------------------------------------
+    void SetGravity(float g) noexcept { m_Gravity = g; }
+    void SetSpawnPosition(const Vector3& pos) noexcept { m_Spawn.Position = pos; }
+    void SetSpawnLookDirection(const Vector3& dir) noexcept { m_Spawn.LookDirection = dir; }
 
     // -- Spawn ----------------------------------------------------------------
     [[nodiscard]] const SpawnPoint& GetSpawnPoint() const noexcept { return m_Spawn; }

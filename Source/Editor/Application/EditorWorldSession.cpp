@@ -7,13 +7,15 @@ void EditorWorldSession::Init(NF::Game::GameWorld& world, Level& level,
                                const std::string& contentRoot,
                                const std::string& worldName)
 {
-    m_World       = &world;
-    m_Level       = &level;
-    m_ContentRoot = contentRoot;
-    m_WorldName   = worldName;
-    m_EntityPath  = contentRoot + "/Worlds/" + worldName + ".nfsv";
-    m_ChunkPath   = contentRoot + "/Worlds/" + worldName + ".nfck";
-    m_Dirty       = false;
+    m_World           = &world;
+    m_Level           = &level;
+    m_ContentRoot     = contentRoot;
+    m_WorldName       = worldName;
+    m_EntityPath      = contentRoot + "/Worlds/" + worldName + ".nfsv";
+    m_ChunkPath       = contentRoot + "/Worlds/" + worldName + ".nfck";
+    m_SolarSystemPath = contentRoot + "/Worlds/" + worldName + ".nfss";
+    m_ConfigPath      = contentRoot + "/Definitions/" + worldName + ".json";
+    m_Dirty           = false;
 
     NF::Logger::Log(NF::LogLevel::Info, "EditorWorldSession",
                     "Initialised — world: " + worldName
@@ -43,9 +45,11 @@ void EditorWorldSession::LoadWorld(const std::string& worldName)
                     "Loading world: " + worldName);
 
     m_World->Shutdown();
-    m_WorldName  = worldName;
-    m_EntityPath = m_ContentRoot + "/Worlds/" + worldName + ".nfsv";
-    m_ChunkPath  = m_ContentRoot + "/Worlds/" + worldName + ".nfck";
+    m_WorldName       = worldName;
+    m_EntityPath      = m_ContentRoot + "/Worlds/" + worldName + ".nfsv";
+    m_ChunkPath       = m_ContentRoot + "/Worlds/" + worldName + ".nfck";
+    m_SolarSystemPath = m_ContentRoot + "/Worlds/" + worldName + ".nfss";
+    m_ConfigPath      = m_ContentRoot + "/Definitions/" + worldName + ".json";
 
     m_World->Initialize(m_ContentRoot, worldName);
     LoadSavedChunks();
@@ -66,19 +70,36 @@ bool EditorWorldSession::Save()
     const bool entityOk = m_World->SaveWorld(m_EntityPath);
     const bool chunkOk  = m_World->SaveChunks(m_ChunkPath);
 
-    if (entityOk && chunkOk) {
+    // Save world definition (spawn position, gravity, etc.) so changes
+    // are picked up by the game on next launch.
+    const bool configOk = m_World->GetConfig().SaveToFile(m_ConfigPath);
+
+    // Save solar system data if one is wired up.
+    bool solarOk = true;
+    if (m_SolarSystem) {
+        solarOk = m_SolarSystem->SaveToFile(m_SolarSystemPath);
+        if (solarOk)
+            NF::Logger::Log(NF::LogLevel::Info, "EditorWorldSession",
+                            "Solar system saved");
+    }
+
+    if (entityOk && chunkOk && configOk) {
         m_Dirty = false;
         NF::Logger::Log(NF::LogLevel::Info, "EditorWorldSession",
-                        "World saved (entities + chunks)");
+                        "World saved (entities + chunks + config"
+                        + std::string(m_SolarSystem ? " + solar system" : "")
+                        + ")");
     } else {
         NF::Logger::Log(NF::LogLevel::Warning, "EditorWorldSession",
                         "World save incomplete — entities: "
                         + std::string(entityOk ? "ok" : "FAILED")
                         + ", chunks: "
-                        + std::string(chunkOk ? "ok" : "FAILED"));
+                        + std::string(chunkOk ? "ok" : "FAILED")
+                        + ", config: "
+                        + std::string(configOk ? "ok" : "FAILED"));
     }
 
-    return entityOk && chunkOk;
+    return entityOk && chunkOk && configOk && solarOk;
 }
 
 void EditorWorldSession::Reload()

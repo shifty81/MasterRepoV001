@@ -93,6 +93,17 @@ public:
     ///        Clears any existing bodies.
     void Generate();
 
+    /// @brief Save the solar system to a JSON file.
+    /// @param path File path for the save file.
+    /// @return True on success.
+    bool SaveToFile(const std::string& path) const;
+
+    /// @brief Load a previously saved solar system from a JSON file.
+    ///        Replaces any existing bodies.
+    /// @param path File path for the save file.
+    /// @return True on success.
+    bool LoadFromFile(const std::string& path);
+
     /// @brief Return all bodies (star + planets + moons).
     [[nodiscard]] const std::vector<CelestialBody>& GetBodies() const noexcept { return m_Bodies; }
     [[nodiscard]] std::vector<CelestialBody>& GetBodies() noexcept { return m_Bodies; }
