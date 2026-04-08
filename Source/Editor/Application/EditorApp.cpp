@@ -1249,6 +1249,10 @@ void EditorApp::ApplyPropertyEditsToWorld()
         const auto& ps = m_PropertyInspectorSystem.GetPropertySet();
         bool anyEdited = false;
 
+        // Retrieve spawn position once so multi-axis edits in the same
+        // frame don't overwrite each other.
+        Vector3 spawnPos = cfg.GetSpawnPoint().Position;
+
         for (const auto& entry : ps.entries) {
             if (!entry.dirty) continue;
 
@@ -1257,26 +1261,21 @@ void EditorApp::ApplyPropertyEditsToWorld()
                 anyEdited = true;
             }
             if (entry.name == "SpawnX" && std::holds_alternative<float>(entry.value)) {
-                auto sp = cfg.GetSpawnPoint().Position;
-                sp.X = std::get<float>(entry.value);
-                cfg.SetSpawnPosition(sp);
+                spawnPos.X = std::get<float>(entry.value);
                 anyEdited = true;
             }
             if (entry.name == "SpawnY" && std::holds_alternative<float>(entry.value)) {
-                auto sp = cfg.GetSpawnPoint().Position;
-                sp.Y = std::get<float>(entry.value);
-                cfg.SetSpawnPosition(sp);
+                spawnPos.Y = std::get<float>(entry.value);
                 anyEdited = true;
             }
             if (entry.name == "SpawnZ" && std::holds_alternative<float>(entry.value)) {
-                auto sp = cfg.GetSpawnPoint().Position;
-                sp.Z = std::get<float>(entry.value);
-                cfg.SetSpawnPosition(sp);
+                spawnPos.Z = std::get<float>(entry.value);
                 anyEdited = true;
             }
         }
 
         if (anyEdited) {
+            cfg.SetSpawnPosition(spawnPos);
             m_ToolContext.worldDirty = true;
             m_WorldSession.MarkDirty();
             Logger::Log(LogLevel::Info, "Editor",
