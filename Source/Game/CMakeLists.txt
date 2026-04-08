@@ -55,6 +55,8 @@ add_library(NFGame STATIC
     Gameplay/Mining/MiningSystem.cpp
     Gameplay/Exploration/ExplorationSystem.cpp
     Gameplay/PCG/PCGWorldGen.cpp
+    Gameplay/PCG/PCGItemGen.cpp
+    Gameplay/SolarSystem/DevSolarSystem.cpp
     Gameplay/Progression/ProgressionSystem.cpp
     Gameplay/PlayerSystems/PlayerController.cpp
     Gameplay/Builder/BuilderSystem.cpp

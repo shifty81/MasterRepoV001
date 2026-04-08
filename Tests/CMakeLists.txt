@@ -34,6 +34,7 @@ add_executable(NFTests
     Audio/AudioTests.cpp
     Gameplay/GameplayTests.cpp
     Economy/EconomyTests.cpp
+    SolarSystem/SolarSystemTests.cpp
 )
 
 target_include_directories(NFTests PRIVATE ${CMAKE_SOURCE_DIR}/Source)
