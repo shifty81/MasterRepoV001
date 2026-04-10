@@ -46,6 +46,7 @@
 #include "Game/Gameplay/Salvage/SalvageSystem.h"
 #include "Game/Gameplay/Storage/StorageSystem.h"
 #include "Game/Gameplay/Inventory/InventorySystem.h"
+#include "Game/Gameplay/Fleet/ShipRenderer.h"
 #include "Game/Components/PositionComponent.h"
 #include <cstdint>
 #include <memory>
@@ -130,6 +131,7 @@ private:
     EconomyPanel                m_EconomyPanel;
     InventoryPanel              m_InventoryPanel;
     NF::Game::PlayerCharacterRenderer m_CharacterRenderer;
+    NF::Game::Gameplay::ShipRenderer   m_ShipRenderer;
     NF::Game::Gameplay::DevSolarSystem m_DevSolarSystem;
     NF::Game::Gameplay::PCGItemGen     m_PCGItemGen;
     NF::Game::Gameplay::ExplorationSystem m_ExplorationSystem;

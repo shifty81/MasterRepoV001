@@ -66,6 +66,8 @@ add_library(NFGame STATIC
     Gameplay/Station/StationServices.cpp
     Gameplay/Manufacturing/ManufacturingQueue.cpp
     Gameplay/Fleet/FleetSystem.cpp
+    Gameplay/Fleet/ShipMeshBuilder.cpp
+    Gameplay/Fleet/ShipRenderer.cpp
     Gameplay/WorldSim/WorldSimSystem.cpp
     Gameplay/Inventory/InventorySystem.cpp
     Gameplay/Storage/StorageSystem.cpp
