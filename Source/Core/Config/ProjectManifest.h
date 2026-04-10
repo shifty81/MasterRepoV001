@@ -33,6 +33,9 @@ struct ProjectManifest {
     bool EditorShipsWithGame     = false;
     bool AllowSuiteFeaturesInRepo = false;
 
+    // -- dev block (not shipped; safe to default to false in prod) --
+    bool DevSolarMapEnabled = false;  ///< Exposes solar map overlay in game build.
+
     // -------------------------------------------------------------------------
     // I/O
     // -------------------------------------------------------------------------

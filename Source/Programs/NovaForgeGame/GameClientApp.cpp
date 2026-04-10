@@ -1,4 +1,5 @@
 #include "GameClientApp.h"
+#include "Core/Config/ProjectManifest.h"
 #include "Core/Logging/Log.h"
 #include "Core/Math/Matrix.h"
 #include "Core/Math/Vector.h"
@@ -233,6 +234,16 @@ bool GameClientApp::Init()
         return false;
     }
 
+    // Read dev flags from project manifest to gate dev-only features.
+    {
+        NF::ProjectManifest manifest;
+        manifest.LoadFromFile("Config/novaforge.project.json");
+        m_DevSolarMapEnabled = manifest.DevSolarMapEnabled;
+        if (m_DevSolarMapEnabled)
+            NF::Logger::Log(NF::LogLevel::Info, "GameClient",
+                            "Dev: solar map overlay enabled (M key)");
+    }
+
     // Phase 4: initialise the forward renderer and chunk mesh cache.
     m_ForwardRenderer.Init(m_RenderDevice.get());
     m_MeshCache.Init(&m_ForwardRenderer);
@@ -389,8 +400,8 @@ void GameClientApp::TickFrame(float dt)
         // Handle mining on left click
         HandleMining();
 
-        // M key toggles solar map overlay.
-        if (m_KeysJustPressed[0x4D]) // VK_M
+        // M key toggles solar map overlay (dev-only: gated by config flag).
+        if (m_DevSolarMapEnabled && m_KeysJustPressed[0x4D]) // VK_M
             m_ShowSolarMap = !m_ShowSolarMap;
 
         // Update mine flash timer

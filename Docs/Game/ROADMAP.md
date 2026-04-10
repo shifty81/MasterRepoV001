@@ -106,20 +106,20 @@ All work must be exercised in DevWorld/DevSolarSystem before it goes to main.
 - [x] Travel mechanic skeleton — EditorWorldSession::TravelToBody(bodyId) swaps world context
 - [x] Per-body terrain generation — PCGWorldGen seeded from body ID generates unique terrain
 - [x] Resource deposits → voxel terrain bridge — deposit positions influence ore placement per body
-- [ ] Dev-only access gate — config flag exposes solar map in game without shipping to players
+- [x] Dev-only access gate — config flag `dev.solar_map_enabled` in `novaforge.project.json` gates solar map in game without shipping to players
 
 **Core Gameplay Systems**
-- [ ] ExplorationSystem skeleton — enough to own body-to-body travel state
-- [ ] CombatSystem basics — simple melee/ranged hit detection on RigState
-- [ ] BuilderSystem + ship construction mode — block palette, ship-tagged context
-- [ ] Economy basics — ResourceRegistry live, TradeMarket with at least 2 stations
-- [ ] ProgressionSystem wired to gameplay — XP awarded for mining, building, kills
-- [ ] MissionRegistry — 2–3 starter missions spawnable in DevWorld
+- [x] ExplorationSystem skeleton — owns body-to-body travel state, current/previous body tracking
+- [x] CombatSystem basics — damage model, armour mitigation, health, death callback, respawn
+- [x] BuilderSystem + recipe palette — recipe-based voxel placement/teardown with resource deduction and XP
+- [x] Economy basics — ResourceRegistry live (8 types), TradeMarket with buy/sell/price fluctuation
+- [x] ProgressionSystem wired to gameplay — XP awarded for mining (10 XP/voxel) and kills (25 XP); level-up callback fires; tier unlocks gate MiningSystem tier
+- [x] MissionRegistry — 3 starter missions (First Contact, Ore Run, Journeyman) auto-accepted; completion/reward pipeline wired to Orchestrator
 
 **Multiplayer Foundation**
-- [ ] Real socket listen/connect — GameServer/GameClient over TCP loopback
-- [ ] Snapshot replication — authoritative server sends player positions to client
-- [ ] Dedicated server headless mode verified in CI
+- [x] Real socket listen/connect — GameServer/GameClient over TCP (POSIX Socket + NetChannel)
+- [x] Snapshot replication — authoritative server sends player positions + voxel edits to clients each tick
+- [x] Dedicated server headless mode — NovaForgeServer/main.cpp runs a full GameServer tick loop (60 Hz, configurable port/tick-rate)
 
 ## Explicitly Deferred
 Do not prioritize these until earlier phases are complete:

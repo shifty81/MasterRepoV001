@@ -63,6 +63,53 @@ bool Orchestrator::Init(RenderDevice* renderDevice, const NetParams& params)
         m_Level.Load(worldName);
         m_InteractionLoop.Init(&m_GameWorld.GetVoxelEditApi());
 
+        // ---- Core gameplay systems ----
+
+        // Missions: auto-accept 3 starter missions.
+        m_Missions.Init();
+
+        // Wire mine callback → ProgressionSystem XP + MissionRegistry progress.
+        m_InteractionLoop.SetOnMineSuccess(
+            [this](NF::Game::ResourceType type, uint32_t count) {
+                // XP per voxel (flat 10 XP matching MiningSystem::kXpPerMine).
+                m_Progression.AddXP(10u * count);
+
+                // Notify mission registry about mining and inventory change.
+                m_Missions.NotifyMined(count);
+                const uint32_t held = m_InteractionLoop.GetInventory().GetCount(type);
+                m_Missions.NotifyInventoryChanged(type, held);
+
+                NF::Logger::Log(NF::LogLevel::Debug, "Game",
+                    "Mine: +" + std::to_string(10u * count) + " XP, level "
+                    + std::to_string(m_Progression.GetLevel()));
+            });
+
+        // Wire ProgressionSystem level-up → MissionRegistry.
+        m_Progression.SetLevelUpCallback([this](int level) {
+            NF::Logger::Log(NF::LogLevel::Info, "Game",
+                            "Level up! Now level " + std::to_string(level));
+            m_Missions.NotifyLevelReached(level);
+        });
+
+        // Wire CombatSystem kills → XP + MissionRegistry.
+        m_Combat.SetDeathCallback([this](uint32_t /*entityId*/) {
+            constexpr uint32_t kKillXP = 25u;
+            m_Progression.AddXP(kKillXP);
+            m_Missions.NotifyKill();
+        });
+
+        // Wire MissionRegistry completion callback for logging.
+        m_Missions.SetOnMissionComplete([this](uint32_t missionId) {
+            const auto& allMissions = m_Missions.GetMissions();
+            for (const auto& ms : allMissions) {
+                if (ms.def && ms.def->id == missionId) {
+                    NF::Logger::Log(NF::LogLevel::Info, "Game",
+                        "Mission complete: " + ms.def->name);
+                    break;
+                }
+            }
+        });
+
         // Phase 8: initialise chunk streamer.
         m_Streamer = std::make_unique<ChunkStreamer>();
         ChunkStreamConfig streamCfg;

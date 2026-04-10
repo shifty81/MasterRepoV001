@@ -79,6 +79,7 @@ constexpr const char* kKeyLogRoot             = "logRoot";
 constexpr const char* kKeyVoxelAuth           = "voxelAuthoritative";
 constexpr const char* kKeyEditorShips         = "editorShipsWithGame";
 constexpr const char* kKeyAllowSuite          = "allowSuiteFeaturesInRepo";
+constexpr const char* kKeyDevSolarMap         = "solar_map_enabled";
 
 } // anonymous namespace
 
@@ -176,6 +177,8 @@ bool ProjectManifest::LoadFromFile(const std::string& path)
             EditorShipsWithGame = ExtractBoolValue(line, kKeyEditorShips, false);
         if (line.find(std::string("\"") + kKeyAllowSuite + "\"") != std::string::npos)
             AllowSuiteFeaturesInRepo = ExtractBoolValue(line, kKeyAllowSuite, false);
+        if (line.find(std::string("\"") + kKeyDevSolarMap + "\"") != std::string::npos)
+            DevSolarMapEnabled = ExtractBoolValue(line, kKeyDevSolarMap, false);
     }
 
     Logger::Log(LogLevel::Info, "Manifest",

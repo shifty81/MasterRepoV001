@@ -286,6 +286,19 @@ NovaForgeEditor/fast:
 .PHONY : NovaForgeEditor/fast
 
 #=============================================================================
+# Target rules for targets named NovaForgeServer
+
+# Build rule for target.
+NovaForgeServer: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 NovaForgeServer
+.PHONY : NovaForgeServer
+
+# fast build rule for target.
+NovaForgeServer/fast:
+	$(MAKE) $(MAKESILENT) -f Source/Programs/CMakeFiles/NovaForgeServer.dir/build.make Source/Programs/CMakeFiles/NovaForgeServer.dir/build
+.PHONY : NovaForgeServer/fast
+
+#=============================================================================
 # Target rules for targets named NovaForgeGame
 
 # Build rule for target.
@@ -320,6 +333,7 @@ help:
 	@echo "... NFUI"
 	@echo "... NovaForgeEditor"
 	@echo "... NovaForgeGame"
+	@echo "... NovaForgeServer"
 .PHONY : help
 
 

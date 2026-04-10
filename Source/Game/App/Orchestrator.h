@@ -8,6 +8,9 @@
 #include "Game/Net/GameClient.h"
 #include "Game/Voxel/ChunkStreamer.h"
 #include "Game/Gameplay/SolarSystem/DevSolarSystem.h"
+#include "Game/Gameplay/Progression/ProgressionSystem.h"
+#include "Game/Gameplay/Combat/CombatSystem.h"
+#include "Game/Gameplay/Missions/MissionRegistry.h"
 #include "Audio/Core/AudioDevice.h"
 #include "Audio/Core/SoundBank.h"
 #include "Audio/Mixer/AudioMixer.h"
@@ -108,6 +111,18 @@ public:
     [[nodiscard]] NF::Game::Gameplay::DevSolarSystem&       GetSolarSystem()       noexcept { return m_SolarSystem; }
     [[nodiscard]] const NF::Game::Gameplay::DevSolarSystem& GetSolarSystem() const noexcept { return m_SolarSystem; }
 
+    /// @brief Returns the ProgressionSystem (level + XP + skill unlocks).
+    [[nodiscard]] NF::Game::Gameplay::ProgressionSystem&       GetProgression()       noexcept { return m_Progression; }
+    [[nodiscard]] const NF::Game::Gameplay::ProgressionSystem& GetProgression() const noexcept { return m_Progression; }
+
+    /// @brief Returns the CombatSystem (damage model, kills, respawn).
+    [[nodiscard]] NF::Game::Gameplay::CombatSystem&       GetCombat()       noexcept { return m_Combat; }
+    [[nodiscard]] const NF::Game::Gameplay::CombatSystem& GetCombat() const noexcept { return m_Combat; }
+
+    /// @brief Returns the MissionRegistry (starter missions).
+    [[nodiscard]] NF::Game::Gameplay::MissionRegistry&       GetMissions()       noexcept { return m_Missions; }
+    [[nodiscard]] const NF::Game::Gameplay::MissionRegistry& GetMissions() const noexcept { return m_Missions; }
+
     /// @brief Returns the GameServer (non-null when Solo/ListenServer/Dedicated).
     [[nodiscard]] GameServer* GetServer() noexcept { return m_Server.get(); }
     /// @brief Returns the GameClient (non-null when ListenServer/Client).
@@ -136,6 +151,11 @@ private:
 
     // Solar system — loaded from editor data or procedurally generated.
     NF::Game::Gameplay::DevSolarSystem m_SolarSystem;
+
+    // Core gameplay systems — wired in Init().
+    NF::Game::Gameplay::ProgressionSystem m_Progression;
+    NF::Game::Gameplay::CombatSystem      m_Combat;
+    NF::Game::Gameplay::MissionRegistry   m_Missions;
 
     // Phase 9 audio
     AudioDevice  m_AudioDevice;
