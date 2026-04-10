@@ -4,6 +4,8 @@
 #include "UI/Rendering/UIRenderer.h"
 #include "Game/App/Orchestrator.h"
 #include "Game/Voxel/ChunkMeshCache.h"
+#include "Audio/Core/SoundAsset.h"
+#include "Audio/Mixer/AudioMixer.h"
 #include <cstdint>
 #include <memory>
 
@@ -83,6 +85,12 @@ private:
     // Solar map overlay
     bool  m_ShowSolarMap{false};        ///< True when the solar map overlay is visible.
     bool  m_DevSolarMapEnabled{false};  ///< Loaded from config; false in prod builds.
+
+    // Phase 10: cached sound ids for quick playback without bank lookup each frame.
+    NF::SoundId     m_SfxMineId{0};
+    NF::SoundId     m_SfxPlaceId{0};
+    NF::SoundId     m_SfxAmbientId{0};
+    NF::ChannelHandle m_AmbientChannel{0};  ///< Handle to the looping ambient channel.
 
     /// @brief Advance simulation and render one frame.
     void TickFrame(float dt);

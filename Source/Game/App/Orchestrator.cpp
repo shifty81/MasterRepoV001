@@ -3,6 +3,7 @@
 #include "Game/Voxel/ChunkCoord.h"
 #include "Core/Config/ProjectManifest.h"
 #include "Core/Logging/Log.h"
+#include <algorithm>
 
 namespace NF::Game {
 
@@ -98,6 +99,19 @@ bool Orchestrator::Init(RenderDevice* renderDevice, const NetParams& params)
             m_Salvage.AddLoot(w, NF::Game::ResourceType::Stone,  5u);
         }
 
+        // Phase 10: seed a default anomaly near spawn for the "Signal Hunt" mission.
+        {
+            const auto& sp = m_GameWorld.GetSpawnPoint();
+            const NF::Vector3 anomalyPos = {sp.Position.X + 30.f,
+                                             sp.Position.Y,
+                                             sp.Position.Z};
+            const NF::Game::Gameplay::AnomalyId a =
+                m_Anomalies.PlaceAnomaly("Strange Signal", anomalyPos,
+                                         NF::Game::Gameplay::AnomalyType::Signal);
+            m_Anomalies.AddLoot(a, NF::Game::ResourceType::Ore,  4u);
+            m_Anomalies.AddLoot(a, NF::Game::ResourceType::Ice,  2u);
+        }
+
         // Wire mine callback → ProgressionSystem XP + MissionRegistry progress.
         m_InteractionLoop.SetOnMineSuccess(
             [this](NF::Game::ResourceType type, uint32_t count) {
@@ -108,6 +122,12 @@ bool Orchestrator::Init(RenderDevice* renderDevice, const NetParams& params)
                 m_Missions.NotifyMined(count);
                 const uint32_t held = m_InteractionLoop.GetInventory().GetCount(type);
                 m_Missions.NotifyInventoryChanged(type, held);
+
+                // Phase 10: faction rep for mining.
+                m_Factions.NotifyMined();
+                // Notify missions if Miners Guild rep threshold is reached.
+                m_Missions.NotifyRepGained(
+                    static_cast<uint32_t>(m_Factions.GetRep(NF::Game::Gameplay::FactionId::MinersGuild)));
 
                 NF::Logger::Log(NF::LogLevel::Debug, "Game",
                     "Mine: +" + std::to_string(10u * count) + " XP, level "
@@ -121,11 +141,12 @@ bool Orchestrator::Init(RenderDevice* renderDevice, const NetParams& params)
             m_Missions.NotifyLevelReached(level);
         });
 
-        // Wire CombatSystem kills → XP + MissionRegistry.
+        // Wire CombatSystem kills → XP + MissionRegistry + FactionRegistry (Phase 10).
         m_Combat.SetDeathCallback([this](uint32_t /*entityId*/) {
             constexpr uint32_t kKillXP = 25u;
             m_Progression.AddXP(kKillXP);
             m_Missions.NotifyKill();
+            m_Factions.NotifyKill();
         });
 
         // Wire MissionRegistry completion callback for logging.
@@ -140,7 +161,16 @@ bool Orchestrator::Init(RenderDevice* renderDevice, const NetParams& params)
             }
         });
 
-        // Phase 8: initialise chunk streamer.
+        // Phase 10: wire anomaly investigation → FactionRegistry + MissionRegistry.
+        m_Anomalies.SetOnInvestigated([this](NF::Game::Gameplay::AnomalyId /*id*/, uint32_t /*count*/) {
+            m_Factions.NotifyInvestigated();
+            m_Missions.NotifyInvestigated();
+            // Notify missions about Traders Union rep (anomaly investigation awards +2).
+            m_Missions.NotifyRepGained(
+                static_cast<uint32_t>(std::max(0, m_Factions.GetRep(NF::Game::Gameplay::FactionId::TradersUnion))));
+        });
+
+        // Phase 9: initialise chunk streamer.
         m_Streamer = std::make_unique<ChunkStreamer>();
         ChunkStreamConfig streamCfg;
         streamCfg.LoadRadius   = 4;

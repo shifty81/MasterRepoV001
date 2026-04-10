@@ -488,6 +488,11 @@ bool EditorApp::Init() {
     m_InventoryPanel.SetPlayerInventory(&m_InteractionLoop.GetInventory());
     m_EconomyPanel.SetPlayerInventory(&m_InteractionLoop.GetInventory());
 
+    // Wire FactionPanel — Phase 10.
+    m_FactionPanel.SetUIRenderer(&m_UIRenderer);
+    m_FactionPanel.SetInputState(&m_Input);
+    m_FactionPanel.SetFactionRegistry(&m_EditorFactions);
+
     // Wire PropertyInspectorSystem to Inspector so it renders the property grid
     m_Inspector.SetPropertyInspectorSystem(&m_PropertyInspectorSystem);
     m_Inspector.SetOnPropertyEdited([this]() {
@@ -636,6 +641,10 @@ bool EditorApp::Init() {
         [this](float x, float y, float w, float h) {
             m_InventoryPanel.Draw(x, y, w, h);
         });
+    m_DockingSystem.RegisterPanel("Factions",
+        [this](float x, float y, float w, float h) {
+            m_FactionPanel.Draw(x, y, w, h);
+        });
 
     // ---- Unreal-like layout with tabbed regions and full-width bottom dock ----
     //
@@ -671,6 +680,7 @@ bool EditorApp::Init() {
     m_DockingSystem.AddTab("Console", "SolarSystem");
     m_DockingSystem.AddTab("Console", "Economy");
     m_DockingSystem.AddTab("Console", "Inventory");
+    m_DockingSystem.AddTab("Console", "Factions");
 
     // The Viewport panel sits directly over the OpenGL 3-D render target.
     // Skip drawing an opaque 2-D background for it so the scene is visible.
@@ -1882,6 +1892,7 @@ void EditorApp::TickFrame(float dt)
     m_SolarSystemPanel.Update(dt);
     m_EconomyPanel.Update(dt);
     m_InventoryPanel.Update(dt);
+    m_FactionPanel.Update(dt);
     // Apply theme changes from preferences only when the selection changes.
     {
         static EditorTheme s_LastAppliedTheme = m_PreferencesPanel.GetData().theme;

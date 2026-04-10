@@ -79,6 +79,26 @@ static const MissionDef kStarterMissions[] = {
         // Reward: 175 XP + 3 bonus Ore (specific salvage reward, not tied to objective type).
         { 175u, NF::Game::ResourceType::Ore,   3u,  40.f }
     },
+    // Mission 8: Guild Bond — gain 10 reputation with the Miners Guild (Phase 10).
+    {
+        8u,
+        "Guild Bond",
+        "Mine enough to earn Friendly standing with the Miners Guild (10 reputation).",
+        MissionObjectiveType::GainFactionRep,
+        10u,
+        NF::Game::ResourceType::None,
+        { 250u, NF::Game::ResourceType::None, 0u, 60.f }
+    },
+    // Mission 9: Signal Hunt — investigate one anomaly site (Phase 10).
+    {
+        9u,
+        "Signal Hunt",
+        "A strange signal was detected near Homebase. Investigate the anomaly site.",
+        MissionObjectiveType::InvestigateAnomaly,
+        1u,
+        NF::Game::ResourceType::None,
+        { 300u, NF::Game::ResourceType::Ore, 5u, 80.f }
+    },
 };
 
 // ---------------------------------------------------------------------------
@@ -247,6 +267,24 @@ void MissionRegistry::NotifySalvaged(uint32_t count)
         if (ms.status != MissionStatus::Active) continue;
         if (ms.def->objectiveType == MissionObjectiveType::SalvageWreck)
             Advance(ms, ms.progress + count);
+    }
+}
+
+void MissionRegistry::NotifyRepGained(uint32_t totalRep)
+{
+    for (auto& ms : m_Missions) {
+        if (ms.status != MissionStatus::Active) continue;
+        if (ms.def->objectiveType == MissionObjectiveType::GainFactionRep)
+            Advance(ms, totalRep); // absolute reputation count
+    }
+}
+
+void MissionRegistry::NotifyInvestigated()
+{
+    for (auto& ms : m_Missions) {
+        if (ms.status != MissionStatus::Active) continue;
+        if (ms.def->objectiveType == MissionObjectiveType::InvestigateAnomaly)
+            Advance(ms, ms.progress + 1u);
     }
 }
 

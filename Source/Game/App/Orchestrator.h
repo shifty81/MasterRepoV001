@@ -20,6 +20,8 @@
 #include "Audio/Core/SoundBank.h"
 #include "Audio/Mixer/AudioMixer.h"
 #include "Audio/Spatial/SpatialAudio.h"
+#include "Game/Gameplay/Factions/FactionRegistry.h"
+#include "Game/Gameplay/Anomaly/AnomalySystem.h"
 #include <memory>
 #include <string>
 
@@ -148,6 +150,14 @@ public:
     [[nodiscard]] NF::Game::Gameplay::InventorySystem&       GetInventorySys()       noexcept { return m_InventorySys; }
     [[nodiscard]] const NF::Game::Gameplay::InventorySystem& GetInventorySys() const noexcept { return m_InventorySys; }
 
+    /// @brief Returns the faction registry (player reputation with factions).
+    [[nodiscard]] NF::Game::Gameplay::FactionRegistry&       GetFactions()       noexcept { return m_Factions; }
+    [[nodiscard]] const NF::Game::Gameplay::FactionRegistry& GetFactions() const noexcept { return m_Factions; }
+
+    /// @brief Returns the anomaly system (encounter sites).
+    [[nodiscard]] NF::Game::Gameplay::AnomalySystem&       GetAnomalies()       noexcept { return m_Anomalies; }
+    [[nodiscard]] const NF::Game::Gameplay::AnomalySystem& GetAnomalies() const noexcept { return m_Anomalies; }
+
     /// @brief Returns the GameServer (non-null when Solo/ListenServer/Dedicated).
     [[nodiscard]] GameServer* GetServer() noexcept { return m_Server.get(); }
     /// @brief Returns the GameClient (non-null when ListenServer/Client).
@@ -190,6 +200,10 @@ private:
     NF::Game::Gameplay::SalvageSystem     m_Salvage;
     NF::Game::Gameplay::StorageSystem     m_Storage;
     NF::Game::Gameplay::InventorySystem   m_InventorySys;
+
+    // Phase 10 factions and anomalies.
+    NF::Game::Gameplay::FactionRegistry   m_Factions;
+    NF::Game::Gameplay::AnomalySystem     m_Anomalies;
 
     // Phase 9 audio
     AudioDevice  m_AudioDevice;

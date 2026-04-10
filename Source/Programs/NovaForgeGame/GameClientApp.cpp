@@ -10,6 +10,7 @@
 #include "Game/Gameplay/Economy/TradeMarket.h"
 #include "Game/Gameplay/Salvage/SalvageSystem.h"
 #include "Game/Gameplay/Storage/StorageSystem.h"
+#include "Game/Gameplay/Anomaly/AnomalySystem.h"
 #include "Game/Voxel/VoxelType.h"
 #include <chrono>
 #include <algorithm>
@@ -252,6 +253,16 @@ bool GameClientApp::Init()
     m_MeshCache.Init(&m_ForwardRenderer);
     m_MeshCache.RebuildDirty(m_Orchestrator.GetGameWorld().GetChunkMap());
 
+    // Phase 10: cache sound ids and start looping ambient.
+    {
+        auto& bank = m_Orchestrator.GetSoundBank();
+        m_SfxMineId    = bank.GetByName("sfx_mine")    ? bank.GetByName("sfx_mine")->Id    : 0u;
+        m_SfxPlaceId   = bank.GetByName("sfx_place")   ? bank.GetByName("sfx_place")->Id   : 0u;
+        m_SfxAmbientId = bank.GetByName("sfx_ambient") ? bank.GetByName("sfx_ambient")->Id : 0u;
+        if (m_SfxAmbientId != 0u)
+            m_AmbientChannel = m_Orchestrator.GetAudioMixer().Play(m_SfxAmbientId, 0.15f, 0.f, /*loop=*/true);
+    }
+
     m_Running = true;
     NF::Logger::Log(NF::LogLevel::Info, "GameClient", "GameClientApp::Init complete");
     return true;
@@ -476,6 +487,18 @@ void GameClientApp::TickFrame(float dt)
             }
         }
 
+        // I key — investigate nearest anomaly (Phase 10).
+        if (m_KeysJustPressed[0x49]) { // VK_I
+            static constexpr float kAnomalyRadius = 25.f;
+            const auto& pos = m_Orchestrator.GetPlayerMovement().GetPosition();
+            auto& inv       = m_Orchestrator.GetInteractionLoop().GetInventory();
+            const auto anomalyId = m_Orchestrator.GetAnomalies().FindNearest(pos, kAnomalyRadius);
+            if (anomalyId != NF::Game::Gameplay::kInvalidAnomalyId) {
+                // Investigate fires the callback which notifies Factions + Missions.
+                m_Orchestrator.GetAnomalies().Investigate(anomalyId, inv);
+            }
+        }
+
         // Update mine flash timer
         if (m_MineFlashTimer > 0.f)
             m_MineFlashTimer -= dt;
@@ -644,6 +667,20 @@ void GameClientApp::DrawHUD()
             m_UIRenderer.DrawText(hint.c_str(), hudX, cy, kItemColor, scale);
         } else if (boxId != NF::Game::Gameplay::kInvalidBoxId) {
             m_UIRenderer.DrawText("[G] Deposit to storage", hudX, cy, kItemColor, scale);
+        }
+        cy += lineH;
+    }
+
+    // Anomaly interaction hint (Phase 10)
+    {
+        static constexpr float kAnomalyRadius = 25.f;
+        const auto& pos     = m_Orchestrator.GetPlayerMovement().GetPosition();
+        const auto anomalyId = m_Orchestrator.GetAnomalies().FindNearest(pos, kAnomalyRadius);
+        if (anomalyId != NF::Game::Gameplay::kInvalidAnomalyId) {
+            const auto* a = m_Orchestrator.GetAnomalies().Get(anomalyId);
+            const std::string hint = "[I] Investigate: " + (a ? a->name : "Anomaly");
+            m_UIRenderer.DrawText(hint.c_str(), hudX, cy, kItemColor, scale);
+            cy += lineH;
         }
     }
 }
@@ -913,6 +950,15 @@ void GameClientApp::HandleMining()
         auto& loop = m_Orchestrator.GetInteractionLoop();
         loop.Mine(hit.x, hit.y, hit.z);
         m_MineFlashTimer = 0.4f; // show "mined!" flash for 0.4s
+
+        // Phase 10: play mine sound effect at the hit voxel position.
+        if (m_SfxMineId != 0u) {
+            const NF::Vector3 hitPos{
+                static_cast<float>(hit.x),
+                static_cast<float>(hit.y),
+                static_cast<float>(hit.z)};
+            m_Orchestrator.GetSpatialAudio().PlayAt(m_SfxMineId, hitPos, 0.8f);
+        }
     }
 }
 
