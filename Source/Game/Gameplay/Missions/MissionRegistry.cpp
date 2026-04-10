@@ -1,4 +1,4 @@
-// MissionRegistry.cpp — 3 starter missions spawnable in DevWorld.
+// MissionRegistry.cpp — starter missions spawnable in DevWorld.
 #include "Game/Gameplay/Missions/MissionRegistry.h"
 
 namespace NF::Game::Gameplay {
@@ -37,6 +37,47 @@ static const MissionDef kStarterMissions[] = {
         3u,
         NF::Game::ResourceType::None, // not a CollectResource mission
         { 300u, NF::Game::ResourceType::None,  0u, 100.f }
+    },
+    // Mission 4: First Trade — sell 3 units of any resource at the station market.
+    {
+        4u,
+        "First Trade",
+        "Dock at Homebase and sell 3 units of any resource to get your first credits.",
+        MissionObjectiveType::SellResources,
+        3u,
+        NF::Game::ResourceType::None, // any resource type counts
+        { 75u,  NF::Game::ResourceType::None,  0u,  50.f }
+    },
+    // Mission 5: First Craft — manufacture 1 unit of Metal via the station factory.
+    {
+        5u,
+        "First Craft",
+        "Use the station manufacturing queue to produce 1 unit of refined Metal.",
+        MissionObjectiveType::CraftItem,
+        1u,
+        NF::Game::ResourceType::Metal, // crafted output type
+        { 200u, NF::Game::ResourceType::None,  0u,  75.f }
+    },
+    // Mission 6: Stash It — deposit 5 resources into the world storage box.
+    {
+        6u,
+        "Stash It",
+        "Deposit 5 units of any resource into the Homebase storage box.",
+        MissionObjectiveType::DepositToStorage,
+        5u,
+        NF::Game::ResourceType::None, // any resource type counts
+        { 100u, NF::Game::ResourceType::None,  0u,  30.f }
+    },
+    // Mission 7: Salvage Run — salvage items from a wreck site.
+    {
+        7u,
+        "Salvage Run",
+        "Salvage at least 3 items from the derelict wreck near Homebase.",
+        MissionObjectiveType::SalvageWreck,
+        3u,
+        NF::Game::ResourceType::None, // not resource-specific
+        // Reward: 175 XP + 3 bonus Ore (specific salvage reward, not tied to objective type).
+        { 175u, NF::Game::ResourceType::Ore,   3u,  40.f }
     },
 };
 
@@ -159,6 +200,53 @@ void MissionRegistry::NotifyKill()
         if (ms.status != MissionStatus::Active) continue;
         if (ms.def->objectiveType == MissionObjectiveType::KillEnemies)
             Advance(ms, ms.progress + 1u);
+    }
+}
+
+void MissionRegistry::NotifySold(NF::Game::ResourceType type, uint32_t count)
+{
+    for (auto& ms : m_Missions) {
+        if (ms.status != MissionStatus::Active) continue;
+        if (ms.def->objectiveType == MissionObjectiveType::SellResources) {
+            // Any resource type counts unless the mission specifies one.
+            const bool matches =
+                (ms.def->targetResourceType == NF::Game::ResourceType::None)
+                || (ms.def->targetResourceType == type);
+            if (matches)
+                Advance(ms, ms.progress + count);
+        }
+    }
+}
+
+void MissionRegistry::NotifyCrafted(NF::Game::ResourceType type, uint32_t count)
+{
+    for (auto& ms : m_Missions) {
+        if (ms.status != MissionStatus::Active) continue;
+        if (ms.def->objectiveType == MissionObjectiveType::CraftItem) {
+            const bool matches =
+                (ms.def->targetResourceType == NF::Game::ResourceType::None)
+                || (ms.def->targetResourceType == type);
+            if (matches)
+                Advance(ms, ms.progress + count);
+        }
+    }
+}
+
+void MissionRegistry::NotifyDeposited(uint32_t count)
+{
+    for (auto& ms : m_Missions) {
+        if (ms.status != MissionStatus::Active) continue;
+        if (ms.def->objectiveType == MissionObjectiveType::DepositToStorage)
+            Advance(ms, ms.progress + count);
+    }
+}
+
+void MissionRegistry::NotifySalvaged(uint32_t count)
+{
+    for (auto& ms : m_Missions) {
+        if (ms.status != MissionStatus::Active) continue;
+        if (ms.def->objectiveType == MissionObjectiveType::SalvageWreck)
+            Advance(ms, ms.progress + count);
     }
 }
 

@@ -450,6 +450,27 @@ bool EditorApp::Init() {
         RegenerateSolarSystem();
     });
 
+    // Wire EconomyPanel — Phase 6.
+    m_EconomyPanel.SetUIRenderer(&m_UIRenderer);
+    m_EditorStation.GetMarket().Initialize(m_Resources, 100u);
+    m_EditorStation.GetMarket().SetCredits(500.f);
+    m_EconomyPanel.SetRegistry(&m_Resources);
+    m_EconomyPanel.SetStation(&m_EditorStation);
+
+    // Wire InventoryPanel — Phase 7.
+    m_InventoryPanel.SetUIRenderer(&m_UIRenderer);
+    m_EditorStorage.AddBox("Homebase Storage", {0.f, 0.f, 0.f});
+    m_EditorInventorySys.AddContainer("Backpack");
+    {
+        const auto w = m_EditorSalvage.PlaceWreck("Derelict Probe", {15.f, 0.f, 0.f});
+        m_EditorSalvage.AddLoot(w, NF::Game::ResourceType::Ore,   8u);
+        m_EditorSalvage.AddLoot(w, NF::Game::ResourceType::Metal, 3u);
+        m_EditorSalvage.AddLoot(w, NF::Game::ResourceType::Stone, 5u);
+    }
+    m_InventoryPanel.SetInventorySystem(&m_EditorInventorySys);
+    m_InventoryPanel.SetStorageSystem(&m_EditorStorage);
+    m_InventoryPanel.SetSalvageSystem(&m_EditorSalvage);
+
     // Wire PropertyInspectorSystem to Inspector so it renders the property grid
     m_Inspector.SetPropertyInspectorSystem(&m_PropertyInspectorSystem);
     m_Inspector.SetOnPropertyEdited([this]() {
@@ -590,6 +611,14 @@ bool EditorApp::Init() {
         [this](float x, float y, float w, float h) {
             m_SolarSystemPanel.Draw(x, y, w, h);
         });
+    m_DockingSystem.RegisterPanel("Economy",
+        [this](float x, float y, float w, float h) {
+            m_EconomyPanel.Draw(x, y, w, h);
+        });
+    m_DockingSystem.RegisterPanel("Inventory",
+        [this](float x, float y, float w, float h) {
+            m_InventoryPanel.Draw(x, y, w, h);
+        });
 
     // ---- Unreal-like layout with tabbed regions and full-width bottom dock ----
     //
@@ -617,12 +646,14 @@ bool EditorApp::Init() {
     // Tabs on the right: Inspector + VoxelInspector + Preferences
     m_DockingSystem.AddTab("Inspector", "VoxelInspector");
     m_DockingSystem.AddTab("Inspector", "Preferences");
-    // Tabs on the bottom: Console + ContentBrowser + WorldDebug + MaterialEditor + Profiler + SolarSystem
+    // Tabs on the bottom: Console + ContentBrowser + WorldDebug + MaterialEditor + Profiler + SolarSystem + Economy + Inventory
     m_DockingSystem.AddTab("Console", "ContentBrowser");
     m_DockingSystem.AddTab("Console", "WorldDebug");
     m_DockingSystem.AddTab("Console", "MaterialEditor");
     m_DockingSystem.AddTab("Console", "Profiler");
     m_DockingSystem.AddTab("Console", "SolarSystem");
+    m_DockingSystem.AddTab("Console", "Economy");
+    m_DockingSystem.AddTab("Console", "Inventory");
 
     // The Viewport panel sits directly over the OpenGL 3-D render target.
     // Skip drawing an opaque 2-D background for it so the scene is visible.
@@ -1789,6 +1820,8 @@ void EditorApp::TickFrame(float dt)
     m_PreferencesPanel.Update(dt);
     m_ProfilerPanel.Update(dt);
     m_SolarSystemPanel.Update(dt);
+    m_EconomyPanel.Update(dt);
+    m_InventoryPanel.Update(dt);
     // Apply theme changes from preferences only when the selection changes.
     {
         static EditorTheme s_LastAppliedTheme = m_PreferencesPanel.GetData().theme;
