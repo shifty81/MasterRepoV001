@@ -332,6 +332,10 @@ bool EditorApp::Init() {
     if (!m_CharacterRenderer.Init(m_RenderDevice.get()))
         Logger::Log(LogLevel::Warning, "Editor", "PlayerCharacterRenderer init failed — character will not be visible");
 
+    // Initialise the low-poly ship renderer.
+    if (!m_ShipRenderer.Init(m_RenderDevice.get()))
+        Logger::Log(LogLevel::Warning, "Editor", "ShipRenderer init failed — ship will not be visible");
+
     Logger::Log(LogLevel::Info, "Editor", "[6/6] EditorApp — wiring panels and layout");
     // Wire UIRenderer to all subsystems
     m_DockingSystem.SetUIRenderer(&m_UIRenderer);
@@ -455,15 +459,18 @@ bool EditorApp::Init() {
         RegenerateSolarSystem();
     });
 
-    // Wire EconomyPanel — Phase 6.
+    // Wire EconomyPanel — Phase 6, now interactive.
     m_EconomyPanel.SetUIRenderer(&m_UIRenderer);
+    m_EconomyPanel.SetInputState(&m_Input);
     m_EditorStation.GetMarket().Initialize(m_Resources, 100u);
     m_EditorStation.GetMarket().SetCredits(500.f);
     m_EconomyPanel.SetRegistry(&m_Resources);
     m_EconomyPanel.SetStation(&m_EditorStation);
+    // Player inventory wired after InteractionLoop init; see below.
 
-    // Wire InventoryPanel — Phase 7.
+    // Wire InventoryPanel — Phase 7, now interactive.
     m_InventoryPanel.SetUIRenderer(&m_UIRenderer);
+    m_InventoryPanel.SetInputState(&m_Input);
     m_EditorStorage.AddBox("Homebase Storage", {0.f, 0.f, 0.f});
     m_EditorInventorySys.AddContainer("Backpack");
     {
@@ -475,6 +482,11 @@ bool EditorApp::Init() {
     m_InventoryPanel.SetInventorySystem(&m_EditorInventorySys);
     m_InventoryPanel.SetStorageSystem(&m_EditorStorage);
     m_InventoryPanel.SetSalvageSystem(&m_EditorSalvage);
+    // Wire the InteractionLoop's inventory as the player backpack so that
+    // Give / Transfer buttons in the Inventory tab act on the same object
+    // that PIE gameplay uses.
+    m_InventoryPanel.SetPlayerInventory(&m_InteractionLoop.GetInventory());
+    m_EconomyPanel.SetPlayerInventory(&m_InteractionLoop.GetInventory());
 
     // Wire PropertyInspectorSystem to Inspector so it renders the property grid
     m_Inspector.SetPropertyInspectorSystem(&m_PropertyInspectorSystem);
@@ -1717,6 +1729,14 @@ void EditorApp::TickFrame(float dt)
             m_CharacterRenderer.Render(m_ForwardRenderer, sp.Position, /* yawRadians= */ 0.f);
         }
 
+        // Render the low-poly ship a short distance from spawn so it is
+        // always visible in the editor viewport as a reference game object.
+        if (m_ShipRenderer.IsReady() && !isPiePlaying && !isPiePaused) {
+            const auto& sp = m_GameWorld.GetSpawnPoint();
+            const NF::Vector3 shipPos{sp.Position.X + 12.f, sp.Position.Y + 2.f, sp.Position.Z + 8.f};
+            m_ShipRenderer.Render(m_ForwardRenderer, shipPos, /* yawRadians= */ 0.4f);
+        }
+
         m_ForwardRenderer.EndScene();
 
         // Always draw a spawn-point marker so the character's feet position
@@ -2028,6 +2048,7 @@ void EditorApp::Shutdown() {
 
     m_MeshCache.Shutdown();
     m_CharacterRenderer.Shutdown();
+    m_ShipRenderer.Shutdown();
     m_ForwardRenderer.Shutdown();
     m_GameWorld.Shutdown();
     m_Level.Unload();

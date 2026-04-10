@@ -57,9 +57,12 @@ MeshData CharacterMeshBuilder::BuildBoots() const
 {
     MeshData md;
     // Right boot — slightly wider/longer than the leg for the leather look
-    AppendBox(md, { 0.04f, 0.00f, -0.15f}, { 0.28f, 0.19f,  0.12f}, CharacterColor::Boots);
+    AppendBox(md, { 0.04f, 0.00f, -0.16f}, { 0.27f, 0.20f,  0.14f}, CharacterColor::Boots);
     // Left boot
-    AppendBox(md, {-0.28f, 0.00f, -0.15f}, {-0.04f, 0.19f,  0.12f}, CharacterColor::Boots);
+    AppendBox(md, {-0.27f, 0.00f, -0.16f}, {-0.04f, 0.20f,  0.14f}, CharacterColor::Boots);
+    // Boot sole detail
+    AppendBox(md, { 0.03f, 0.00f, -0.17f}, { 0.28f, 0.04f,  0.15f}, CharacterColor::Belt);
+    AppendBox(md, {-0.28f, 0.00f, -0.17f}, {-0.03f, 0.04f,  0.15f}, CharacterColor::Belt);
     return md;
 }
 
@@ -67,13 +70,13 @@ MeshData CharacterMeshBuilder::BuildLegs() const
 {
     MeshData md;
     // Right lower leg — dark trousers visible below coat tails
-    AppendBox(md, { 0.05f, 0.19f, -0.12f}, { 0.23f, 0.72f,  0.10f}, CharacterColor::Pants);
+    AppendBox(md, { 0.05f, 0.20f, -0.12f}, { 0.22f, 0.72f,  0.10f}, CharacterColor::Pants);
     // Left lower leg
-    AppendBox(md, {-0.23f, 0.19f, -0.12f}, {-0.05f, 0.72f,  0.10f}, CharacterColor::Pants);
+    AppendBox(md, {-0.22f, 0.20f, -0.12f}, {-0.05f, 0.72f,  0.10f}, CharacterColor::Pants);
     // Right upper leg (mostly hidden under coat tails)
-    AppendBox(md, { 0.04f, 0.72f, -0.12f}, { 0.22f, 1.12f,  0.10f}, CharacterColor::Pants);
+    AppendBox(md, { 0.04f, 0.72f, -0.13f}, { 0.21f, 1.12f,  0.11f}, CharacterColor::Pants);
     // Left upper leg
-    AppendBox(md, {-0.22f, 0.72f, -0.12f}, {-0.04f, 1.12f,  0.10f}, CharacterColor::Pants);
+    AppendBox(md, {-0.21f, 0.72f, -0.13f}, {-0.04f, 1.12f,  0.11f}, CharacterColor::Pants);
     return md;
 }
 
@@ -121,14 +124,18 @@ MeshData CharacterMeshBuilder::BuildInnerShirt() const
 MeshData CharacterMeshBuilder::BuildArms() const
 {
     MeshData md;
-    // Right upper arm (coat sleeve)
-    AppendBox(md, { 0.27f, 1.26f, -0.13f}, { 0.42f, 1.53f,  0.09f}, CharacterColor::CoatGreen);
+    // Right upper arm (coat sleeve) — slightly wider for beefy look
+    AppendBox(md, { 0.27f, 1.26f, -0.14f}, { 0.44f, 1.55f,  0.10f}, CharacterColor::CoatGreen);
     // Right lower arm (coat sleeve, slightly narrower)
-    AppendBox(md, { 0.28f, 0.94f, -0.11f}, { 0.41f, 1.26f,  0.08f}, CharacterColor::CoatGreen);
+    AppendBox(md, { 0.28f, 0.92f, -0.12f}, { 0.42f, 1.26f,  0.09f}, CharacterColor::CoatGreen);
     // Left upper arm
-    AppendBox(md, {-0.42f, 1.26f, -0.13f}, {-0.27f, 1.53f,  0.09f}, CharacterColor::CoatGreen);
+    AppendBox(md, {-0.44f, 1.26f, -0.14f}, {-0.27f, 1.55f,  0.10f}, CharacterColor::CoatGreen);
     // Left lower arm
-    AppendBox(md, {-0.41f, 0.94f, -0.11f}, {-0.28f, 1.26f,  0.08f}, CharacterColor::CoatGreen);
+    AppendBox(md, {-0.42f, 0.92f, -0.12f}, {-0.28f, 1.26f,  0.09f}, CharacterColor::CoatGreen);
+    // Right shoulder pauldron (armor plate)
+    AppendBox(md, { 0.26f, 1.53f, -0.14f}, { 0.46f, 1.63f,  0.12f}, CharacterColor::CoatDark);
+    // Left shoulder pauldron
+    AppendBox(md, {-0.46f, 1.53f, -0.14f}, {-0.26f, 1.63f,  0.12f}, CharacterColor::CoatDark);
     return md;
 }
 
@@ -153,26 +160,30 @@ MeshData CharacterMeshBuilder::BuildHead() const
 {
     MeshData md;
     // Head — slightly angular/blocky for the low-poly look
-    AppendBox(md, {-0.14f, 1.66f, -0.13f}, { 0.14f, 1.93f,  0.13f}, CharacterColor::Skin);
-    // Face definition: brow ridge (slightly recessed sides)
-    AppendBox(md, {-0.13f, 1.79f, -0.14f}, { 0.13f, 1.87f, -0.12f}, CharacterColor::Skin);
+    AppendBox(md, {-0.15f, 1.66f, -0.14f}, { 0.15f, 1.94f,  0.14f}, CharacterColor::Skin);
+    // Face definition: brow ridge
+    AppendBox(md, {-0.14f, 1.79f, -0.15f}, { 0.14f, 1.88f, -0.13f}, CharacterColor::Skin);
+    // Goggle/visor strap — across forehead (CoatDark for a darker band)
+    AppendBox(md, {-0.13f, 1.84f, -0.155f}, { 0.13f, 1.91f, -0.13f}, CharacterColor::CoatDark);
+    // Chin strap detail
+    AppendBox(md, {-0.14f, 1.66f, -0.145f}, { 0.14f, 1.70f, -0.12f}, CharacterColor::Belt);
     return md;
 }
 
 MeshData CharacterMeshBuilder::BuildHair() const
 {
     MeshData md;
-    // Main hair cap — covers the top and back of head
-    AppendBox(md, {-0.14f, 1.90f, -0.11f}, { 0.14f, 2.00f,  0.12f}, CharacterColor::Hair);
-    // Side hair — frames the face slightly
-    AppendBox(md, {-0.15f, 1.74f,  0.06f}, {-0.13f, 1.91f,  0.12f}, CharacterColor::Hair);
-    AppendBox(md, { 0.13f, 1.74f,  0.06f}, { 0.15f, 1.91f,  0.12f}, CharacterColor::Hair);
+    // Main hair cap — covers the top and back of head, slightly wider
+    AppendBox(md, {-0.15f, 1.91f, -0.12f}, { 0.15f, 2.01f,  0.14f}, CharacterColor::Hair);
+    // Side hair — frames the face
+    AppendBox(md, {-0.16f, 1.74f,  0.06f}, {-0.14f, 1.92f,  0.14f}, CharacterColor::Hair);
+    AppendBox(md, { 0.14f, 1.74f,  0.06f}, { 0.16f, 1.92f,  0.14f}, CharacterColor::Hair);
     // Front spike cluster — messy/spiky look
-    AppendBox(md, {-0.07f, 1.97f, -0.10f}, { 0.01f, 2.07f, -0.04f}, CharacterColor::Hair);
-    AppendBox(md, { 0.01f, 1.95f, -0.09f}, { 0.08f, 2.05f, -0.03f}, CharacterColor::Hair);
-    AppendBox(md, {-0.11f, 1.93f, -0.06f}, {-0.04f, 2.03f, -0.01f}, CharacterColor::Hair);
+    AppendBox(md, {-0.08f, 1.97f, -0.11f}, { 0.02f, 2.08f, -0.04f}, CharacterColor::Hair);
+    AppendBox(md, { 0.01f, 1.95f, -0.10f}, { 0.09f, 2.06f, -0.03f}, CharacterColor::Hair);
+    AppendBox(md, {-0.12f, 1.93f, -0.07f}, {-0.04f, 2.04f, -0.01f}, CharacterColor::Hair);
     // Back tuft
-    AppendBox(md, {-0.08f, 1.92f,  0.08f}, { 0.08f, 2.02f,  0.13f}, CharacterColor::Hair);
+    AppendBox(md, {-0.09f, 1.92f,  0.09f}, { 0.09f, 2.03f,  0.15f}, CharacterColor::Hair);
     return md;
 }
 
