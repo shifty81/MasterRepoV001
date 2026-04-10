@@ -87,7 +87,7 @@ Required outputs:
 All outputs verified. ✅
 
 ## Phase 5 — Runtime Expansion
-Status: Current Active Phase
+Status: Done
 
 Goal:
 Grow the game loop beyond the DevWorld interaction loop toward a real playable game.
@@ -164,7 +164,7 @@ All systems must be exercised in DevWorld before going to main.
 - [x] `InventoryPanel` wired into bottom dock as "Inventory" tab
 
 ## Phase 6 — Economy, Manufacturing & Station Loop
-Status: Current Active Phase
+Status: Done
 
 Goal:
 Wire the economy and manufacturing subsystems into the live gameplay loop.
@@ -189,3 +189,104 @@ All work must be exercised in DevWorld/DevSolarSystem before it goes to main.
 **Editor**
 - [x] EconomyPanel — market price table, credits balance, station status, manufacturing recipes
 - [x] EconomyPanel wired into bottom dock as "Economy" tab
+
+## Phase 7 — Salvage, Storage & World Interaction Loop
+Status: Done
+
+Goal:
+Implement the salvage and storage mechanics, closing the resource loop:
+mine → salvage wreck → deposit to storage → trade or craft.
+All systems must be exercised in DevWorld before going to main.
+
+### Phase 7 Checklist
+
+**SalvageSystem**
+- [x] `SalvageSystem` — header + implementation: wreck sites with resource loot pools; `PlaceWreck`, `AddLoot`, `FindNearest`, `Salvage` (batch extraction), `GetWrecks`
+- [x] Default wreck ("Derelict Probe") seeded at session start 15 units from spawn with Ore/Metal/Stone loot
+
+**MissionRegistry**
+- [x] `DepositToStorage` + `SalvageWreck` objective types added
+- [x] `NotifyDeposited()` + `NotifySalvaged()` notifiers
+- [x] Two new auto-accepted starter missions — "Stash It" (deposit 5 units) + "Salvage Run" (salvage 3 items)
+
+**Orchestrator**
+- [x] `SalvageSystem`, `StorageSystem`, `InventorySystem` owned and initialised in `Init`
+- [x] Default "Homebase Storage" box at world origin; default "Backpack" container in InventorySystem
+- [x] `GetSalvage()`, `GetStorage()`, `GetInventorySys()` accessors exposed
+
+**In-Game (GameClientApp)**
+- [x] G key — salvage nearest wreck (extracts one batch of 5) or deposit all held items into nearest storage box (within 25 units)
+- [x] HUD shows "[G] Salvage: \<name\>" when a non-empty wreck is nearby, or "[G] Deposit to storage" when a box is nearby
+
+**Editor**
+- [x] `InventoryPanel` — shows backpack contents, Homebase Storage box, and wreck sites with loot counts
+- [x] `InventoryPanel` wired into bottom dock as "Inventory" tab
+
+## Phase 8 — Chunk Streaming
+Status: Done
+
+Goal:
+Stream voxel chunks in and out of memory dynamically as the player moves,
+replacing the flat "load everything at startup" approach.
+
+### Phase 8 Checklist
+
+- [x] `ChunkStreamer` — configurable load/unload radii, LRU memory cap, save-on-unload
+- [x] Background terrain generation via `TaskSystem`; async chunk queue
+- [x] LOD levels (`Full`, `Simplified`, `None`) computed by distance
+- [x] `ChunkStreamConfig` struct (LoadRadius=4, UnloadRadius=6, MaxLoadedChunks=512)
+- [x] `ChunkStreamer` owned and ticked by `Orchestrator`; seeded from world seed
+- [x] Dedicated server streams around origin; client/listen-server streams around player position
+
+## Phase 9 — Audio Foundation
+Status: Done
+
+Goal:
+Establish a cross-platform software audio pipeline:
+device → bank → mixer → spatial panning.
+
+### Phase 9 Checklist
+
+- [x] `AudioDevice` — Null (cross-platform) backend; master volume; 44 100 Hz / stereo
+- [x] `SoundAsset` + `SoundBank` — in-memory PCM float samples; `LoadWav`, `GenerateTone`, `GenerateNoise`
+- [x] `AudioMixer` — up to 64 concurrent channels; `Play`, `Stop`, `StopAll`, `Update`; looping support
+- [x] `SpatialAudio` — inverse-distance attenuation + stereo pan from listener orientation; `PlayAt`
+- [x] Orchestrator wires all four systems; seeds three placeholder sounds (`sfx_mine`, `sfx_place`, `sfx_ambient`)
+- [x] Orchestrator `Tick` calls `AudioMixer::Update` and `SpatialAudio::SetListenerPosition`
+- [x] GameClientApp caches sound ids; plays `sfx_mine` spatially on mine hit; loops `sfx_ambient` on start
+
+## Phase 10 — Factions, Anomalies & Audio Feedback
+Status: Done
+
+Goal:
+Make the game world feel alive with faction relationships and discoverable anomaly events.
+Closes the audio feedback loop started in Phase 9.
+
+### Phase 10 Checklist
+
+**FactionRegistry**
+- [x] `FactionRegistry` — 3 built-in factions: Miners Guild, Traders Union, Raiders
+- [x] Reputation per faction [-100, 100]; standing thresholds: Hostile < -25 ≤ Neutral < 25 ≤ Friendly < 75 ≤ Allied
+- [x] `NotifyMined` → +1 Miners Guild; `NotifySold` → +1 Traders Union; `NotifyKill` → -5 Raiders; `NotifyInvestigated` → +2 Traders Union
+- [x] Owned by `Orchestrator`; wired to mine, kill, and anomaly investigation callbacks
+
+**AnomalySystem**
+- [x] `AnomalySystem` — anomaly sites with typed loot pools (Derelict, Mineral, Signal, Radiation)
+- [x] `PlaceAnomaly`, `AddLoot`, `FindNearest`, `Investigate` (extracts loot, marks investigated)
+- [x] Default "Strange Signal" anomaly seeded 30 units from spawn with Ore/Ice loot
+- [x] Owned by `Orchestrator`; investigation callback fires `FactionRegistry` + `MissionRegistry`
+
+**MissionRegistry**
+- [x] `GainFactionRep` + `InvestigateAnomaly` objective types added
+- [x] `NotifyRepGained()` + `NotifyInvestigated()` notifiers
+- [x] Two new auto-accepted missions — "Guild Bond" (gain 10 Miners Guild rep) + "Signal Hunt" (investigate 1 anomaly)
+
+**In-Game (GameClientApp)**
+- [x] I key — investigate nearest anomaly within 25 units
+- [x] HUD shows "[I] Investigate: \<name\>" when an uninvestigated anomaly is nearby
+- [x] Audio: `sfx_mine` played spatially via `SpatialAudio::PlayAt` on every successful mine
+- [x] Audio: `sfx_ambient` looped at 15% volume on game start
+
+**Editor**
+- [x] `FactionPanel` — three faction rows with colour-coded reputation bars and standing text
+- [x] `FactionPanel` wired into bottom dock as "Factions" tab

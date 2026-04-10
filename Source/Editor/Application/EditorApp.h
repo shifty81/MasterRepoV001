@@ -36,6 +36,7 @@
 #include "Editor/Panels/SolarSystemPanel.h"
 #include "Editor/Panels/EconomyPanel.h"
 #include "Editor/Panels/InventoryPanel.h"
+#include "Editor/Panels/FactionPanel.h"
 #include "Game/Character/PlayerCharacterRenderer.h"
 #include "Game/Movement/PlayerMovement.h"
 #include "Game/Gameplay/SolarSystem/DevSolarSystem.h"
@@ -46,6 +47,7 @@
 #include "Game/Gameplay/Salvage/SalvageSystem.h"
 #include "Game/Gameplay/Storage/StorageSystem.h"
 #include "Game/Gameplay/Inventory/InventorySystem.h"
+#include "Game/Gameplay/Factions/FactionRegistry.h"
 #include "Game/Gameplay/Fleet/ShipRenderer.h"
 #include "Game/Components/PositionComponent.h"
 #include <cstdint>
@@ -130,6 +132,7 @@ private:
     SolarSystemPanel            m_SolarSystemPanel;
     EconomyPanel                m_EconomyPanel;
     InventoryPanel              m_InventoryPanel;
+    FactionPanel                m_FactionPanel;
     NF::Game::PlayerCharacterRenderer m_CharacterRenderer;
     NF::Game::Gameplay::ShipRenderer   m_ShipRenderer;
     NF::Game::Gameplay::DevSolarSystem m_DevSolarSystem;
@@ -140,6 +143,7 @@ private:
     NF::Game::Gameplay::SalvageSystem     m_EditorSalvage;
     NF::Game::Gameplay::StorageSystem     m_EditorStorage;
     NF::Game::Gameplay::InventorySystem   m_EditorInventorySys;
+    NF::Game::Gameplay::FactionRegistry   m_EditorFactions;  // Phase 10
 
     // ---- PIE (Play-In-Editor) state ----
     NF::Game::PlayerMovement m_PiePlayer;   ///< FPS player — always active; noclip in edit, physics in PIE.

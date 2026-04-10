@@ -26,6 +26,8 @@ enum class MissionObjectiveType : uint8_t {
     CraftItem,        ///< Craft >= N units of a specific resource via manufacturing.
     DepositToStorage, ///< Deposit >= N total units into world storage boxes.
     SalvageWreck,     ///< Salvage >= N items from wreck sites.
+    GainFactionRep,   ///< Accumulate >= N reputation with a specific faction (Phase 10).
+    InvestigateAnomaly, ///< Investigate >= N anomaly sites (Phase 10).
 };
 
 /// @brief Lifecycle state of a mission.
@@ -130,6 +132,15 @@ public:
 
     /// @brief Report that @p count items were salvaged from a wreck site.
     void NotifySalvaged(uint32_t count);
+
+    /// @brief Report the player's current (positive) reputation total for a faction.
+    ///        The GainFactionRep objective completes when @p totalRep >= objectiveTarget,
+    ///        so this models "reach N total reputation" rather than incremental accumulation.
+    ///        Call whenever faction rep changes; passing 0 when rep is negative is safe.
+    void NotifyRepGained(uint32_t totalRep);
+
+    /// @brief Report that the player investigated an anomaly site.
+    void NotifyInvestigated();
 
     // ---- Queries ------------------------------------------------------------
 
