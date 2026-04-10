@@ -2011,7 +2011,7 @@ void EditorApp::Shutdown() {
 // PIE (Play-In-Editor) helpers
 // ---------------------------------------------------------------------------
 
-void EditorApp::HandlePieInput(float /*dt*/)
+void EditorApp::HandlePieInput(float dt)
 {
 #ifdef _WIN32
     float forward = 0.f, right = 0.f;
@@ -2019,6 +2019,21 @@ void EditorApp::HandlePieInput(float /*dt*/)
     if (m_Input.keysDown[0x53]) forward -= 1.f; // S
     if (m_Input.keysDown[0x44]) right   += 1.f; // D
     if (m_Input.keysDown[0x41]) right   -= 1.f; // A
+
+    // Q/E vertical fly (noclip editor mode — Unreal-style).
+    // In noclip mode the player can fly freely; these move the camera
+    // along the world-up axis regardless of pitch.
+    if (m_PiePlayer.IsNoclip()) {
+        const float flySpeed = NF::Game::PlayerMovement::kMoveSpeed
+                             * (m_Input.keysDown[0x10] ? NF::Game::PlayerMovement::kSprintMul : 1.f);
+        float verticalDelta = 0.f;
+        if (m_Input.keysDown[0x45]) verticalDelta += flySpeed * dt; // E — fly up
+        if (m_Input.keysDown[0x51]) verticalDelta -= flySpeed * dt; // Q — fly down
+        if (verticalDelta != 0.f) {
+            const auto& pos = m_PiePlayer.GetPosition();
+            m_PiePlayer.SetPosition({pos.X, pos.Y + verticalDelta, pos.Z});
+        }
+    }
 
     const bool jump   = m_Input.keysJustPressed[0x20]; // Space
     const bool sprint = m_Input.keysDown[0x10];         // Shift

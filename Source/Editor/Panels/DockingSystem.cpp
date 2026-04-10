@@ -320,11 +320,12 @@ void DockingSystem::DrawNode(DockNode& node,
                     if (hovered && m_Input && m_Input->leftJustPressed)
                         node.activeTabIdx = ti;
 
-                    // Tab background
-                    uint32_t tabBg = isActive ? theme.panelBg
-                                  : hovered  ? theme.hoverBg
-                                             : theme.titleBarBg;
-                    m_Renderer->DrawRect({tabX, tabY, tabW, tabH}, tabBg);
+                    // Tab background (using theme tab tokens with rounded corners)
+                    uint32_t tabBgColor = isActive ? theme.tabActiveBg
+                                        : hovered  ? theme.tabHoverBg
+                                                   : theme.tabBg;
+                    m_Renderer->DrawRoundedRect({tabX, tabY, tabW, tabH}, tabBgColor,
+                                               theme.tabCornerRadius * dpi);
 
                     // Bevel depth on each tab
                     m_Renderer->DrawRect({tabX + 1.f, tabY + 1.f, tabW - 2.f, 1.f},       0xFFFFFF15U);

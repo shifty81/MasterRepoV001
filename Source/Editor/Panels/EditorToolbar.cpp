@@ -290,9 +290,10 @@ void EditorToolbar::DrawDropdown()
     for (int i = 0; i < menu.count; ++i)
         ddH += menu.items[i].label ? itemH : sepH;
 
-    // Background and border
-    m_Renderer->DrawRect({ddX, ddY, ddW, ddH}, kDropdownBg);
-    m_Renderer->DrawOutlineRect({ddX, ddY, ddW, ddH}, kSepColor);
+    // Background and border (rounded corners for Godot-like style)
+    const float ddRadius = ActiveTheme().panelCornerRadius * dpi;
+    m_Renderer->DrawRoundedRect({ddX, ddY, ddW, ddH}, kDropdownBg, ddRadius);
+    m_Renderer->DrawRoundedOutlineRect({ddX, ddY, ddW, ddH}, kSepColor, ddRadius);
 
     // Items
     float iy = ddY + 3.f * dpi;
