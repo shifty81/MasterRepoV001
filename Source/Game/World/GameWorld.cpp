@@ -1,4 +1,5 @@
 #include "Game/World/GameWorld.h"
+#include "Game/Components/PositionComponent.h"
 #include "Core/Logging/Log.h"
 #include <cmath>
 #include <vector>
@@ -26,14 +27,18 @@ bool GameWorld::Initialize(const std::string& contentRoot,
                 "[World] Seed: " + std::to_string(m_Config.Seed()));
 
     // Create a player entity at the spawn point
+    const auto& sp = m_Config.GetSpawnPoint();
     m_Level.Load(m_Config.WorldId());
     auto& world = m_Level.GetWorld();
     m_PlayerEntity = world.CreateEntity();
+    // Attach a world-space position component so the editor gizmo can
+    // read and write the entity's position.
+    world.AddComponent<PositionComponent>(m_PlayerEntity,
+        PositionComponent{ sp.Position });
     Logger::Log(LogLevel::Info, "GameWorld",
                 "[World] Player entity created: " + std::to_string(m_PlayerEntity));
 
     // Log spawn point
-    const auto& sp = m_Config.GetSpawnPoint();
     Logger::Log(LogLevel::Info, "GameWorld",
                 "[World] Spawn initialized: (" + std::to_string(sp.Position.X) + ", "
                 + std::to_string(sp.Position.Y) + ", "

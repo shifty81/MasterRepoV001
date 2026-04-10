@@ -7,6 +7,7 @@
 #include "Game/Voxel/ChunkCoord.h"
 #include "Renderer/Debug/DebugDraw.h"
 #include "Editor/Commands/VoxelEditCommands.h"
+#include "Game/Components/PositionComponent.h"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -281,6 +282,7 @@ bool EditorApp::Init() {
         m_WorldSession.Init(m_GameWorld, m_Level, contentRoot, worldName);
         m_WorldSession.SetSolarSystem(&m_DevSolarSystem);
         m_WorldSession.SetItemGen(&m_PCGItemGen);
+        m_WorldSession.SetExplorationSystem(&m_ExplorationSystem);
         m_GameWorld.Initialize(contentRoot, worldName);
         m_WorldSession.LoadSavedChunks();
     }
@@ -362,6 +364,7 @@ bool EditorApp::Init() {
     // Wire Phase 3 interaction loop
     m_InteractionLoop.Init(&m_GameWorld.GetVoxelEditApi());
     m_HUDPanel.SetInteractionLoop(&m_InteractionLoop);
+    m_HUDPanel.SetPlayerMovement(&m_PiePlayer);
 
     // Wire toolbar
     m_Toolbar.SetUIRenderer(&m_UIRenderer);
@@ -431,13 +434,15 @@ bool EditorApp::Init() {
         UpdateViewportHighlight();
     });
 
-    // Wire "Travel to Body" — placeholder that logs intent.
+    // Wire "Travel to Body" — calls TravelToBody which regenerates terrain.
     m_SolarSystemPanel.SetOnTravelToBody([this](uint32_t bodyId) {
         const auto* body = m_DevSolarSystem.FindBody(bodyId);
-        const std::string name = body ? body->name : std::to_string(bodyId);
-        Logger::Log(LogLevel::Info, "Editor",
-                    "Travel to Body requested: " + name
-                    + " (ExplorationSystem not yet implemented)");
+        if (!body) {
+            Logger::Log(LogLevel::Warning, "Editor",
+                        "TravelToBody: body " + std::to_string(bodyId) + " not found");
+            return;
+        }
+        m_WorldSession.TravelToBody(*body);
     });
 
     // Wire world-changed callback to re-seed and regenerate solar system.
@@ -469,8 +474,14 @@ bool EditorApp::Init() {
         m_Inspector.SetSelectedEntity(id, &m_Level.GetWorld());
         BuildPropertySetForSelection(handle);
         UpdateViewportHighlight();
-        // Sync gizmo to the selected entity.
+        // Sync gizmo to the selected entity's position.
         m_TransformGizmo.SetSelectedEntity(id);
+        if (id != NullEntity
+            && m_Level.GetWorld().HasComponent<NF::Game::PositionComponent>(id))
+        {
+            const auto& pc = m_Level.GetWorld().GetComponent<NF::Game::PositionComponent>(id);
+            m_TransformGizmo.SetPosition(pc.position);
+        }
     });
 
     // Chunk selection from SceneOutliner
@@ -1663,12 +1674,73 @@ void EditorApp::TickFrame(float dt)
             NF::DebugDraw::Flush(*m_RenderDevice, viewProj);
         }
 
+        // ---- Transform Gizmo ----
+        // Sync gizmo position from the selected entity's PositionComponent
+        // every frame while not actively dragging so it follows the entity.
+        {
+            const EntityId gizmoEntity = static_cast<EntityId>(
+                m_Selection.HasSelection()
+                    ? m_Selection.GetSelection().id
+                    : static_cast<uint64_t>(NullEntity));
+            World& ecsWorld = m_Level.GetWorld();
+            if (gizmoEntity != NullEntity
+                && !m_TransformGizmo.IsActive()
+                && ecsWorld.HasComponent<NF::Game::PositionComponent>(gizmoEntity))
+            {
+                const auto& pc = ecsWorld.GetComponent<NF::Game::PositionComponent>(gizmoEntity);
+                m_TransformGizmo.SetPosition(pc.position);
+            }
+        }
+
         // Draw the transform gizmo on top of the 3D scene.
         m_TransformGizmo.SetCameraMatrices(view, proj);
         m_TransformGizmo.SetViewportBounds(vpX, vpY, vpW, vpH);
-        m_TransformGizmo.SetMouseDown(m_Input.leftDown);
+        // Only feed mouse input to the gizmo when not in PIE — during PIE the
+        // left click is reserved for mining and crosshair interaction.
+        m_TransformGizmo.SetMouseDown(!isPiePlaying && !isPiePaused && m_Input.leftDown);
         m_TransformGizmo.Update(dt, {m_Input.mouseX, m_Input.mouseY});
         m_TransformGizmo.Draw(*m_RenderDevice);
+
+        // Detect gizmo drag end and push an undoable EntityMoveCommand.
+        if (m_GizmoWasActive && !m_TransformGizmo.IsActive()) {
+            const EntityId movingEntity = static_cast<EntityId>(
+                m_Selection.HasSelection()
+                    ? m_Selection.GetSelection().id
+                    : static_cast<uint64_t>(NullEntity));
+            World& ecsWorld = m_Level.GetWorld();
+            if (movingEntity != NullEntity
+                && ecsWorld.HasComponent<NF::Game::PositionComponent>(movingEntity))
+            {
+                const NF::Vector3 newPos =
+                    ecsWorld.GetComponent<NF::Game::PositionComponent>(movingEntity).position
+                    + m_TransformGizmo.GetDragDelta();
+                ecsWorld.GetComponent<NF::Game::PositionComponent>(movingEntity).position = newPos;
+                auto cmd = std::make_shared<EntityMoveCommand>(
+                    ecsWorld, movingEntity, m_GizmoDragStartPos, newPos);
+                m_CommandHistory.Push(cmd);
+                m_WorldSession.MarkDirty();
+                Logger::Log(LogLevel::Debug, "Editor",
+                            "Entity " + std::to_string(movingEntity) + " moved to ("
+                            + std::to_string(newPos.X) + ", "
+                            + std::to_string(newPos.Y) + ", "
+                            + std::to_string(newPos.Z) + ")");
+            }
+        }
+        // Record drag-start position when a drag begins.
+        if (!m_GizmoWasActive && m_TransformGizmo.IsActive()) {
+            const EntityId movingEntity = static_cast<EntityId>(
+                m_Selection.HasSelection()
+                    ? m_Selection.GetSelection().id
+                    : static_cast<uint64_t>(NullEntity));
+            World& ecsWorld = m_Level.GetWorld();
+            if (movingEntity != NullEntity
+                && ecsWorld.HasComponent<NF::Game::PositionComponent>(movingEntity))
+            {
+                m_GizmoDragStartPos =
+                    ecsWorld.GetComponent<NF::Game::PositionComponent>(movingEntity).position;
+            }
+        }
+        m_GizmoWasActive = m_TransformGizmo.IsActive();
 
         // Restore full-window viewport for UI pass.
         m_RenderDevice->EnableScissor(false);
@@ -1735,6 +1807,26 @@ void EditorApp::TickFrame(float dt)
     if (isPiePlaying)
         m_InteractionLoop.Tick(dt);
 
+    // ---- PIE mining: left-click during Play fires a mine action ----
+    if (isPiePlaying && m_Input.leftJustPressed && hasViewport && m_Viewport.IsMouseInside()) {
+        // Cast a ray from the FPS camera eye in the view direction.
+        Vector3 origin, direction;
+        if (m_Viewport.PickRay(m_Input.mouseX, m_Input.mouseY, origin, direction)) {
+            auto hit = m_GameWorld.GetChunkMap().RaycastVoxel(
+                origin.X, origin.Y, origin.Z,
+                direction.X, direction.Y, direction.Z, 8.f);
+            if (hit.hit) {
+                const auto result = m_InteractionLoop.Mine(hit.x, hit.y, hit.z);
+                const auto mr = result.voxelReport.result;
+                if (mr == NF::Game::MineResult::Success
+                    || mr == NF::Game::MineResult::DurabilityLeft) {
+                    m_HUDPanel.NotifyMineFired();
+                    m_WorldSession.MarkDirty();
+                }
+            }
+        }
+    }
+
     // ---- Band 1: Toolbar strip at the top ----
     m_Toolbar.Draw(0.f, 0.f, static_cast<float>(m_ClientWidth), toolbarH);
 
@@ -1760,6 +1852,17 @@ void EditorApp::TickFrame(float dt)
         constexpr uint32_t kCrosshairCol = 0xCCCCCC99u;
         m_UIRenderer.DrawRect({cx - len, cy - th * 0.5f, len * 2.f, th}, kCrosshairCol);
         m_UIRenderer.DrawRect({cx - th * 0.5f, cy - len, th, len * 2.f}, kCrosshairCol);
+
+        // ---- PIE HUD overlay: draw the status panel in the viewport corner ----
+        const float dpi2   = m_UIRenderer.GetDpiScale();
+        const float hudW   = 200.f * dpi2;
+        const float hudH   = 200.f * dpi2;
+        const float hudX   = vpX + 8.f * dpi2;
+        const float hudY   = vpY + 8.f * dpi2;
+        // Semi-transparent background behind the HUD overlay.
+        m_UIRenderer.DrawRect({hudX - 4.f * dpi2, hudY - 4.f * dpi2,
+                                hudW + 8.f * dpi2, hudH + 8.f * dpi2}, 0x00000088u);
+        m_HUDPanel.Draw(hudX, hudY, hudW, hudH);
     }
 
     // Status bar at the bottom

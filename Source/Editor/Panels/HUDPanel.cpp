@@ -4,11 +4,16 @@
 #include "Game/Interaction/ResourceItem.h"
 #include "Game/World/GameWorld.h"
 #include <algorithm>
+#include <cstdio>
 #include <string>
 
 namespace NF::Editor {
 
-void HUDPanel::Update([[maybe_unused]] float dt) {}
+void HUDPanel::Update(float dt)
+{
+    if (m_MineFlashTimer > 0.f)
+        m_MineFlashTimer -= dt;
+}
 
 void HUDPanel::DrawBar(float x, float y, float w, float barH,
                         float fraction, uint32_t fillColor,
@@ -78,6 +83,18 @@ void HUDPanel::Draw(float x, float y, float w, float h) {
         cy += 4.f * dpi;
     }
 
+    // ---- Player position ----
+    if (m_Player) {
+        const NF::Vector3 pos = m_Player->GetEyePosition();
+        char posBuf[64];
+        std::snprintf(posBuf, sizeof(posBuf), "Pos %.1f, %.1f, %.1f",
+                      static_cast<double>(pos.X),
+                      static_cast<double>(pos.Y),
+                      static_cast<double>(pos.Z));
+        m_Renderer->DrawText(posBuf, x + padX, cy + 2.f * dpi, kLabelColor, scale);
+        cy += lineH;
+    }
+
     if (!m_Loop) {
         m_Renderer->DrawText("No interaction loop", x + padX, cy + 2.f * dpi, kLabelColor, scale);
         return;
@@ -111,8 +128,14 @@ void HUDPanel::Draw(float x, float y, float w, float h) {
         static const char* kToolNames[] = {"Mine", "Place", "Repair"};
         const int slot = rig.GetToolSlot();
         const char* toolName = (slot >= 0 && slot < 3) ? kToolNames[slot] : "?";
-        const std::string toolStr = std::string("Tool: ") + toolName;
-        m_Renderer->DrawText(toolStr, x + padX, cy + 2.f * dpi, kTextColor, scale);
+
+        // Mine flash: highlight the tool label briefly when mining fires.
+        const bool isFlashing = m_MineFlashTimer > 0.f;
+        const uint32_t toolColor = isFlashing ? 0xFF8800FFu : kTextColor;
+        const std::string toolStr = isFlashing
+            ? (std::string("Tool: ") + toolName + "  [MINE]")
+            : (std::string("Tool: ") + toolName);
+        m_Renderer->DrawText(toolStr, x + padX, cy + 2.f * dpi, toolColor, scale);
         cy += lineH;
     }
 

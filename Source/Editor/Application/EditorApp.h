@@ -38,6 +38,8 @@
 #include "Game/Movement/PlayerMovement.h"
 #include "Game/Gameplay/SolarSystem/DevSolarSystem.h"
 #include "Game/Gameplay/PCG/PCGItemGen.h"
+#include "Game/Gameplay/Exploration/ExplorationSystem.h"
+#include "Game/Components/PositionComponent.h"
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -121,11 +123,16 @@ private:
     NF::Game::PlayerCharacterRenderer m_CharacterRenderer;
     NF::Game::Gameplay::DevSolarSystem m_DevSolarSystem;
     NF::Game::Gameplay::PCGItemGen     m_PCGItemGen;
+    NF::Game::Gameplay::ExplorationSystem m_ExplorationSystem;
 
     // ---- PIE (Play-In-Editor) state ----
     NF::Game::PlayerMovement m_PiePlayer;   ///< FPS player — always active; noclip in edit, physics in PIE.
     bool  m_WasPiePlaying{false};           ///< Tracks PIE state transitions.
     bool  m_FpsCursorHidden{false};         ///< True when cursor is hidden for FPS look.
+
+    // ---- Gizmo drag state ----
+    bool        m_GizmoWasActive{false};    ///< Gizmo drag active on previous frame.
+    NF::Vector3 m_GizmoDragStartPos{};      ///< Entity position at the start of the gizmo drag.
 
     // ---- World picker overlay ----
     bool                     m_WorldPickerOpen{false};   ///< True when the world picker overlay is shown.

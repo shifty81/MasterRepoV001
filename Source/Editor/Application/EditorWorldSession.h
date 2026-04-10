@@ -3,6 +3,8 @@
 #include "Game/World/GameWorld.h"
 #include "Game/Gameplay/SolarSystem/DevSolarSystem.h"
 #include "Game/Gameplay/PCG/PCGItemGen.h"
+#include "Game/Gameplay/PCG/PCGWorldGen.h"
+#include "Game/Gameplay/Exploration/ExplorationSystem.h"
 #include "Engine/World/Level.h"
 #include <functional>
 #include <string>
@@ -30,6 +32,11 @@ public:
     /// @brief Set the PCG item generator to save/load alongside the world.
     void SetItemGen(NF::Game::Gameplay::PCGItemGen* gen) noexcept { m_ItemGen = gen; }
 
+    /// @brief Set the ExplorationSystem so TravelToBody can update it.
+    void SetExplorationSystem(NF::Game::Gameplay::ExplorationSystem* sys) noexcept {
+        m_ExplorationSystem = sys;
+    }
+
     /// @brief Register a callback invoked after any world change (load/reload/new).
     ///
     /// EditorApp uses this to re-seed and regenerate the solar system whenever
@@ -49,6 +56,13 @@ public:
 
     /// @brief Reload the world from the last saved state on disk.
     void Reload();
+
+    /// @brief Travel to a celestial body identified by @p bodyId.
+    ///
+    /// Regenerates the terrain using PCGWorldGen seeded from the body, then
+    /// fires OnWorldChanged so the editor refreshes.
+    /// @param body The destination body.
+    void TravelToBody(const NF::Game::Gameplay::CelestialBody& body);
 
     /// @brief Load any saved chunk data over the generated terrain.
     /// Call after GameWorld::Initialize to overlay persisted edits.
@@ -81,8 +95,9 @@ public:
 private:
     NF::Game::GameWorld* m_World{nullptr};
     Level*               m_Level{nullptr};
-    NF::Game::Gameplay::DevSolarSystem* m_SolarSystem{nullptr};
-    NF::Game::Gameplay::PCGItemGen*     m_ItemGen{nullptr};
+    NF::Game::Gameplay::DevSolarSystem*   m_SolarSystem{nullptr};
+    NF::Game::Gameplay::PCGItemGen*       m_ItemGen{nullptr};
+    NF::Game::Gameplay::ExplorationSystem* m_ExplorationSystem{nullptr};
     std::function<void()> m_OnWorldChanged;   ///< Fired after load/reload/new.
     std::string          m_ContentRoot;
     std::string          m_WorldName;

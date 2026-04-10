@@ -98,14 +98,14 @@ All work must be exercised in DevWorld/DevSolarSystem before it goes to main.
 **Editor Improvements**
 - [x] PIE crosshair overlay in viewport when Playing
 - [x] PCGItemGen save/load (.nfpi) — placed items persist across sessions
-- [ ] Functional TransformGizmo — drag-to-move entities in the viewport
-- [ ] Full PIE HUD mirror — inventory slots, active tool feedback, position, mine flash
+- [x] Functional TransformGizmo — drag-to-move entities in the viewport
+- [x] Full PIE HUD mirror — inventory slots, active tool feedback, position, mine flash
 
 **Solar System → In-Game**
 - [x] GameClientApp solar map overlay (M key, 2D orbital map with bodies and deposits)
-- [ ] Travel mechanic skeleton — EditorWorldSession::TravelToBody(bodyId) swaps world context
-- [ ] Per-body terrain generation — PCGWorldGen seeded from body ID generates unique terrain
-- [ ] Resource deposits → voxel terrain bridge — deposit positions influence ore placement per body
+- [x] Travel mechanic skeleton — EditorWorldSession::TravelToBody(bodyId) swaps world context
+- [x] Per-body terrain generation — PCGWorldGen seeded from body ID generates unique terrain
+- [x] Resource deposits → voxel terrain bridge — deposit positions influence ore placement per body
 - [ ] Dev-only access gate — config flag exposes solar map in game without shipping to players
 
 **Core Gameplay Systems**
