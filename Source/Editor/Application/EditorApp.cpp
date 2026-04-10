@@ -2023,12 +2023,15 @@ void EditorApp::HandlePieInput(float dt)
     // Q/E vertical fly (noclip editor mode — Unreal-style).
     // In noclip mode the player can fly freely; these move the camera
     // along the world-up axis regardless of pitch.
+    static constexpr uint8_t kVK_Q     = 0x51;
+    static constexpr uint8_t kVK_E     = 0x45;
+    static constexpr uint8_t kVK_Shift = 0x10;
     if (m_PiePlayer.IsNoclip()) {
         const float flySpeed = NF::Game::PlayerMovement::kMoveSpeed
-                             * (m_Input.keysDown[0x10] ? NF::Game::PlayerMovement::kSprintMul : 1.f);
+                             * (m_Input.keysDown[kVK_Shift] ? NF::Game::PlayerMovement::kSprintMul : 1.f);
         float verticalDelta = 0.f;
-        if (m_Input.keysDown[0x45]) verticalDelta += flySpeed * dt; // E — fly up
-        if (m_Input.keysDown[0x51]) verticalDelta -= flySpeed * dt; // Q — fly down
+        if (m_Input.keysDown[kVK_E]) verticalDelta += flySpeed * dt; // E — fly up
+        if (m_Input.keysDown[kVK_Q]) verticalDelta -= flySpeed * dt; // Q — fly down
         if (verticalDelta != 0.f) {
             const auto& pos = m_PiePlayer.GetPosition();
             m_PiePlayer.SetPosition({pos.X, pos.Y + verticalDelta, pos.Z});
