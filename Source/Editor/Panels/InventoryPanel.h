@@ -56,11 +56,11 @@ private:
     NF::Game::Gameplay::SalvageSystem*          m_Salvage{nullptr};
     const NF::Game::Inventory*                  m_PlayerInv{nullptr};
 
-    void DrawBackpack(float x, float& cy, float w, float maxY);
-    void DrawStorageBoxes(float x, float& cy, float w, float maxY);
-    void DrawWreckSites(float x, float& cy, float w, float maxY);
+    void DrawBackpack(float x, float& cy, [[maybe_unused]] float w, float maxY);
+    void DrawStorageBoxes(float x, float& cy, [[maybe_unused]] float w, float maxY);
+    void DrawWreckSites(float x, float& cy, [[maybe_unused]] float w, float maxY);
     void DrawInventory(const NF::Game::Inventory& inv,
-                       float x, float& cy, float w, float maxY);
+                       float x, float& cy, [[maybe_unused]] float w, float maxY);
 };
 
 } // namespace NF::Editor

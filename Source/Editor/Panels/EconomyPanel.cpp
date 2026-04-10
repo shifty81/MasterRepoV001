@@ -15,7 +15,8 @@ static std::string FormatFloat(float v, int decimals = 1)
 {
     // Simple fixed-decimal formatter for non-negative floats.
     // Credits and prices are always >= 0 by design, so negative values are
-    // not handled here.
+    // not handled here.  Callers must ensure v >= 0.
+    if (v < 0.f) v = 0.f; // guard: clamp to zero rather than producing garbled output
     const int scale = (decimals == 1) ? 10 : (decimals == 2 ? 100 : 1);
     const int whole = static_cast<int>(v);
     const int frac  = static_cast<int>((v - static_cast<float>(whole)) * static_cast<float>(scale) + 0.5f);

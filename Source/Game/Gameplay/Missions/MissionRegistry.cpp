@@ -76,6 +76,7 @@ static const MissionDef kStarterMissions[] = {
         MissionObjectiveType::SalvageWreck,
         3u,
         NF::Game::ResourceType::None, // not resource-specific
+        // Reward: 175 XP + 3 bonus Ore (specific salvage reward, not tied to objective type).
         { 175u, NF::Game::ResourceType::Ore,   3u,  40.f }
     },
 };

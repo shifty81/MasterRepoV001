@@ -65,7 +65,10 @@ bool Orchestrator::Init(RenderDevice* renderDevice, const NetParams& params)
 
         // ---- Core gameplay systems ----
 
-        // Missions: auto-accept 5 starter missions (3 original + 2 economy).
+        // Missions: auto-accept 7 starter missions:
+        //   3 original (First Contact, Ore Run, Journeyman)
+        //   2 economy   (First Trade, First Craft) — Phase 6
+        //   2 salvage   (Stash It, Salvage Run)    — Phase 7
         m_Missions.Init();
 
         // Phase 6: initialise station market from the resource registry.

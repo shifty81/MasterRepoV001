@@ -58,7 +58,7 @@ void InventoryPanel::Draw(float x, float y, float w, float h)
 // DrawBackpack
 // ---------------------------------------------------------------------------
 
-void InventoryPanel::DrawBackpack(float x, float& cy, float w, float maxY)
+void InventoryPanel::DrawBackpack(float x, float& cy, [[maybe_unused]] float w, float maxY)
 {
     const auto& t     = ActiveTheme();
     const float dpi   = m_Renderer->GetDpiScale();
@@ -71,7 +71,6 @@ void InventoryPanel::DrawBackpack(float x, float& cy, float w, float maxY)
     }
 
     DrawInventory(*m_PlayerInv, x, cy, w, maxY);
-    (void)w;
 }
 
 // ---------------------------------------------------------------------------
@@ -79,7 +78,7 @@ void InventoryPanel::DrawBackpack(float x, float& cy, float w, float maxY)
 // ---------------------------------------------------------------------------
 
 void InventoryPanel::DrawInventory(const NF::Game::Inventory& inv,
-                                   float x, float& cy, float w, float maxY)
+                                   float x, float& cy, [[maybe_unused]] float w, float maxY)
 {
     const auto& t     = ActiveTheme();
     const float dpi   = m_Renderer->GetDpiScale();
@@ -101,14 +100,13 @@ void InventoryPanel::DrawInventory(const NF::Game::Inventory& inv,
         m_Renderer->DrawText("(empty)", x, cy, t.textSecondary, 1.f);
         cy += lineH;
     }
-    (void)w;
 }
 
 // ---------------------------------------------------------------------------
 // DrawStorageBoxes
 // ---------------------------------------------------------------------------
 
-void InventoryPanel::DrawStorageBoxes(float x, float& cy, float w, float maxY)
+void InventoryPanel::DrawStorageBoxes(float x, float& cy, [[maybe_unused]] float w, float maxY)
 {
     const auto& t     = ActiveTheme();
     const float dpi   = m_Renderer->GetDpiScale();
@@ -139,14 +137,13 @@ void InventoryPanel::DrawStorageBoxes(float x, float& cy, float w, float maxY)
         m_Renderer->DrawText("(no boxes placed)", x, cy, t.textSecondary, 1.f);
         cy += lineH;
     }
-    (void)w;
 }
 
 // ---------------------------------------------------------------------------
 // DrawWreckSites
 // ---------------------------------------------------------------------------
 
-void InventoryPanel::DrawWreckSites(float x, float& cy, float w, float maxY)
+void InventoryPanel::DrawWreckSites(float x, float& cy, [[maybe_unused]] float w, float maxY)
 {
     const auto& t     = ActiveTheme();
     const float dpi   = m_Renderer->GetDpiScale();
@@ -174,7 +171,6 @@ void InventoryPanel::DrawWreckSites(float x, float& cy, float w, float maxY)
         m_Renderer->DrawText(lootStr.c_str(),        x + colW, cy, t.textSecondary, 1.f);
         cy += lineH;
     }
-    (void)w;
 }
 
 } // namespace NF::Editor
