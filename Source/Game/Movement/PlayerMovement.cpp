@@ -26,7 +26,7 @@ void PlayerMovement::SetMoveInput(float forward, float right,
 
 void PlayerMovement::ApplyMouseLook(float dx, float dy) noexcept
 {
-    m_Yaw   += dx * kMouseSens;
+    m_Yaw   -= dx * kMouseSens;
     m_Pitch -= dy * kMouseSens;
     m_Pitch  = std::clamp(m_Pitch, -kMaxPitch, kMaxPitch);
 }
@@ -42,7 +42,7 @@ NF::Vector3 PlayerMovement::GetForwardXZ() const noexcept
 
 NF::Vector3 PlayerMovement::GetRightXZ() const noexcept
 {
-    return NF::Vector3{std::cos(m_Yaw), 0.f, -std::sin(m_Yaw)};
+    return NF::Vector3{-std::cos(m_Yaw), 0.f, std::sin(m_Yaw)};
 }
 
 NF::Vector3 PlayerMovement::GetViewDirection() const noexcept
