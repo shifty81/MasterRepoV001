@@ -15,6 +15,7 @@ static const MissionDef kStarterMissions[] = {
         "The RIG's mining array is cold. Break ground: mine 10 voxels to warm it up.",
         MissionObjectiveType::MineVoxels,
         10u,
+        NF::Game::ResourceType::None, // not a CollectResource mission
         { 50u,  NF::Game::ResourceType::Stone, 5u,  0.f  }
     },
     // Mission 2: Ore Run — collect 5 units of Ore in inventory.
@@ -24,6 +25,7 @@ static const MissionDef kStarterMissions[] = {
         "The station processor is hungry. Collect 5 units of raw Ore.",
         MissionObjectiveType::CollectResource,
         5u,
+        NF::Game::ResourceType::Ore, // explicit target resource type
         { 150u, NF::Game::ResourceType::Metal, 2u,  25.f }
     },
     // Mission 3: Journeyman — reach progression level 3.
@@ -33,6 +35,7 @@ static const MissionDef kStarterMissions[] = {
         "Prove your worth. Reach Pilot level 3 through mining and construction.",
         MissionObjectiveType::ReachLevel,
         3u,
+        NF::Game::ResourceType::None, // not a CollectResource mission
         { 300u, NF::Game::ResourceType::None,  0u, 100.f }
     },
 };
@@ -131,16 +134,12 @@ void MissionRegistry::NotifyInventoryChanged(NF::Game::ResourceType type, uint32
     for (auto& ms : m_Missions) {
         if (ms.status != MissionStatus::Active) continue;
         if (ms.def->objectiveType == MissionObjectiveType::CollectResource) {
-            // Check if the resource type matches — None means any.
-            // For "Ore Run", collect Ore.  The objectiveTarget stores units needed.
-            // We treat CollectResource as: reach at least objectiveTarget of the type
-            // whose ResourceType is stored in the reward (as a proxy for objective type).
-            // For simplicity, the first CollectResource mission targets Ore.
+            // Use the explicit targetResourceType field; None means any resource.
             const bool matches =
-                (ms.def->reward.resourceType == type)
-                || (ms.def->reward.resourceType == NF::Game::ResourceType::None);
+                (ms.def->targetResourceType == type)
+                || (ms.def->targetResourceType == NF::Game::ResourceType::None);
             if (matches)
-                Advance(ms, count); // absolute count, not incremental
+                Advance(ms, count); // absolute inventory count, not incremental
         }
     }
 }

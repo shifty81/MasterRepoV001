@@ -47,7 +47,10 @@ struct MissionDef {
     std::string           name;
     std::string           description;
     MissionObjectiveType  objectiveType{MissionObjectiveType::MineVoxels};
-    uint32_t              objectiveTarget{0}; ///< Quantity needed.
+    uint32_t              objectiveTarget{0};     ///< Quantity needed.
+    /// @brief For CollectResource missions: the specific resource type to collect.
+    ///        Ignored for other objective types.
+    NF::Game::ResourceType targetResourceType{NF::Game::ResourceType::None};
     MissionReward         reward;
 };
 

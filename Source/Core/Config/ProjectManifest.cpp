@@ -79,6 +79,8 @@ constexpr const char* kKeyLogRoot             = "logRoot";
 constexpr const char* kKeyVoxelAuth           = "voxelAuthoritative";
 constexpr const char* kKeyEditorShips         = "editorShipsWithGame";
 constexpr const char* kKeyAllowSuite          = "allowSuiteFeaturesInRepo";
+// The key is named "solar_map_enabled" — the flat line-by-line parser finds it
+// anywhere in the file, including inside the "dev": { } block in the JSON.
 constexpr const char* kKeyDevSolarMap         = "solar_map_enabled";
 
 } // anonymous namespace
