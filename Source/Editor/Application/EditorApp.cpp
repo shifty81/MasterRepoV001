@@ -1997,8 +1997,8 @@ Matrix4x4 EditorApp::GetPieViewMatrix() const noexcept
     const Vector3 viewDir = m_PiePlayer.GetViewDirection();
 
     Vector3 forward = viewDir;
-    Vector3 right   = forward.Cross({0.f, 1.f, 0.f}).Normalized();
-    Vector3 up      = right.Cross(forward);
+    Vector3 right   = Vector3{0.f, 1.f, 0.f}.Cross(forward).Normalized();
+    Vector3 up      = forward.Cross(right);
 
     Matrix4x4 v = Matrix4x4::Identity();
     v.M[0][0] = right.X;    v.M[1][0] = right.Y;    v.M[2][0] = right.Z;
