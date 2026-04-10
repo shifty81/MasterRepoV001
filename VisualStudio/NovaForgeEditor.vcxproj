@@ -138,6 +138,10 @@
     <ClInclude Include="..\Source\Game\Gameplay\Manufacturing\ManufacturingQueue.h" />
     <ClInclude Include="..\Source\Game\Gameplay\Mining\MiningSystem.h" />
     <ClInclude Include="..\Source\Game\Gameplay\PCG\PCGItemGen.h" />
+    <ClInclude Include="..\Source\Game\Gameplay\PCG\PCGWorldGen.h" />
+    <ClInclude Include="..\Source\Game\Gameplay\Exploration\ExplorationSystem.h" />
+    <ClInclude Include="..\Source\Game\Gameplay\Missions\MissionRegistry.h" />
+    <ClInclude Include="..\Source\Game\Components\PositionComponent.h" />
     <ClInclude Include="..\Source\Game\Gameplay\Progression\ProgressionSystem.h" />
     <ClInclude Include="..\Source\Game\Gameplay\SolarSystem\DevSolarSystem.h" />
     <ClInclude Include="..\Source\Game\Gameplay\Station\StationServices.h" />

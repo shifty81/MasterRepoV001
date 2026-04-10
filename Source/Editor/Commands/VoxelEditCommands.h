@@ -2,6 +2,9 @@
 #include "Editor/Commands/EditorCommand.h"
 #include "Game/Voxel/VoxelEditApi.h"
 #include "Game/Voxel/VoxelType.h"
+#include "Game/Components/PositionComponent.h"
+#include "Engine/ECS/World.h"
+#include "Core/Math/Vector.h"
 #include <cstdint>
 
 namespace NF::Editor {
@@ -97,6 +100,34 @@ private:
     int32_t                 m_X, m_Y, m_Z;
     NF::Game::VoxelId       m_OldType;
     NF::Game::VoxelId       m_NewType;
+};
+
+/// @brief Undoable command that moves an entity to a new world-space position.
+///
+/// Execute() applies @p newPos; Undo() restores @p oldPos.
+/// The command writes through the entity's PositionComponent.
+class EntityMoveCommand : public EditorCommand {
+public:
+    EntityMoveCommand(World& world, EntityId id,
+                      const NF::Vector3& oldPos, const NF::Vector3& newPos)
+        : m_World(world), m_Entity(id), m_OldPos(oldPos), m_NewPos(newPos)
+    {}
+
+    void Execute() override {
+        if (m_World.HasComponent<NF::Game::PositionComponent>(m_Entity))
+            m_World.GetComponent<NF::Game::PositionComponent>(m_Entity).position = m_NewPos;
+    }
+
+    void Undo() override {
+        if (m_World.HasComponent<NF::Game::PositionComponent>(m_Entity))
+            m_World.GetComponent<NF::Game::PositionComponent>(m_Entity).position = m_OldPos;
+    }
+
+private:
+    World&          m_World;
+    EntityId        m_Entity;
+    NF::Vector3     m_OldPos;
+    NF::Vector3     m_NewPos;
 };
 
 } // namespace NF::Editor

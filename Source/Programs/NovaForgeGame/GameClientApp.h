@@ -81,7 +81,8 @@ private:
     float m_MineFlashTimer{0.f};  ///< Countdown for "mined!" HUD flash.
 
     // Solar map overlay
-    bool  m_ShowSolarMap{false};  ///< True when the solar map overlay is visible.
+    bool  m_ShowSolarMap{false};        ///< True when the solar map overlay is visible.
+    bool  m_DevSolarMapEnabled{false};  ///< Loaded from config; false in prod builds.
 
     /// @brief Advance simulation and render one frame.
     void TickFrame(float dt);

@@ -24,6 +24,9 @@
   "game": {
     "deterministic_simulation": true
   },
+  "dev": {
+    "solar_map_enabled": true
+  },
   "phases": [
     "Phase0_Bootstrap",
     "Phase1_DevWorldOnly",

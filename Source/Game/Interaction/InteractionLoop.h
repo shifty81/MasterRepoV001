@@ -3,6 +3,7 @@
 #include "Game/Interaction/Inventory.h"
 #include "Game/Interaction/MiningTool.h"
 #include "Game/Voxel/VoxelEditApi.h"
+#include <functional>
 
 namespace NF::Game {
 
@@ -67,6 +68,16 @@ public:
     RepairResult Repair(int32_t wx, int32_t wy, int32_t wz, ResourceType type);
 
     // -------------------------------------------------------------------------
+    // Callbacks
+    // -------------------------------------------------------------------------
+
+    /// @brief Fired on every successful mine that produces a resource.
+    ///        Receives the resource type and the count yielded.
+    void SetOnMineSuccess(std::function<void(ResourceType, uint32_t)> cb) {
+        m_OnMineSuccess = std::move(cb);
+    }
+
+    // -------------------------------------------------------------------------
     // Accessors
     // -------------------------------------------------------------------------
 
@@ -80,6 +91,7 @@ private:
     Inventory   m_Inventory;
     MiningTool  m_MiningTool;
     VoxelEditApi* m_Api{nullptr};
+    std::function<void(ResourceType, uint32_t)> m_OnMineSuccess;
 };
 
 } // namespace NF::Game

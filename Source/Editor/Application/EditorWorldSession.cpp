@@ -1,5 +1,9 @@
 #include "Editor/Application/EditorWorldSession.h"
 #include "Core/Logging/Log.h"
+#include "Game/Voxel/ChunkCoord.h"
+#include "Game/Voxel/VoxelType.h"
+#include "Game/Gameplay/PCG/PCGWorldGen.h"
+#include <cmath>
 
 namespace NF::Editor {
 
@@ -161,6 +165,91 @@ bool EditorWorldSession::LoadSavedChunks()
     }
 
     return chunksOk;
+}
+
+// ---------------------------------------------------------------------------
+// TravelToBody — per-body PCG terrain generation (Phase 5)
+// ---------------------------------------------------------------------------
+
+void EditorWorldSession::TravelToBody(const NF::Game::Gameplay::CelestialBody& body)
+{
+    if (!m_World) return;
+
+    const uint32_t bodySeed = body.id * 2654435761u ^ 0xDEADBEEFu;
+    // bodySeed: Knuth multiplicative hash (2654435761) mixed with body.id ensures
+    // each body maps to a distinct well-spread seed; XOR with a fixed constant
+    // ensures body 0 (star) does not collapse to seed 0.
+
+    NF::Logger::Log(NF::LogLevel::Info, "EditorWorldSession",
+                    "Travelling to " + body.name
+                    + " (id=" + std::to_string(body.id)
+                    + ", seed=" + std::to_string(bodySeed) + ")");
+
+    // Clear existing terrain and regenerate using PCGWorldGen seeded from body.
+    m_World->GetChunkMap().Clear();
+
+    NF::Game::Gameplay::PCGWorldGen gen;
+    gen.SetSeed(bodySeed);
+
+    // Generate 3×3 chunks around world origin — same footprint as the default world.
+    constexpr int kRadius = 1;
+    for (int cx = -kRadius; cx <= kRadius; ++cx) {
+        for (int cz = -kRadius; cz <= kRadius; ++cz) {
+            NF::Game::ChunkCoord coord{cx, 0, cz};
+            NF::Game::Chunk* chunk = m_World->GetChunkMap().GetOrCreateChunk(coord);
+            if (chunk)
+                gen.GenerateChunk(*chunk);
+        }
+    }
+
+    // Overlay ore veins near deposit positions to bridge deposits → terrain.
+    for (const auto& deposit : body.deposits) {
+        // Convert flat-map deposit position to voxel chunk.
+        const int32_t depCX = static_cast<int32_t>(std::floor(deposit.worldX / NF::Game::kChunkSize));
+        const int32_t depCZ = static_cast<int32_t>(std::floor(deposit.worldZ / NF::Game::kChunkSize));
+        NF::Game::ChunkCoord dc{depCX, 0, depCZ};
+        NF::Game::Chunk* chunk = m_World->GetChunkMap().GetChunk(dc);
+        if (!chunk) {
+            chunk = m_World->GetChunkMap().GetOrCreateChunk(dc);
+            if (chunk) gen.GenerateChunk(*chunk);
+        }
+        if (!chunk) continue;
+
+        // Place ore voxels in a small vein around the deposit's local position.
+        // Use safe modulo so negative worldX/worldZ values wrap into [0, kChunkSize).
+        const auto safeMod = [](int32_t v, int32_t m) -> int32_t {
+            return ((v % m) + m) % m;
+        };
+        const int32_t lx = safeMod(static_cast<int32_t>(deposit.worldX), NF::Game::kChunkSize);
+        const int32_t lz = safeMod(static_cast<int32_t>(deposit.worldZ), NF::Game::kChunkSize);
+        // Place at Y=4..7 (underground) to be mine-able.
+        for (int32_t vy = 4; vy <= 7; ++vy) {
+            for (int32_t vx = lx - 1; vx <= lx + 1; ++vx) {
+                for (int32_t vz = lz - 1; vz <= lz + 1; ++vz) {
+                    if (vx < 0 || vx >= NF::Game::kChunkSize) continue;
+                    if (vz < 0 || vz >= NF::Game::kChunkSize) continue;
+                    chunk->SetVoxel(
+                        static_cast<uint8_t>(vx),
+                        static_cast<uint8_t>(vy),
+                        static_cast<uint8_t>(vz),
+                        static_cast<NF::Game::VoxelId>(NF::Game::VoxelType::Ore));
+                }
+            }
+        }
+    }
+
+    // Update exploration state.
+    if (m_ExplorationSystem)
+        m_ExplorationSystem->TravelToBody(body.id);
+
+    m_Dirty = true;
+
+    NF::Logger::Log(NF::LogLevel::Info, "EditorWorldSession",
+                    "Arrived at " + body.name + " — terrain regenerated ("
+                    + std::to_string(m_World->GetLoadedChunkCount()) + " chunks)");
+
+    if (m_OnWorldChanged)
+        m_OnWorldChanged();
 }
 
 } // namespace NF::Editor

@@ -17,8 +17,11 @@ MiningResult InteractionLoop::Mine(int32_t wx, int32_t wy, int32_t wz) {
     MiningResult result = m_MiningTool.Use(*m_Api, m_Rig, wx, wy, wz);
 
     // Deposit gathered resources into the inventory (silently ignore if full).
-    if (!result.gathered.IsEmpty())
+    if (!result.gathered.IsEmpty()) {
         m_Inventory.AddItem(result.gathered.type, result.gathered.count);
+        if (m_OnMineSuccess)
+            m_OnMineSuccess(result.gathered.type, result.gathered.count);
+    }
 
     return result;
 }
