@@ -176,6 +176,9 @@ void EditorWorldSession::TravelToBody(const NF::Game::Gameplay::CelestialBody& b
     if (!m_World) return;
 
     const uint32_t bodySeed = body.id * 2654435761u ^ 0xDEADBEEFu;
+    // bodySeed: Knuth multiplicative hash (2654435761) mixed with body.id ensures
+    // each body maps to a distinct well-spread seed; XOR with a fixed constant
+    // ensures body 0 (star) does not collapse to seed 0.
 
     NF::Logger::Log(NF::LogLevel::Info, "EditorWorldSession",
                     "Travelling to " + body.name
@@ -213,8 +216,12 @@ void EditorWorldSession::TravelToBody(const NF::Game::Gameplay::CelestialBody& b
         if (!chunk) continue;
 
         // Place ore voxels in a small vein around the deposit's local position.
-        const int32_t lx = static_cast<int32_t>(deposit.worldX) % NF::Game::kChunkSize;
-        const int32_t lz = static_cast<int32_t>(deposit.worldZ) % NF::Game::kChunkSize;
+        // Use safe modulo so negative worldX/worldZ values wrap into [0, kChunkSize).
+        const auto safeMod = [](int32_t v, int32_t m) -> int32_t {
+            return ((v % m) + m) % m;
+        };
+        const int32_t lx = safeMod(static_cast<int32_t>(deposit.worldX), NF::Game::kChunkSize);
+        const int32_t lz = safeMod(static_cast<int32_t>(deposit.worldZ), NF::Game::kChunkSize);
         // Place at Y=4..7 (underground) to be mine-able.
         for (int32_t vy = 4; vy <= 7; ++vy) {
             for (int32_t vx = lx - 1; vx <= lx + 1; ++vx) {

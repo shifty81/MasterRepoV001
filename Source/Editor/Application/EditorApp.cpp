@@ -1711,10 +1711,9 @@ void EditorApp::TickFrame(float dt)
             if (movingEntity != NullEntity
                 && ecsWorld.HasComponent<NF::Game::PositionComponent>(movingEntity))
             {
-                const NF::Vector3 newPos =
-                    ecsWorld.GetComponent<NF::Game::PositionComponent>(movingEntity).position
-                    + m_TransformGizmo.GetDragDelta();
-                ecsWorld.GetComponent<NF::Game::PositionComponent>(movingEntity).position = newPos;
+                auto& posComp = ecsWorld.GetComponent<NF::Game::PositionComponent>(movingEntity);
+                const NF::Vector3 newPos = posComp.position + m_TransformGizmo.GetDragDelta();
+                posComp.position = newPos;
                 auto cmd = std::make_shared<EntityMoveCommand>(
                     ecsWorld, movingEntity, m_GizmoDragStartPos, newPos);
                 m_CommandHistory.Push(cmd);
