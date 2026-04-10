@@ -239,26 +239,47 @@ void EditorToolbar::Draw(float x, float y, float w, float h)
         wchar_t selfPath[MAX_PATH]{};
         GetModuleFileNameW(nullptr, selfPath, MAX_PATH);
 
+        // Build candidate path: same directory as the editor executable.
+        wchar_t gamePath[MAX_PATH]{};
+        bool found = false;
+
         wchar_t* lastSlash = wcsrchr(selfPath, L'\\');
         if (lastSlash) {
             *(lastSlash + 1) = L'\0';
-            wchar_t gamePath[MAX_PATH]{};
             if (swprintf_s(gamePath, MAX_PATH, L"%s%s", selfPath, L"NovaForgeGame.exe") > 0) {
-                STARTUPINFOW si{};
-                si.cb = sizeof(si);
-                PROCESS_INFORMATION pi{};
-                const BOOL launched = CreateProcessW(gamePath, nullptr, nullptr, nullptr,
-                                                     FALSE, 0, nullptr, nullptr, &si, &pi);
-                const DWORD lastErr = launched ? 0 : GetLastError();
-                if (launched) {
-                    CloseHandle(pi.hProcess);
-                    CloseHandle(pi.hThread);
-                } else {
-                    Logger::Log(LogLevel::Warning, "EditorToolbar",
-                                "CreateProcess failed for NovaForgeGame.exe (error "
-                                + std::to_string(lastErr) + ")");
+                const DWORD attr = GetFileAttributesW(gamePath);
+                if (attr != INVALID_FILE_ATTRIBUTES && !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
+                    found = true;
                 }
             }
+        }
+
+        if (found) {
+            STARTUPINFOW si{};
+            si.cb = sizeof(si);
+            PROCESS_INFORMATION pi{};
+            const BOOL launched = CreateProcessW(gamePath, nullptr, nullptr, nullptr,
+                                                  FALSE, 0, nullptr, nullptr, &si, &pi);
+            const DWORD lastErr = launched ? 0 : GetLastError();
+            if (launched) {
+                CloseHandle(pi.hProcess);
+                CloseHandle(pi.hThread);
+                Logger::Log(LogLevel::Info, "EditorToolbar", "NovaForgeGame launched successfully");
+            } else {
+                // Convert wide path to narrow for logging.
+                char narrowPath[MAX_PATH]{};
+                WideCharToMultiByte(CP_UTF8, 0, gamePath, -1, narrowPath, MAX_PATH, nullptr, nullptr);
+                Logger::Log(LogLevel::Warning, "EditorToolbar",
+                            "CreateProcess failed (error " + std::to_string(lastErr)
+                            + ") for: " + std::string(narrowPath));
+            }
+        } else {
+            // Convert wide path to narrow for logging.
+            char narrowPath[MAX_PATH]{};
+            WideCharToMultiByte(CP_UTF8, 0, gamePath, -1, narrowPath, MAX_PATH, nullptr, nullptr);
+            Logger::Log(LogLevel::Warning, "EditorToolbar",
+                        "NovaForgeGame.exe not found. Expected at: " + std::string(narrowPath)
+                        + " — ensure NF_BUILD_GAME=ON and the project is fully built.");
         }
     }
 #endif

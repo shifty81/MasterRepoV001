@@ -1597,6 +1597,23 @@ void EditorApp::TickFrame(float dt)
         const auto& sp = m_GameWorld.GetSpawnPoint();
         m_PiePlayer.SetPosition({sp.Position.X, sp.Position.Y + 2.f, sp.Position.Z});
         m_PiePlayer.SetNoclip(false); // enable physics for PIE
+
+        // Capture the mouse for game-style FPS controls.
+#ifdef _WIN32
+        if (!m_FpsCursorHidden) {
+            ShowCursor(FALSE);
+            HWND hwnd = static_cast<HWND>(m_Hwnd);
+            RECT rc{};
+            GetClientRect(hwnd, &rc);
+            POINT tl{rc.left, rc.top}, br{rc.right, rc.bottom};
+            ClientToScreen(hwnd, &tl);
+            ClientToScreen(hwnd, &br);
+            RECT screen{tl.x, tl.y, br.x, br.y};
+            ClipCursor(&screen);
+            m_FpsCursorHidden = true;
+        }
+#endif
+
         Logger::Log(LogLevel::Info, "Editor", "PIE — player spawned at ("
             + std::to_string(sp.Position.X) + ", " + std::to_string(sp.Position.Y + 2.f)
             + ", " + std::to_string(sp.Position.Z) + ")");
@@ -1604,30 +1621,43 @@ void EditorApp::TickFrame(float dt)
     if (!isPiePlaying && !isPiePaused && m_WasPiePlaying) {
         // PIE just stopped — re-enable noclip so the editor flies freely.
         m_PiePlayer.SetNoclip(true);
+
+        // Release mouse capture back to the editor.
+#ifdef _WIN32
+        if (m_FpsCursorHidden) {
+            ClipCursor(nullptr);
+            ShowCursor(TRUE);
+            m_FpsCursorHidden = false;
+        }
+#endif
+
         Logger::Log(LogLevel::Info, "Editor", "PIE — noclip restored for editor fly mode");
     }
     m_WasPiePlaying = isPiePlaying || isPiePaused;
 
     // ---- FPS cursor capture (Win32) ----
-    // When the user starts a right-drag inside the viewport, hide the cursor
-    // and confine it to the window so FPS mouse-look doesn't drift at edges.
+    // In edit mode (not PIE), capture cursor on right-drag inside the viewport
+    // so FPS mouse-look doesn't drift at edges.  During PIE the cursor is
+    // already captured above.
 #ifdef _WIN32
-    if (m_Input.rightJustPressed && m_Viewport.IsMouseInside() && !m_FpsCursorHidden) {
-        ShowCursor(FALSE);
-        HWND hwnd = static_cast<HWND>(m_Hwnd);
-        RECT rc{};
-        GetClientRect(hwnd, &rc);
-        POINT tl{rc.left, rc.top}, br{rc.right, rc.bottom};
-        ClientToScreen(hwnd, &tl);
-        ClientToScreen(hwnd, &br);
-        RECT screen{tl.x, tl.y, br.x, br.y};
-        ClipCursor(&screen);
-        m_FpsCursorHidden = true;
-    }
-    if (!m_Input.rightDown && m_FpsCursorHidden) {
-        ClipCursor(nullptr);
-        ShowCursor(TRUE);
-        m_FpsCursorHidden = false;
+    if (!isPiePlaying) {
+        if (m_Input.rightJustPressed && m_Viewport.IsMouseInside() && !m_FpsCursorHidden) {
+            ShowCursor(FALSE);
+            HWND hwnd = static_cast<HWND>(m_Hwnd);
+            RECT rc{};
+            GetClientRect(hwnd, &rc);
+            POINT tl{rc.left, rc.top}, br{rc.right, rc.bottom};
+            ClientToScreen(hwnd, &tl);
+            ClientToScreen(hwnd, &br);
+            RECT screen{tl.x, tl.y, br.x, br.y};
+            ClipCursor(&screen);
+            m_FpsCursorHidden = true;
+        }
+        if (!m_Input.rightDown && m_FpsCursorHidden) {
+            ClipCursor(nullptr);
+            ShowCursor(TRUE);
+            m_FpsCursorHidden = false;
+        }
     }
 #endif
 
@@ -2043,9 +2073,14 @@ void EditorApp::HandlePieInput(float dt)
 
     m_PiePlayer.SetMoveInput(forward, right, jump, sprint);
 
-    // Apply mouse look only when right mouse button is held (matching game controls).
+    // Apply mouse look:
+    //   - During PIE: always active (mouse is captured).
+    //   - During edit: only when right mouse button is held.
     // Honour the invertLookY preference.
-    if (m_Input.rightDown && (m_Input.mouseDeltaX != 0.f || m_Input.mouseDeltaY != 0.f)) {
+    const bool isPiePlaying = m_Toolbar.IsPiePlaying();
+    const bool applyLook = isPiePlaying ||
+                           (m_Input.rightDown && (m_Input.mouseDeltaX != 0.f || m_Input.mouseDeltaY != 0.f));
+    if (applyLook && (m_Input.mouseDeltaX != 0.f || m_Input.mouseDeltaY != 0.f)) {
         const float dySign = m_PreferencesPanel.GetData().invertLookY ? -1.f : 1.f;
         m_PiePlayer.ApplyMouseLook(m_Input.mouseDeltaX,
                                    m_Input.mouseDeltaY * dySign);
@@ -2059,8 +2094,8 @@ Matrix4x4 EditorApp::GetPieViewMatrix() const noexcept
     const Vector3 viewDir = m_PiePlayer.GetViewDirection();
 
     Vector3 forward = viewDir;
-    Vector3 right   = Vector3{0.f, 1.f, 0.f}.Cross(forward).Normalized();
-    Vector3 up      = forward.Cross(right);
+    Vector3 right   = forward.Cross(Vector3{0.f, 1.f, 0.f}).Normalized();
+    Vector3 up      = right.Cross(forward);
 
     Matrix4x4 v = Matrix4x4::Identity();
     v.M[0][0] = right.X;    v.M[1][0] = right.Y;    v.M[2][0] = right.Z;
