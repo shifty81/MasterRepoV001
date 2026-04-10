@@ -90,14 +90,36 @@ All outputs verified. ✅
 Status: Current Active Phase
 
 Goal:
-Only after editor trust and persistence are solid.
+Grow the game loop beyond the DevWorld interaction loop toward a real playable game.
+All work must be exercised in DevWorld/DevSolarSystem before it goes to main.
 
-Potential outputs later:
-- broader gameplay systems
-- low-poly wrapper layer
-- fleet and galaxy systems
-- expanded content pipeline
-- broader multiplayer foundations
+### Phase 5 Checklist
+
+**Editor Improvements**
+- [x] PIE crosshair overlay in viewport when Playing
+- [x] PCGItemGen save/load (.nfpi) — placed items persist across sessions
+- [ ] Functional TransformGizmo — drag-to-move entities in the viewport
+- [ ] Full PIE HUD mirror — inventory slots, active tool feedback, position, mine flash
+
+**Solar System → In-Game**
+- [x] GameClientApp solar map overlay (M key, 2D orbital map with bodies and deposits)
+- [ ] Travel mechanic skeleton — EditorWorldSession::TravelToBody(bodyId) swaps world context
+- [ ] Per-body terrain generation — PCGWorldGen seeded from body ID generates unique terrain
+- [ ] Resource deposits → voxel terrain bridge — deposit positions influence ore placement per body
+- [ ] Dev-only access gate — config flag exposes solar map in game without shipping to players
+
+**Core Gameplay Systems**
+- [ ] ExplorationSystem skeleton — enough to own body-to-body travel state
+- [ ] CombatSystem basics — simple melee/ranged hit detection on RigState
+- [ ] BuilderSystem + ship construction mode — block palette, ship-tagged context
+- [ ] Economy basics — ResourceRegistry live, TradeMarket with at least 2 stations
+- [ ] ProgressionSystem wired to gameplay — XP awarded for mining, building, kills
+- [ ] MissionRegistry — 2–3 starter missions spawnable in DevWorld
+
+**Multiplayer Foundation**
+- [ ] Real socket listen/connect — GameServer/GameClient over TCP loopback
+- [ ] Snapshot replication — authoritative server sends player positions to client
+- [ ] Dedicated server headless mode verified in CI
 
 ## Explicitly Deferred
 Do not prioritize these until earlier phases are complete:

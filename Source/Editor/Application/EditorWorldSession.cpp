@@ -14,6 +14,7 @@ void EditorWorldSession::Init(NF::Game::GameWorld& world, Level& level,
     m_EntityPath      = contentRoot + "/Worlds/" + worldName + ".nfsv";
     m_ChunkPath       = contentRoot + "/Worlds/" + worldName + ".nfck";
     m_SolarSystemPath = contentRoot + "/Worlds/" + worldName + ".nfss";
+    m_ItemsPath       = contentRoot + "/Worlds/" + worldName + ".nfpi";
     m_ConfigPath      = contentRoot + "/Definitions/" + worldName + ".json";
     m_Dirty           = false;
 
@@ -52,6 +53,7 @@ void EditorWorldSession::LoadWorld(const std::string& worldName)
     m_EntityPath      = m_ContentRoot + "/Worlds/" + worldName + ".nfsv";
     m_ChunkPath       = m_ContentRoot + "/Worlds/" + worldName + ".nfck";
     m_SolarSystemPath = m_ContentRoot + "/Worlds/" + worldName + ".nfss";
+    m_ItemsPath       = m_ContentRoot + "/Worlds/" + worldName + ".nfpi";
     m_ConfigPath      = m_ContentRoot + "/Definitions/" + worldName + ".json";
 
     m_World->Initialize(m_ContentRoot, worldName);
@@ -89,11 +91,22 @@ bool EditorWorldSession::Save()
                             "Solar system saved");
     }
 
+    // Save PCG item placements if an item generator is wired up.
+    bool itemsOk = true;
+    if (m_ItemGen) {
+        itemsOk = m_ItemGen->SaveToFile(m_ItemsPath);
+        if (itemsOk)
+            NF::Logger::Log(NF::LogLevel::Info, "EditorWorldSession",
+                            "PCG items saved ("
+                            + std::to_string(m_ItemGen->ItemCount()) + " items)");
+    }
+
     if (entityOk && chunkOk && configOk) {
         m_Dirty = false;
         NF::Logger::Log(NF::LogLevel::Info, "EditorWorldSession",
                         "World saved (entities + chunks + config"
                         + std::string(m_SolarSystem ? " + solar system" : "")
+                        + std::string(m_ItemGen ? " + PCG items" : "")
                         + ")");
     } else {
         NF::Logger::Log(NF::LogLevel::Warning, "EditorWorldSession",
@@ -105,7 +118,7 @@ bool EditorWorldSession::Save()
                         + std::string(configOk ? "ok" : "FAILED"));
     }
 
-    return entityOk && chunkOk && configOk && solarOk;
+    return entityOk && chunkOk && configOk && solarOk && itemsOk;
 }
 
 void EditorWorldSession::Reload()
@@ -131,14 +144,23 @@ bool EditorWorldSession::LoadSavedChunks()
 {
     if (!m_World) return false;
 
+    bool chunksOk = false;
     if (m_World->LoadChunks(m_ChunkPath)) {
+        chunksOk = true;
         NF::Logger::Log(NF::LogLevel::Info, "EditorWorldSession",
                         "Loaded saved chunk data ("
                         + std::to_string(m_World->GetLoadedChunkCount())
                         + " chunks)");
-        return true;
     }
-    return false;
+
+    // Load PCG items if a file exists; it's non-fatal if it doesn't.
+    if (m_ItemGen && m_ItemGen->LoadFromFile(m_ItemsPath)) {
+        NF::Logger::Log(NF::LogLevel::Info, "EditorWorldSession",
+                        "Loaded PCG items ("
+                        + std::to_string(m_ItemGen->ItemCount()) + " items)");
+    }
+
+    return chunksOk;
 }
 
 } // namespace NF::Editor

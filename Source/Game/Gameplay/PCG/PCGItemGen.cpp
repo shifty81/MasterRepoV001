@@ -7,6 +7,8 @@
 #include "Game/Gameplay/PCG/PCGItemGen.h"
 #include <cmath>
 #include <algorithm>
+#include <fstream>
+#include <sstream>
 
 namespace NF::Game::Gameplay {
 
@@ -127,6 +129,131 @@ std::vector<const PlacedItem*> PCGItemGen::ItemsForBody(uint32_t bodyId) const {
     for (const auto& item : m_Items)
         if (item.sourceBodyId == bodyId) result.push_back(&item);
     return result;
+}
+
+// ---------------------------------------------------------------------------
+// SaveToFile — write placed items to a simple JSON file
+// ---------------------------------------------------------------------------
+
+bool PCGItemGen::SaveToFile(const std::string& path) const {
+    std::ofstream file(path);
+    if (!file.is_open()) return false;
+
+    file << "{\n  \"seed\": " << m_Seed << ",\n  \"items\": [\n";
+    for (size_t i = 0; i < m_Items.size(); ++i) {
+        const auto& item = m_Items[i];
+        file << "    {\n";
+        file << "      \"id\": "           << item.id                          << ",\n";
+        file << "      \"name\": \""       << item.name                        << "\",\n";
+        file << "      \"resourceType\": " << static_cast<int>(item.resourceType) << ",\n";
+        file << "      \"quantity\": "     << item.quantity                    << ",\n";
+        file << "      \"posX\": "         << item.posX                        << ",\n";
+        file << "      \"posZ\": "         << item.posZ                        << ",\n";
+        file << "      \"color\": "        << item.color                       << ",\n";
+        file << "      \"iconRadius\": "   << item.iconRadius                  << ",\n";
+        file << "      \"sourceBodyId\": " << item.sourceBodyId                << ",\n";
+        file << "      \"userEdited\": "   << (item.userEdited ? 1 : 0)        << "\n";
+        file << "    }";
+        if (i + 1 < m_Items.size()) file << ",";
+        file << "\n";
+    }
+    file << "  ]\n}\n";
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+// LoadFromFile — read placed items from a JSON file
+// ---------------------------------------------------------------------------
+
+namespace {
+
+float PIJsonFloat(const std::string& json, const std::string& key, float fallback) {
+    const std::string needle = "\"" + key + "\"";
+    auto pos = json.find(needle);
+    if (pos == std::string::npos) return fallback;
+    pos = json.find(':', pos + needle.size());
+    if (pos == std::string::npos) return fallback;
+    ++pos;
+    while (pos < json.size() && (json[pos] == ' ' || json[pos] == '\t')) ++pos;
+    try { return std::stof(json.substr(pos)); }
+    catch (...) { return fallback; }
+}
+
+uint32_t PIJsonUInt(const std::string& json, const std::string& key, uint32_t fallback) {
+    return static_cast<uint32_t>(PIJsonFloat(json, key, static_cast<float>(fallback)));
+}
+
+std::string PIJsonString(const std::string& json, const std::string& key) {
+    const std::string needle = "\"" + key + "\"";
+    auto pos = json.find(needle);
+    if (pos == std::string::npos) return {};
+    pos = json.find(':', pos + needle.size());
+    if (pos == std::string::npos) return {};
+    pos = json.find('"', pos + 1);
+    if (pos == std::string::npos) return {};
+    auto end = json.find('"', pos + 1);
+    if (end == std::string::npos) return {};
+    return json.substr(pos + 1, end - pos - 1);
+}
+
+} // anonymous namespace
+
+bool PCGItemGen::LoadFromFile(const std::string& path) {
+    std::ifstream file(path);
+    if (!file.is_open()) return false;
+
+    std::ostringstream ss;
+    ss << file.rdbuf();
+    const std::string json = ss.str();
+
+    const uint32_t seed = PIJsonUInt(json, "seed", m_Seed);
+    m_Seed = seed;
+
+    m_Items.clear();
+    m_NextId = 1;
+
+    const std::string itemsKey = "\"items\"";
+    auto arrStart = json.find(itemsKey);
+    if (arrStart == std::string::npos) return false;
+    arrStart = json.find('[', arrStart);
+    if (arrStart == std::string::npos) return false;
+
+    size_t searchPos = arrStart + 1;
+    while (searchPos < json.size()) {
+        auto objStart = json.find('{', searchPos);
+        if (objStart == std::string::npos) break;
+
+        // Find matching close brace.
+        int depth = 0;
+        size_t objEnd = objStart;
+        for (size_t p = objStart; p < json.size(); ++p) {
+            if (json[p] == '{') ++depth;
+            else if (json[p] == '}') { --depth; if (depth == 0) { objEnd = p; break; } }
+        }
+        if (objEnd <= objStart) break;
+
+        const std::string block = json.substr(objStart, objEnd - objStart + 1);
+
+        PlacedItem item;
+        item.id           = PIJsonUInt(block, "id", 0);
+        item.name         = PIJsonString(block, "name");
+        item.resourceType = static_cast<NF::Game::ResourceType>(PIJsonUInt(block, "resourceType", 0));
+        item.quantity     = PIJsonUInt(block, "quantity", 1);
+        item.posX         = PIJsonFloat(block, "posX", 0.f);
+        item.posZ         = PIJsonFloat(block, "posZ", 0.f);
+        item.color        = PIJsonUInt(block, "color", 0xCCCCCCFF);
+        item.iconRadius   = PIJsonFloat(block, "iconRadius", 2.f);
+        item.sourceBodyId = PIJsonUInt(block, "sourceBodyId", 0);
+        item.userEdited   = PIJsonUInt(block, "userEdited", 0) != 0;
+
+        if (item.id >= m_NextId) m_NextId = item.id + 1;
+        m_Items.push_back(std::move(item));
+        searchPos = objEnd + 1;
+    }
+
+    // Return true if the file was opened and parsed — even an empty items array
+    // is a valid state (e.g. a brand-new world with no deposits yet).
+    return true;
 }
 
 } // namespace NF::Game::Gameplay

@@ -2,6 +2,7 @@
 
 #include "Game/World/GameWorld.h"
 #include "Game/Gameplay/SolarSystem/DevSolarSystem.h"
+#include "Game/Gameplay/PCG/PCGItemGen.h"
 #include "Engine/World/Level.h"
 #include <functional>
 #include <string>
@@ -25,6 +26,9 @@ public:
 
     /// @brief Set the solar system to save/load alongside the world.
     void SetSolarSystem(NF::Game::Gameplay::DevSolarSystem* sys) noexcept { m_SolarSystem = sys; }
+
+    /// @brief Set the PCG item generator to save/load alongside the world.
+    void SetItemGen(NF::Game::Gameplay::PCGItemGen* gen) noexcept { m_ItemGen = gen; }
 
     /// @brief Register a callback invoked after any world change (load/reload/new).
     ///
@@ -78,12 +82,14 @@ private:
     NF::Game::GameWorld* m_World{nullptr};
     Level*               m_Level{nullptr};
     NF::Game::Gameplay::DevSolarSystem* m_SolarSystem{nullptr};
+    NF::Game::Gameplay::PCGItemGen*     m_ItemGen{nullptr};
     std::function<void()> m_OnWorldChanged;   ///< Fired after load/reload/new.
     std::string          m_ContentRoot;
     std::string          m_WorldName;
     std::string          m_EntityPath;
     std::string          m_ChunkPath;
     std::string          m_SolarSystemPath;
+    std::string          m_ItemsPath;
     std::string          m_ConfigPath;
     bool                 m_Dirty{false};
 };

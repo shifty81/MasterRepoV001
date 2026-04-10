@@ -80,6 +80,9 @@ private:
     // Mining feedback
     float m_MineFlashTimer{0.f};  ///< Countdown for "mined!" HUD flash.
 
+    // Solar map overlay
+    bool  m_ShowSolarMap{false};  ///< True when the solar map overlay is visible.
+
     /// @brief Advance simulation and render one frame.
     void TickFrame(float dt);
 
@@ -88,6 +91,9 @@ private:
 
     /// @brief Draw a small crosshair at screen centre.
     void DrawCrosshair();
+
+    /// @brief Draw a full-screen 2D solar system map overlay.
+    void DrawSolarMap();
 
     /// @brief Draw the main menu screen.
     void DrawMainMenu();

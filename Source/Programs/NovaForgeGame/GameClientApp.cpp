@@ -5,6 +5,7 @@
 #include "Game/Interaction/RigState.h"
 #include "Game/Interaction/Inventory.h"
 #include "Game/Interaction/ResourceItem.h"
+#include "Game/Gameplay/SolarSystem/DevSolarSystem.h"
 #include "Game/Voxel/VoxelType.h"
 #include <chrono>
 #include <algorithm>
@@ -388,6 +389,10 @@ void GameClientApp::TickFrame(float dt)
         // Handle mining on left click
         HandleMining();
 
+        // M key toggles solar map overlay.
+        if (m_KeysJustPressed[0x4D]) // VK_M
+            m_ShowSolarMap = !m_ShowSolarMap;
+
         // Update mine flash timer
         if (m_MineFlashTimer > 0.f)
             m_MineFlashTimer -= dt;
@@ -406,6 +411,8 @@ void GameClientApp::TickFrame(float dt)
         // ---- 2-D overlays ----
         DrawCrosshair();
         DrawHUD();
+        if (m_ShowSolarMap)
+            DrawSolarMap();
         break;
     }
 
@@ -542,6 +549,110 @@ void GameClientApp::DrawCrosshair()
     m_UIRenderer.DrawRect({cx - len, cy - th * 0.5f, len * 2.f, th}, kCrosshairCol);
     // Vertical line
     m_UIRenderer.DrawRect({cx - th * 0.5f, cy - len, th, len * 2.f}, kCrosshairCol);
+}
+
+// ---------------------------------------------------------------------------
+// DrawSolarMap — full-screen 2D orbital map overlay (toggle with M key)
+// ---------------------------------------------------------------------------
+
+void GameClientApp::DrawSolarMap()
+{
+    using NF::Game::Gameplay::CelestialBodyType;
+
+    const float w   = static_cast<float>(m_ClientWidth);
+    const float h   = static_cast<float>(m_ClientHeight);
+    const float dpi = m_UIRenderer.GetDpiScale();
+
+    // Semi-transparent full-screen background.
+    m_UIRenderer.DrawRect({0.f, 0.f, w, h}, 0x0A0A0ADD);
+
+    const auto& sys = m_Orchestrator.GetSolarSystem();
+
+    // Title + close hint
+    m_UIRenderer.DrawText("SOLAR MAP", w * 0.5f - 40.f * dpi, 18.f * dpi, kTitleColor, 2.f);
+    m_UIRenderer.DrawText("[M] Close", w - 90.f * dpi, 20.f * dpi, kSepColor, 1.5f);
+    const std::string seedStr = "Seed: " + std::to_string(sys.GetSeed())
+                              + "  Bodies: " + std::to_string(sys.BodyCount());
+    m_UIRenderer.DrawText(seedStr, 20.f * dpi, 20.f * dpi, kSepColor, 1.5f);
+
+    if (sys.BodyCount() == 0) {
+        m_UIRenderer.DrawText("No solar system data loaded.", w * 0.5f - 80.f * dpi,
+                              h * 0.5f, kTextColor, 2.f);
+        return;
+    }
+
+    const float cx = w * 0.5f;
+    const float cy = h * 0.5f + 10.f * dpi; // slightly below centre to clear title
+
+    // Scale: fit the widest planet orbit into 80% of the shorter screen dimension.
+    float maxOrbit = 1.f;
+    for (const auto& body : sys.GetBodies()) {
+        if (body.type == CelestialBodyType::Planet)
+            maxOrbit = std::max(maxOrbit, body.orbitRadius);
+    }
+    const float scale = std::min(w, h) * 0.38f / maxOrbit;
+
+    // Orbit rings (approximated with dots).
+    for (const auto& body : sys.GetBodies()) {
+        if (body.type != CelestialBodyType::Planet) continue;
+        const float r = body.orbitRadius * scale;
+        constexpr int kSeg = 72;
+        for (int s = 0; s < kSeg; ++s) {
+            const float a  = static_cast<float>(s) * 6.2832f / static_cast<float>(kSeg);
+            const float px = cx + std::cos(a) * r;
+            const float py = cy + std::sin(a) * r;
+            m_UIRenderer.DrawRect({px - dpi, py - dpi, 2.f * dpi, 2.f * dpi}, 0x333355FF);
+        }
+    }
+
+    // Bodies
+    for (const auto& body : sys.GetBodies()) {
+        float bx, by;
+
+        if (body.type == CelestialBodyType::Star) {
+            bx = cx;
+            by = cy;
+        } else if (body.type == CelestialBodyType::Moon) {
+            const auto* parent = sys.FindBody(body.parentId);
+            if (!parent) continue;
+            const float pr = parent->orbitRadius * scale;
+            const float pa = parent->orbitAngle;
+            const float parentX = cx + std::cos(pa) * pr;
+            const float parentY = cy + std::sin(pa) * pr;
+            bx = parentX + body.FlatX() * scale * 0.3f;
+            by = parentY + body.FlatY() * scale * 0.3f;
+        } else {
+            bx = cx + body.FlatX() * scale;
+            by = cy + body.FlatY() * scale;
+        }
+
+        float drawR = 4.f * dpi;
+        if (body.type == CelestialBodyType::Star)   drawR = 12.f * dpi;
+        else if (body.type == CelestialBodyType::Moon) drawR = 2.f * dpi;
+
+        m_UIRenderer.DrawRect({bx - drawR, by - drawR, drawR * 2.f, drawR * 2.f}, body.color);
+
+        // Body label (skip moon labels to reduce clutter)
+        if (body.type != CelestialBodyType::Moon) {
+            m_UIRenderer.DrawText(body.name.c_str(),
+                                  bx + drawR + 3.f * dpi,
+                                  by - 6.f * dpi,
+                                  kTextColor, 1.5f);
+        }
+
+        // Deposit count badge for planets
+        if (body.type == CelestialBodyType::Planet && !body.deposits.empty()) {
+            const std::string depStr = std::to_string(body.deposits.size()) + "d";
+            m_UIRenderer.DrawText(depStr.c_str(),
+                                  bx + drawR + 3.f * dpi,
+                                  by + 4.f * dpi,
+                                  kItemColor, 1.f);
+        }
+    }
+
+    // Controls hint at bottom
+    m_UIRenderer.DrawText("Orbital map | M = toggle | Travel not yet available",
+                          20.f * dpi, h - 26.f * dpi, kSepColor, 1.5f);
 }
 
 // ---------------------------------------------------------------------------
