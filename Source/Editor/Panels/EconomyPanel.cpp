@@ -14,6 +14,9 @@ namespace NF::Editor {
 
 static std::string FormatFloat(float v, int decimals = 1)
 {
+    // Simple fixed-decimal formatter for non-negative floats.
+    // Credits and prices are always >= 0 by design; clamp guards against
+    // garbled output if a caller violates that contract.
     if (v < 0.f) v = 0.f;
     const int scale = (decimals == 1) ? 10 : (decimals == 2 ? 100 : 1);
     const int whole = static_cast<int>(v);

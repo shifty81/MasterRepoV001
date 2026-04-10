@@ -183,7 +183,7 @@ void InventoryPanel::DrawInventoryReadOnly(const NF::Game::Inventory& inv,
         if (slot.IsEmpty()) continue;
         anyItem = true;
         const char* name = NF::Game::ResourceTypeName(slot.type);
-        m_Renderer->DrawText(name,                               x,        cy, t.textPrimary,   1.f);
+        m_Renderer->DrawText(name,                              x,        cy, t.textPrimary,   1.f);
         m_Renderer->DrawText(std::to_string(slot.count).c_str(), x + colW, cy, t.textSecondary, 1.f);
         cy += lineH;
     }
