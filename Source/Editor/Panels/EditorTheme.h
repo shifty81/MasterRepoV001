@@ -340,6 +340,7 @@ inline constexpr Theme kHighContrastTheme {
     .buttonCornerRadius = 4.f,
 
     // Semantic
+    .dirty          = 0xFFAA00FF,
     .worldAccent    = 0x00FFFFFF,
     .toggleOn       = 0x00FF00FF,
     .toggleOff      = 0xFF0000FF,
