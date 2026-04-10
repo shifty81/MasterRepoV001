@@ -1564,6 +1564,14 @@ void EditorApp::TickFrame(float dt)
     // Process hotkeys before anything else.
     ProcessHotkeys();
 
+    // Esc stops PIE when it is playing or paused.
+#ifdef _WIN32
+    if (m_Input.keysJustPressed[VK_ESCAPE] &&
+        (m_Toolbar.IsPiePlaying() || m_Toolbar.IsPiePaused())) {
+        m_Toolbar.RequestStop();
+    }
+#endif
+
     // Compute docking layout FIRST so we know viewport bounds before the 3D pass.
     // Four-band top structure:
     //   Band 1: Menu bar + compact toolbar  (m_Toolbar.GetHeight())
@@ -1645,19 +1653,16 @@ void EditorApp::TickFrame(float dt)
         m_RenderDevice->SetScissorRect(glX, glY, glW, glH);
         m_RenderDevice->Clear(0.12f, 0.12f, 0.14f, 1.f);
 
-        // Always use the FPS editor player camera.
-        // In edit mode the player flies freely (noclip); during PIE normal
-        // physics apply.  HandlePieInput runs whenever the viewport has mouse
-        // focus or RMB is held, allowing WASD+look at any time.
-        if (m_Viewport.IsMouseInside() || m_Input.rightDown) {
+        // Viewport navigation (editor fly) — gated strictly on RMB held AND
+        // mouse inside the viewport to prevent input bleed.
+        // PIE gameplay gets WASD without requiring RMB (game-style controls).
+        const bool routeInput = isPiePlaying ||
+                                (m_Viewport.IsMouseInside() && m_Input.rightDown);
+        if (routeInput) {
             HandlePieInput(dt);
         }
-        if (isPiePlaying) {
-            m_PiePlayer.Update(dt, m_GameWorld.GetChunkMap());
-        } else {
-            // Edit / paused: noclip fly — still call Update so input moves player.
-            m_PiePlayer.Update(dt, m_GameWorld.GetChunkMap());
-        }
+        // m_PiePlayer.Update is always called so physics/noclip both advance.
+        m_PiePlayer.Update(dt, m_GameWorld.GetChunkMap());
         const Matrix4x4 view = GetPieViewMatrix();
         const Matrix4x4 proj = GetPieProjectionMatrix();
 
@@ -1832,6 +1837,8 @@ void EditorApp::TickFrame(float dt)
     }
     // Apply Show Grid preference to the viewport.
     m_Viewport.SetShowGrid(m_PreferencesPanel.GetData().showGrid);
+    // Apply InvertLookY preference to the viewport.
+    m_Viewport.SetInvertLookY(m_PreferencesPanel.GetData().invertLookY);
     // Sync the serialized docking layout so the next autosave captures any
     // split-ratio or tab changes the user made this frame.
     m_PreferencesPanel.GetData().dockLayout = m_DockingSystem.SerializeLayout();
@@ -2004,7 +2011,7 @@ void EditorApp::Shutdown() {
 // PIE (Play-In-Editor) helpers
 // ---------------------------------------------------------------------------
 
-void EditorApp::HandlePieInput(float /*dt*/)
+void EditorApp::HandlePieInput(float dt)
 {
 #ifdef _WIN32
     float forward = 0.f, right = 0.f;
@@ -2013,14 +2020,36 @@ void EditorApp::HandlePieInput(float /*dt*/)
     if (m_Input.keysDown[0x44]) right   += 1.f; // D
     if (m_Input.keysDown[0x41]) right   -= 1.f; // A
 
+    // Q/E vertical fly (noclip editor mode — Unreal-style).
+    // In noclip mode the player can fly freely; these move the camera
+    // along the world-up axis regardless of pitch.
+    static constexpr uint8_t kVK_Q     = 0x51;
+    static constexpr uint8_t kVK_E     = 0x45;
+    static constexpr uint8_t kVK_Shift = 0x10;
+    if (m_PiePlayer.IsNoclip()) {
+        const float flySpeed = NF::Game::PlayerMovement::kMoveSpeed
+                             * (m_Input.keysDown[kVK_Shift] ? NF::Game::PlayerMovement::kSprintMul : 1.f);
+        float verticalDelta = 0.f;
+        if (m_Input.keysDown[kVK_E]) verticalDelta += flySpeed * dt; // E — fly up
+        if (m_Input.keysDown[kVK_Q]) verticalDelta -= flySpeed * dt; // Q — fly down
+        if (verticalDelta != 0.f) {
+            const auto& pos = m_PiePlayer.GetPosition();
+            m_PiePlayer.SetPosition({pos.X, pos.Y + verticalDelta, pos.Z});
+        }
+    }
+
     const bool jump   = m_Input.keysJustPressed[0x20]; // Space
     const bool sprint = m_Input.keysDown[0x10];         // Shift
 
     m_PiePlayer.SetMoveInput(forward, right, jump, sprint);
 
     // Apply mouse look only when right mouse button is held (matching game controls).
-    if (m_Input.rightDown && (m_Input.mouseDeltaX != 0.f || m_Input.mouseDeltaY != 0.f))
-        m_PiePlayer.ApplyMouseLook(m_Input.mouseDeltaX, m_Input.mouseDeltaY);
+    // Honour the invertLookY preference.
+    if (m_Input.rightDown && (m_Input.mouseDeltaX != 0.f || m_Input.mouseDeltaY != 0.f)) {
+        const float dySign = m_PreferencesPanel.GetData().invertLookY ? -1.f : 1.f;
+        m_PiePlayer.ApplyMouseLook(m_Input.mouseDeltaX,
+                                   m_Input.mouseDeltaY * dySign);
+    }
 #endif
 }
 

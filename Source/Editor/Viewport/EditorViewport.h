@@ -124,6 +124,9 @@ public:
     /// @brief Enable or disable the fallback grid overlay.
     void SetShowGrid(bool show) noexcept { m_ShowGrid = show; }
 
+    /// @brief Set whether the Y-axis pitch direction is inverted for mouse look.
+    void SetInvertLookY(bool invert) noexcept { m_InvertLookY = invert; }
+
     // ---- External camera override (FPS camera) ------------------------------
 
     /// @brief Inject an external view / projection matrix pair.
@@ -166,6 +169,7 @@ private:
 
     bool  m_SceneRendered{false}; ///< True when real 3D content has been rendered.
     bool  m_ShowGrid{true};      ///< When false, suppress the fallback grid overlay.
+    bool  m_InvertLookY{false};  ///< When true, pitch is inverted for mouse look.
 
     ViewportHighlightState m_HighlightState; ///< Current selection highlight, updated each frame.
 

@@ -50,6 +50,8 @@ bool PreferencesPanel::Load(const std::string& path)
         else if (key == "autosaveInterval") m_Data.autosaveIntervalSec = static_cast<uint32_t>(std::stoul(val));
         else if (key == "showGrid")        m_Data.showGrid            = (val == "1" || val == "true");
         else if (key == "uiScale")         m_Data.uiScale             = std::stof(val);
+        else if (key == "invertLookY")     m_Data.invertLookY         = (val == "1" || val == "true");
+        else if (key == "viewportSensitivity") m_Data.viewportSensitivity = std::stof(val);
         else if (key == "recentProjectsDir") m_Data.recentProjectsDir = val;
         else if (key == "dockLayout")        m_Data.dockLayout        = val;
     }
@@ -69,6 +71,8 @@ bool PreferencesPanel::Save(const std::string& path) const
     f << "autosaveInterval="     << m_Data.autosaveIntervalSec             << "\n";
     f << "showGrid="             << (m_Data.showGrid ? "1" : "0")         << "\n";
     f << "uiScale="              << m_Data.uiScale                         << "\n";
+    f << "invertLookY="          << (m_Data.invertLookY ? "1" : "0")       << "\n";
+    f << "viewportSensitivity="  << m_Data.viewportSensitivity              << "\n";
     f << "recentProjectsDir="    << m_Data.recentProjectsDir               << "\n";
     f << "dockLayout="           << m_Data.dockLayout                      << "\n";
 
@@ -216,6 +220,8 @@ void PreferencesPanel::Draw(float x, float y, float w, float h)
     drawIntRow("Autosave Sec", m_Data.autosaveIntervalSec);
     drawBoolRow("Show Grid",   m_Data.showGrid);
     drawFloatRow("UI Scale",   m_Data.uiScale);
+    drawBoolRow("Invert Look Y", m_Data.invertLookY);
+    drawFloatRow("Viewport Sensitivity", m_Data.viewportSensitivity);
     drawStringRow("Projects Dir", m_Data.recentProjectsDir);
 
     // --- Separator ---

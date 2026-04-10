@@ -59,6 +59,15 @@ struct Theme {
     uint32_t panelBorder;      ///< Panel outline.
     uint32_t separator;        ///< Horizontal / vertical separators.
 
+    // -- Tab colours ----------------------------------------------------------
+    uint32_t tabBg;            ///< Default tab background.
+    uint32_t tabActiveBg;      ///< Active/selected tab background.
+    uint32_t tabHoverBg;       ///< Hovered tab background.
+
+    // -- Rounded corner radii (Godot-style) ---------------------------------
+    float    panelCornerRadius; ///< Corner radius for panel chrome (px, pre-DPI).
+    float    tabCornerRadius;   ///< Corner radius for tab buttons (px, pre-DPI).
+
     // -- Semantic colours ---------------------------------------------------
     uint32_t dirty;            ///< Unsaved-changes indicator (orange).
     uint32_t worldAccent;      ///< World / selection accent (light blue).
@@ -142,6 +151,15 @@ inline constexpr Theme kDarkTheme {
     .panelBorder    = 0x4B5563FF,
     .separator      = 0x444444FF,
 
+    // Tab colours
+    .tabBg          = 0x2F343DFF,  // matches titleBarBg
+    .tabActiveBg    = 0x24262BFF,  // matches panelBg
+    .tabHoverBg     = 0x3F3F50FF,  // matches hoverBg
+
+    // Corner radii (Godot-like 7 px)
+    .panelCornerRadius = 7.f,
+    .tabCornerRadius   = 5.f,
+
     // Semantic
     .dirty          = 0xFFAA44FF,
     .worldAccent    = 0x78C8FFFF,
@@ -221,6 +239,15 @@ inline constexpr Theme kLightTheme {
     .panelBorder    = 0xB0B0B0FF,
     .separator      = 0xC0C0C0FF,
 
+    // Tab colours
+    .tabBg          = 0xE0E0E4FF,  // matches titleBarBg
+    .tabActiveBg    = 0xF0F0F0FF,  // matches panelBg
+    .tabHoverBg     = 0xD0D4DDFF,  // matches hoverBg
+
+    // Corner radii
+    .panelCornerRadius = 7.f,
+    .tabCornerRadius   = 5.f,
+
     // Semantic
     .dirty          = 0xE08820FF,
     .worldAccent    = 0x2080C0FF,
@@ -299,6 +326,15 @@ inline constexpr Theme kHighContrastTheme {
     // Borders & separators
     .panelBorder    = 0xFFFFFFFF,
     .separator      = 0xAAAAAAFF,
+
+    // Tab colours
+    .tabBg          = 0x1A1A1AFF,  // matches titleBarBg
+    .tabActiveBg    = 0x000000FF,  // matches panelBg
+    .tabHoverBg     = 0x444444FF,  // matches hoverBg
+
+    // Corner radii
+    .panelCornerRadius = 7.f,
+    .tabCornerRadius   = 5.f,
 
     // Semantic
     .dirty          = 0xFFAA00FF,

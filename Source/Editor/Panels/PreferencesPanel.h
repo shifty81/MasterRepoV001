@@ -22,6 +22,11 @@ struct PreferenceData {
     float       uiScale{1.0f};             ///< Global UI DPI scale factor.
     std::string recentProjectsDir{};        ///< Last-used projects directory path.
     std::string dockLayout{};               ///< Serialized docking split ratios and tab states.
+
+    // ---- Viewport / camera controls ----------------------------------------
+    bool        invertLookY{false};         ///< Invert pitch direction for viewport mouse look.
+    float       viewportSensitivity{1.0f};  ///< Multiplier applied to orbit/look sensitivity.
+                                            ///< TODO: wire into EditorViewport kOrbitSensitivity.
 };
 
 /// @brief Editor preferences panel.
