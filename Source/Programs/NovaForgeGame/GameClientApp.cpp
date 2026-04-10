@@ -8,6 +8,8 @@
 #include "Game/Interaction/ResourceItem.h"
 #include "Game/Gameplay/SolarSystem/DevSolarSystem.h"
 #include "Game/Gameplay/Economy/TradeMarket.h"
+#include "Game/Gameplay/Salvage/SalvageSystem.h"
+#include "Game/Gameplay/Storage/StorageSystem.h"
 #include "Game/Voxel/VoxelType.h"
 #include <chrono>
 #include <algorithm>
@@ -437,6 +439,43 @@ void GameClientApp::TickFrame(float dt)
             }
         }
 
+        // G key — salvage nearest wreck or deposit into nearest storage box.
+        // Priority: salvage if a wreck is closer; otherwise deposit.
+        if (m_KeysJustPressed[0x47]) { // VK_G
+            static constexpr float kInteractRadius = 25.f;
+            const auto& pos = m_Orchestrator.GetPlayerMovement().GetPosition();
+            auto& inv       = m_Orchestrator.GetInteractionLoop().GetInventory();
+
+            // Try salvage first.
+            const auto wreckId = m_Orchestrator.GetSalvage().FindNearest(pos, kInteractRadius);
+            if (wreckId != NF::Game::Gameplay::kInvalidWreckId) {
+                const uint32_t extracted =
+                    m_Orchestrator.GetSalvage().Salvage(wreckId, inv, /*maxPerBatch=*/5u);
+                if (extracted > 0)
+                    m_Orchestrator.GetMissions().NotifySalvaged(extracted);
+            } else {
+                // Try storage deposit.
+                const auto boxId = m_Orchestrator.GetStorage().FindNearest(pos, kInteractRadius);
+                if (boxId != NF::Game::Gameplay::kInvalidBoxId) {
+                    // Deposit all held items.
+                    using RT = NF::Game::ResourceType;
+                    static constexpr RT kTypes[] = {
+                        RT::Stone, RT::Ore, RT::Dirt, RT::Rock,
+                        RT::Metal, RT::Ice, RT::Organic
+                    };
+                    uint32_t totalDeposited = 0;
+                    for (const auto t : kTypes) {
+                        const uint32_t held = inv.GetCount(t);
+                        if (held > 0 &&
+                            m_Orchestrator.GetStorage().Deposit(boxId, inv, t, held))
+                            totalDeposited += held;
+                    }
+                    if (totalDeposited > 0)
+                        m_Orchestrator.GetMissions().NotifyDeposited(totalDeposited);
+                }
+            }
+        }
+
         // Update mine flash timer
         if (m_MineFlashTimer > 0.f)
             m_MineFlashTimer -= dt;
@@ -496,12 +535,12 @@ void GameClientApp::DrawHUD()
     const float padX  = 8.f  * dpi;
     const float hudW  = 260.f * dpi;
     const float hudX  = padX;
-    const float hudY  = static_cast<float>(m_ClientHeight) - (lineH * 9.f + 12.f * dpi);
+    const float hudY  = static_cast<float>(m_ClientHeight) - (lineH * 11.f + 12.f * dpi);
     const float scale = 2.f;
 
     // HUD background panel
     m_UIRenderer.DrawRect({hudX - 4.f * dpi, hudY - 4.f * dpi,
-                            hudW + 8.f * dpi, lineH * 9.f + 16.f * dpi}, kHudBg);
+                            hudW + 8.f * dpi, lineH * 11.f + 16.f * dpi}, kHudBg);
 
     const NF::Game::RigState&   rig = m_Orchestrator.GetInteractionLoop().GetRig();
     const NF::Game::Inventory&  inv = m_Orchestrator.GetInteractionLoop().GetInventory();
@@ -589,6 +628,23 @@ void GameClientApp::DrawHUD()
             ? "[F] Undock  [T] Sell"
             : "[F] Dock at Homebase";
         m_UIRenderer.DrawText(stationStr.c_str(), hudX, cy, kTextColor, scale);
+        cy += lineH;
+    }
+
+    // Salvage / storage interaction hint (Phase 7)
+    {
+        static constexpr float kInteractRadius = 25.f;
+        const auto& pos    = m_Orchestrator.GetPlayerMovement().GetPosition();
+        const auto wreckId = m_Orchestrator.GetSalvage().FindNearest(pos, kInteractRadius);
+        const auto boxId   = m_Orchestrator.GetStorage().FindNearest(pos, kInteractRadius);
+
+        if (wreckId != NF::Game::Gameplay::kInvalidWreckId) {
+            const auto* w = m_Orchestrator.GetSalvage().GetWreck(wreckId);
+            const std::string hint = "[G] Salvage: " + (w ? w->name : "Wreck");
+            m_UIRenderer.DrawText(hint.c_str(), hudX, cy, kItemColor, scale);
+        } else if (boxId != NF::Game::Gameplay::kInvalidBoxId) {
+            m_UIRenderer.DrawText("[G] Deposit to storage", hudX, cy, kItemColor, scale);
+        }
     }
 }
 

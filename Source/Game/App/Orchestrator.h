@@ -13,6 +13,9 @@
 #include "Game/Gameplay/Missions/MissionRegistry.h"
 #include "Game/Gameplay/Economy/ResourceRegistry.h"
 #include "Game/Gameplay/Station/StationServices.h"
+#include "Game/Gameplay/Salvage/SalvageSystem.h"
+#include "Game/Gameplay/Storage/StorageSystem.h"
+#include "Game/Gameplay/Inventory/InventorySystem.h"
 #include "Audio/Core/AudioDevice.h"
 #include "Audio/Core/SoundBank.h"
 #include "Audio/Mixer/AudioMixer.h"
@@ -133,6 +136,18 @@ public:
     [[nodiscard]] NF::Game::Gameplay::StationServices&       GetStation()       noexcept { return m_Station; }
     [[nodiscard]] const NF::Game::Gameplay::StationServices& GetStation() const noexcept { return m_Station; }
 
+    /// @brief Returns the salvage system (wreck sites).
+    [[nodiscard]] NF::Game::Gameplay::SalvageSystem&       GetSalvage()       noexcept { return m_Salvage; }
+    [[nodiscard]] const NF::Game::Gameplay::SalvageSystem& GetSalvage() const noexcept { return m_Salvage; }
+
+    /// @brief Returns the world storage system (placed boxes).
+    [[nodiscard]] NF::Game::Gameplay::StorageSystem&       GetStorage()       noexcept { return m_Storage; }
+    [[nodiscard]] const NF::Game::Gameplay::StorageSystem& GetStorage() const noexcept { return m_Storage; }
+
+    /// @brief Returns the inventory system (named containers).
+    [[nodiscard]] NF::Game::Gameplay::InventorySystem&       GetInventorySys()       noexcept { return m_InventorySys; }
+    [[nodiscard]] const NF::Game::Gameplay::InventorySystem& GetInventorySys() const noexcept { return m_InventorySys; }
+
     /// @brief Returns the GameServer (non-null when Solo/ListenServer/Dedicated).
     [[nodiscard]] GameServer* GetServer() noexcept { return m_Server.get(); }
     /// @brief Returns the GameClient (non-null when ListenServer/Client).
@@ -170,6 +185,11 @@ private:
     // Phase 6 economy systems.
     NF::Game::Gameplay::ResourceRegistry  m_Resources;
     NF::Game::Gameplay::StationServices   m_Station{"Homebase"};
+
+    // Phase 7 salvage / storage / inventory systems.
+    NF::Game::Gameplay::SalvageSystem     m_Salvage;
+    NF::Game::Gameplay::StorageSystem     m_Storage;
+    NF::Game::Gameplay::InventorySystem   m_InventorySys;
 
     // Phase 9 audio
     AudioDevice  m_AudioDevice;

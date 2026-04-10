@@ -6,6 +6,8 @@
 #include "Game/Gameplay/Builder/BuilderSystem.h"
 #include "Game/Gameplay/Inventory/InventorySystem.h"
 #include "Game/Gameplay/Storage/StorageSystem.h"
+#include "Game/Gameplay/Salvage/SalvageSystem.h"
+#include "Game/Gameplay/Missions/MissionRegistry.h"
 #include "Game/Gameplay/Combat/CombatSystem.h"
 #include "Game/Interaction/RigState.h"
 #include "Game/Interaction/Inventory.h"
@@ -386,4 +388,104 @@ TEST_CASE("CombatSystem: UnregisterEntity removes entity", "[Combat]") {
     REQUIRE(cs.UnregisterEntity(9));
     REQUIRE(cs.EntityCount() == 0);
     REQUIRE(cs.DealDamage(9, 10.f, DamageType::Physical) == DamageResult::NotFound);
+}
+
+// =============================================================================
+// SalvageSystem — Phase 7
+// =============================================================================
+
+TEST_CASE("SalvageSystem: PlaceWreck returns unique IDs", "[Salvage]") {
+    NF::Game::Gameplay::SalvageSystem ss;
+    const auto id1 = ss.PlaceWreck("W1", {0.f, 0.f, 0.f});
+    const auto id2 = ss.PlaceWreck("W2", {5.f, 0.f, 0.f});
+    REQUIRE(id1 != id2);
+    REQUIRE(id1 != NF::Game::Gameplay::kInvalidWreckId);
+    REQUIRE(id2 != NF::Game::Gameplay::kInvalidWreckId);
+    REQUIRE(ss.WreckCount() == 2);
+}
+
+TEST_CASE("SalvageSystem: AddLoot stores resources in wreck", "[Salvage]") {
+    NF::Game::Gameplay::SalvageSystem ss;
+    const auto id = ss.PlaceWreck("Probe", {0.f, 0.f, 0.f});
+    REQUIRE(ss.AddLoot(id, NF::Game::ResourceType::Ore, 10u));
+    const auto* w = ss.GetWreck(id);
+    REQUIRE(w != nullptr);
+    REQUIRE(w->TotalLoot() == 10u);
+    REQUIRE(!w->IsEmpty());
+}
+
+TEST_CASE("SalvageSystem: Salvage extracts resources into inventory", "[Salvage]") {
+    NF::Game::Gameplay::SalvageSystem ss;
+    const auto id = ss.PlaceWreck("Probe", {0.f, 0.f, 0.f});
+    ss.AddLoot(id, NF::Game::ResourceType::Ore, 10u);
+
+    NF::Game::Inventory inv;
+    const uint32_t extracted = ss.Salvage(id, inv, 5u);
+    REQUIRE(extracted == 5u);
+    REQUIRE(inv.GetCount(NF::Game::ResourceType::Ore) == 5u);
+    REQUIRE(ss.GetWreck(id)->TotalLoot() == 5u);
+}
+
+TEST_CASE("SalvageSystem: Salvage returns 0 on empty wreck", "[Salvage]") {
+    NF::Game::Gameplay::SalvageSystem ss;
+    const auto id = ss.PlaceWreck("Empty", {0.f, 0.f, 0.f});
+    NF::Game::Inventory inv;
+    REQUIRE(ss.Salvage(id, inv) == 0u);
+}
+
+TEST_CASE("SalvageSystem: FindNearest returns closest non-empty wreck", "[Salvage]") {
+    NF::Game::Gameplay::SalvageSystem ss;
+    const auto near = ss.PlaceWreck("Near", {2.f, 0.f, 0.f});
+    const auto far  = ss.PlaceWreck("Far",  {50.f, 0.f, 0.f});
+    ss.AddLoot(near, NF::Game::ResourceType::Stone, 5u);
+    ss.AddLoot(far,  NF::Game::ResourceType::Stone, 5u);
+
+    const NF::Vector3 origin = {0.f, 0.f, 0.f};
+    REQUIRE(ss.FindNearest(origin, 100.f) == near);
+}
+
+TEST_CASE("SalvageSystem: FindNearest ignores empty wrecks", "[Salvage]") {
+    NF::Game::Gameplay::SalvageSystem ss;
+    const auto id = ss.PlaceWreck("Empty", {2.f, 0.f, 0.f});
+    (void)id; // empty, no loot added
+    REQUIRE(ss.FindNearest({0.f, 0.f, 0.f}, 100.f) == NF::Game::Gameplay::kInvalidWreckId);
+}
+
+TEST_CASE("SalvageSystem: RemoveWreck removes the site", "[Salvage]") {
+    NF::Game::Gameplay::SalvageSystem ss;
+    const auto id = ss.PlaceWreck("TBR", {0.f, 0.f, 0.f});
+    REQUIRE(ss.WreckCount() == 1);
+    REQUIRE(ss.RemoveWreck(id));
+    REQUIRE(ss.WreckCount() == 0);
+    REQUIRE(ss.GetWreck(id) == nullptr);
+}
+
+// =============================================================================
+// MissionRegistry — Phase 7 notifiers
+// =============================================================================
+
+TEST_CASE("MissionRegistry: NotifyDeposited advances DepositToStorage mission", "[Mission]") {
+    NF::Game::Gameplay::MissionRegistry reg;
+    reg.Init();
+
+    int completedId = -1;
+    reg.SetOnMissionComplete([&](uint32_t id){ completedId = static_cast<int>(id); });
+
+    // "Stash It" mission (id=6) requires 5 deposited units.
+    reg.NotifyDeposited(3u);
+    REQUIRE(completedId == -1); // not yet
+    reg.NotifyDeposited(2u);
+    REQUIRE(completedId == 6);
+}
+
+TEST_CASE("MissionRegistry: NotifySalvaged advances SalvageWreck mission", "[Mission]") {
+    NF::Game::Gameplay::MissionRegistry reg;
+    reg.Init();
+
+    int completedId = -1;
+    reg.SetOnMissionComplete([&](uint32_t id){ completedId = static_cast<int>(id); });
+
+    // "Salvage Run" mission (id=7) requires 3 salvaged items.
+    reg.NotifySalvaged(3u);
+    REQUIRE(completedId == 7);
 }

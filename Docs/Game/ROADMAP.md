@@ -131,6 +131,38 @@ Do not prioritize these until earlier phases are complete:
 - broad server/admin platform work
 - luxury editor panels not tied to core authoring loop
 
+## Phase 7 — Salvage, Storage & World Interaction Loop
+Status: Current Active Phase
+
+Goal:
+Implement the salvage and storage mechanics, closing the resource loop:
+mine → salvage wreck → deposit to storage → trade or craft.
+All systems must be exercised in DevWorld before going to main.
+
+### Phase 7 Checklist
+
+**SalvageSystem**
+- [x] `SalvageSystem` — header + implementation: wreck sites with resource loot pools; `PlaceWreck`, `AddLoot`, `FindNearest`, `Salvage` (batch extraction), `GetWrecks`
+- [x] Default wreck ("Derelict Probe") seeded at session start 15 units from spawn with Ore/Metal/Stone loot
+
+**MissionRegistry**
+- [x] `DepositToStorage` + `SalvageWreck` objective types added
+- [x] `NotifyDeposited()` + `NotifySalvaged()` notifiers
+- [x] Two new auto-accepted starter missions — "Stash It" (deposit 5 units) + "Salvage Run" (salvage 3 items)
+
+**Orchestrator**
+- [x] `SalvageSystem`, `StorageSystem`, `InventorySystem` owned and initialised in `Init`
+- [x] Default "Homebase Storage" box at world origin; default "Backpack" container in InventorySystem
+- [x] `GetSalvage()`, `GetStorage()`, `GetInventorySys()` accessors exposed
+
+**In-Game (GameClientApp)**
+- [x] G key — salvage nearest wreck (extracts one batch of 5) or deposit all held items into nearest storage box (within 25 units)
+- [x] HUD shows "[G] Salvage: \<name\>" when a non-empty wreck is nearby, or "[G] Deposit to storage" when a box is nearby
+
+**Editor**
+- [x] `InventoryPanel` — shows backpack contents, Homebase Storage box, and wreck sites with loot counts
+- [x] `InventoryPanel` wired into bottom dock as "Inventory" tab
+
 ## Phase 6 — Economy, Manufacturing & Station Loop
 Status: Current Active Phase
 

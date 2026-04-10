@@ -22,6 +22,7 @@ add_library(NFEditor STATIC
     Panels/WorldDebugPanel.cpp
     Panels/SolarSystemPanel.cpp
     Panels/EconomyPanel.cpp
+    Panels/InventoryPanel.cpp
     Commands/EditorCommand.cpp
     Commands/EditorCommandRegistry.cpp
     Commands/EditorHotkeyMap.cpp

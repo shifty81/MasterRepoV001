@@ -35,6 +35,7 @@
 #include "Editor/Panels/LiveProfilerPanel.h"
 #include "Editor/Panels/SolarSystemPanel.h"
 #include "Editor/Panels/EconomyPanel.h"
+#include "Editor/Panels/InventoryPanel.h"
 #include "Game/Character/PlayerCharacterRenderer.h"
 #include "Game/Movement/PlayerMovement.h"
 #include "Game/Gameplay/SolarSystem/DevSolarSystem.h"
@@ -42,6 +43,9 @@
 #include "Game/Gameplay/Exploration/ExplorationSystem.h"
 #include "Game/Gameplay/Economy/ResourceRegistry.h"
 #include "Game/Gameplay/Station/StationServices.h"
+#include "Game/Gameplay/Salvage/SalvageSystem.h"
+#include "Game/Gameplay/Storage/StorageSystem.h"
+#include "Game/Gameplay/Inventory/InventorySystem.h"
 #include "Game/Components/PositionComponent.h"
 #include <cstdint>
 #include <memory>
@@ -124,12 +128,16 @@ private:
     LiveProfilerPanel           m_ProfilerPanel;
     SolarSystemPanel            m_SolarSystemPanel;
     EconomyPanel                m_EconomyPanel;
+    InventoryPanel              m_InventoryPanel;
     NF::Game::PlayerCharacterRenderer m_CharacterRenderer;
     NF::Game::Gameplay::DevSolarSystem m_DevSolarSystem;
     NF::Game::Gameplay::PCGItemGen     m_PCGItemGen;
     NF::Game::Gameplay::ExplorationSystem m_ExplorationSystem;
     NF::Game::Gameplay::ResourceRegistry  m_Resources;
     NF::Game::Gameplay::StationServices   m_EditorStation{"Homebase"};
+    NF::Game::Gameplay::SalvageSystem     m_EditorSalvage;
+    NF::Game::Gameplay::StorageSystem     m_EditorStorage;
+    NF::Game::Gameplay::InventorySystem   m_EditorInventorySys;
 
     // ---- PIE (Play-In-Editor) state ----
     NF::Game::PlayerMovement m_PiePlayer;   ///< FPS player — always active; noclip in edit, physics in PIE.

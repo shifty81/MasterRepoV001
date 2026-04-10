@@ -24,6 +24,8 @@ enum class MissionObjectiveType : uint8_t {
     KillEnemies,      ///< Kill N entities via CombatSystem.
     SellResources,    ///< Sell >= N total units at a station market.
     CraftItem,        ///< Craft >= N units of a specific resource via manufacturing.
+    DepositToStorage, ///< Deposit >= N total units into world storage boxes.
+    SalvageWreck,     ///< Salvage >= N items from wreck sites.
 };
 
 /// @brief Lifecycle state of a mission.
@@ -122,6 +124,12 @@ public:
 
     /// @brief Report that @p count units of @p type were produced by manufacturing.
     void NotifyCrafted(NF::Game::ResourceType type, uint32_t count);
+
+    /// @brief Report that @p count items were deposited into a world storage box.
+    void NotifyDeposited(uint32_t count);
+
+    /// @brief Report that @p count items were salvaged from a wreck site.
+    void NotifySalvaged(uint32_t count);
 
     // ---- Queries ------------------------------------------------------------
 

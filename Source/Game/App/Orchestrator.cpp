@@ -75,6 +75,26 @@ bool Orchestrator::Init(RenderDevice* renderDevice, const NetParams& params)
         m_Station.GetMarket().Initialize(m_Resources, kInitialStockPerType);
         m_Station.GetMarket().SetCredits(500.f);
 
+        // Phase 7: place a default Homebase storage box at world origin.
+        m_Storage.AddBox("Homebase Storage", {0.f, 0.f, 0.f});
+
+        // Phase 7: set up player inventory system — one named "Backpack" container.
+        m_InventorySys.AddContainer("Backpack");
+
+        // Phase 7: seed a default wreck site near the spawn point so the
+        // "Salvage Run" mission is immediately actionable.
+        {
+            const auto& sp = m_GameWorld.GetSpawnPoint();
+            // Place the wreck 15 units ahead of spawn.
+            const NF::Vector3 wreckPos = {sp.Position.X + 15.f,
+                                           sp.Position.Y,
+                                           sp.Position.Z};
+            const NF::Game::Gameplay::WreckId w = m_Salvage.PlaceWreck("Derelict Probe", wreckPos);
+            m_Salvage.AddLoot(w, NF::Game::ResourceType::Ore,    8u);
+            m_Salvage.AddLoot(w, NF::Game::ResourceType::Metal,  3u);
+            m_Salvage.AddLoot(w, NF::Game::ResourceType::Stone,  5u);
+        }
+
         // Wire mine callback → ProgressionSystem XP + MissionRegistry progress.
         m_InteractionLoop.SetOnMineSuccess(
             [this](NF::Game::ResourceType type, uint32_t count) {

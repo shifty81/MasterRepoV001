@@ -1,4 +1,4 @@
-// MissionRegistry.cpp — 3 starter missions spawnable in DevWorld.
+// MissionRegistry.cpp — starter missions spawnable in DevWorld.
 #include "Game/Gameplay/Missions/MissionRegistry.h"
 
 namespace NF::Game::Gameplay {
@@ -57,6 +57,26 @@ static const MissionDef kStarterMissions[] = {
         1u,
         NF::Game::ResourceType::Metal, // crafted output type
         { 200u, NF::Game::ResourceType::None,  0u,  75.f }
+    },
+    // Mission 6: Stash It — deposit 5 resources into the world storage box.
+    {
+        6u,
+        "Stash It",
+        "Deposit 5 units of any resource into the Homebase storage box.",
+        MissionObjectiveType::DepositToStorage,
+        5u,
+        NF::Game::ResourceType::None, // any resource type counts
+        { 100u, NF::Game::ResourceType::None,  0u,  30.f }
+    },
+    // Mission 7: Salvage Run — salvage items from a wreck site.
+    {
+        7u,
+        "Salvage Run",
+        "Salvage at least 3 items from the derelict wreck near Homebase.",
+        MissionObjectiveType::SalvageWreck,
+        3u,
+        NF::Game::ResourceType::None, // not resource-specific
+        { 175u, NF::Game::ResourceType::Ore,   3u,  40.f }
     },
 };
 
@@ -208,6 +228,24 @@ void MissionRegistry::NotifyCrafted(NF::Game::ResourceType type, uint32_t count)
             if (matches)
                 Advance(ms, ms.progress + count);
         }
+    }
+}
+
+void MissionRegistry::NotifyDeposited(uint32_t count)
+{
+    for (auto& ms : m_Missions) {
+        if (ms.status != MissionStatus::Active) continue;
+        if (ms.def->objectiveType == MissionObjectiveType::DepositToStorage)
+            Advance(ms, ms.progress + count);
+    }
+}
+
+void MissionRegistry::NotifySalvaged(uint32_t count)
+{
+    for (auto& ms : m_Missions) {
+        if (ms.status != MissionStatus::Active) continue;
+        if (ms.def->objectiveType == MissionObjectiveType::SalvageWreck)
+            Advance(ms, ms.progress + count);
     }
 }
 
