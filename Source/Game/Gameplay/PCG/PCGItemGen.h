@@ -77,6 +77,14 @@ public:
     /// @brief Return items for a specific body.
     [[nodiscard]] std::vector<const PlacedItem*> ItemsForBody(uint32_t bodyId) const;
 
+    /// @brief Save all placed items to a JSON file (.nfpi).
+    /// @return True on success.
+    [[nodiscard]] bool SaveToFile(const std::string& path) const;
+
+    /// @brief Load placed items from a JSON file (.nfpi).
+    /// @return True if the file was found and parsed successfully.
+    [[nodiscard]] bool LoadFromFile(const std::string& path);
+
 private:
     uint32_t                m_Seed{42};
     std::vector<PlacedItem> m_Items;

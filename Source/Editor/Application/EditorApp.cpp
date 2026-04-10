@@ -280,6 +280,7 @@ bool EditorApp::Init() {
             manifest.IsValid() ? manifest.DefaultWorld : "DevWorld";
         m_WorldSession.Init(m_GameWorld, m_Level, contentRoot, worldName);
         m_WorldSession.SetSolarSystem(&m_DevSolarSystem);
+        m_WorldSession.SetItemGen(&m_PCGItemGen);
         m_GameWorld.Initialize(contentRoot, worldName);
         m_WorldSession.LoadSavedChunks();
     }
@@ -1748,6 +1749,18 @@ void EditorApp::TickFrame(float dt)
 
     // ---- Docking panels fill the area between top bands and status bar ----
     m_DockingSystem.Draw(0.f, dockY, dockW, dockH);
+
+    // ---- PIE crosshair: centered + in the viewport rect while Playing ----
+    if (isPiePlaying && hasViewport && vpW > 0.f && vpH > 0.f) {
+        const float cx  = vpX + vpW * 0.5f;
+        const float cy  = vpY + vpH * 0.5f;
+        const float dpi = m_UIRenderer.GetDpiScale();
+        const float len = 10.f * dpi;
+        const float th  = 2.f  * dpi;
+        constexpr uint32_t kCrosshairCol = 0xCCCCCC99u;
+        m_UIRenderer.DrawRect({cx - len, cy - th * 0.5f, len * 2.f, th}, kCrosshairCol);
+        m_UIRenderer.DrawRect({cx - th * 0.5f, cy - len, th, len * 2.f}, kCrosshairCol);
+    }
 
     // Status bar at the bottom
     DrawStatusBar(0.f, static_cast<float>(m_ClientHeight) - statusH,
