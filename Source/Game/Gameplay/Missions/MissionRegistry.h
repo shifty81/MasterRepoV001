@@ -22,6 +22,8 @@ enum class MissionObjectiveType : uint8_t {
     CollectResource,  ///< Hold >= N units of a specific resource in inventory.
     ReachLevel,       ///< Reach progression level >= N.
     KillEnemies,      ///< Kill N entities via CombatSystem.
+    SellResources,    ///< Sell >= N total units at a station market.
+    CraftItem,        ///< Craft >= N units of a specific resource via manufacturing.
 };
 
 /// @brief Lifecycle state of a mission.
@@ -114,6 +116,12 @@ public:
 
     /// @brief Report that the player killed an enemy.
     void NotifyKill();
+
+    /// @brief Report that the player sold @p count units of @p type at a market.
+    void NotifySold(NF::Game::ResourceType type, uint32_t count);
+
+    /// @brief Report that @p count units of @p type were produced by manufacturing.
+    void NotifyCrafted(NF::Game::ResourceType type, uint32_t count);
 
     // ---- Queries ------------------------------------------------------------
 

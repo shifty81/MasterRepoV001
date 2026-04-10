@@ -11,6 +11,8 @@
 #include "Game/Gameplay/Progression/ProgressionSystem.h"
 #include "Game/Gameplay/Combat/CombatSystem.h"
 #include "Game/Gameplay/Missions/MissionRegistry.h"
+#include "Game/Gameplay/Economy/ResourceRegistry.h"
+#include "Game/Gameplay/Station/StationServices.h"
 #include "Audio/Core/AudioDevice.h"
 #include "Audio/Core/SoundBank.h"
 #include "Audio/Mixer/AudioMixer.h"
@@ -123,6 +125,14 @@ public:
     [[nodiscard]] NF::Game::Gameplay::MissionRegistry&       GetMissions()       noexcept { return m_Missions; }
     [[nodiscard]] const NF::Game::Gameplay::MissionRegistry& GetMissions() const noexcept { return m_Missions; }
 
+    /// @brief Returns the ResourceRegistry (static resource catalog).
+    [[nodiscard]] NF::Game::Gameplay::ResourceRegistry&       GetResources()       noexcept { return m_Resources; }
+    [[nodiscard]] const NF::Game::Gameplay::ResourceRegistry& GetResources() const noexcept { return m_Resources; }
+
+    /// @brief Returns the starter station (Homebase).
+    [[nodiscard]] NF::Game::Gameplay::StationServices&       GetStation()       noexcept { return m_Station; }
+    [[nodiscard]] const NF::Game::Gameplay::StationServices& GetStation() const noexcept { return m_Station; }
+
     /// @brief Returns the GameServer (non-null when Solo/ListenServer/Dedicated).
     [[nodiscard]] GameServer* GetServer() noexcept { return m_Server.get(); }
     /// @brief Returns the GameClient (non-null when ListenServer/Client).
@@ -156,6 +166,10 @@ private:
     NF::Game::Gameplay::ProgressionSystem m_Progression;
     NF::Game::Gameplay::CombatSystem      m_Combat;
     NF::Game::Gameplay::MissionRegistry   m_Missions;
+
+    // Phase 6 economy systems.
+    NF::Game::Gameplay::ResourceRegistry  m_Resources;
+    NF::Game::Gameplay::StationServices   m_Station{"Homebase"};
 
     // Phase 9 audio
     AudioDevice  m_AudioDevice;

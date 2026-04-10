@@ -38,6 +38,26 @@ static const MissionDef kStarterMissions[] = {
         NF::Game::ResourceType::None, // not a CollectResource mission
         { 300u, NF::Game::ResourceType::None,  0u, 100.f }
     },
+    // Mission 4: First Trade — sell 3 units of any resource at the station market.
+    {
+        4u,
+        "First Trade",
+        "Dock at Homebase and sell 3 units of any resource to get your first credits.",
+        MissionObjectiveType::SellResources,
+        3u,
+        NF::Game::ResourceType::None, // any resource type counts
+        { 75u,  NF::Game::ResourceType::None,  0u,  50.f }
+    },
+    // Mission 5: First Craft — manufacture 1 unit of Metal via the station factory.
+    {
+        5u,
+        "First Craft",
+        "Use the station manufacturing queue to produce 1 unit of refined Metal.",
+        MissionObjectiveType::CraftItem,
+        1u,
+        NF::Game::ResourceType::Metal, // crafted output type
+        { 200u, NF::Game::ResourceType::None,  0u,  75.f }
+    },
 };
 
 // ---------------------------------------------------------------------------
@@ -159,6 +179,35 @@ void MissionRegistry::NotifyKill()
         if (ms.status != MissionStatus::Active) continue;
         if (ms.def->objectiveType == MissionObjectiveType::KillEnemies)
             Advance(ms, ms.progress + 1u);
+    }
+}
+
+void MissionRegistry::NotifySold(NF::Game::ResourceType type, uint32_t count)
+{
+    for (auto& ms : m_Missions) {
+        if (ms.status != MissionStatus::Active) continue;
+        if (ms.def->objectiveType == MissionObjectiveType::SellResources) {
+            // Any resource type counts unless the mission specifies one.
+            const bool matches =
+                (ms.def->targetResourceType == NF::Game::ResourceType::None)
+                || (ms.def->targetResourceType == type);
+            if (matches)
+                Advance(ms, ms.progress + count);
+        }
+    }
+}
+
+void MissionRegistry::NotifyCrafted(NF::Game::ResourceType type, uint32_t count)
+{
+    for (auto& ms : m_Missions) {
+        if (ms.status != MissionStatus::Active) continue;
+        if (ms.def->objectiveType == MissionObjectiveType::CraftItem) {
+            const bool matches =
+                (ms.def->targetResourceType == NF::Game::ResourceType::None)
+                || (ms.def->targetResourceType == type);
+            if (matches)
+                Advance(ms, ms.progress + count);
+        }
     }
 }
 

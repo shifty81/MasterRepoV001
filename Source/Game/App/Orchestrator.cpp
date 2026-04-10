@@ -65,8 +65,13 @@ bool Orchestrator::Init(RenderDevice* renderDevice, const NetParams& params)
 
         // ---- Core gameplay systems ----
 
-        // Missions: auto-accept 3 starter missions.
+        // Missions: auto-accept 5 starter missions (3 original + 2 economy).
         m_Missions.Init();
+
+        // Phase 6: initialise station market from the resource registry.
+        // Seed the player with 500 starting credits.
+        m_Station.GetMarket().Initialize(m_Resources, 100u);
+        m_Station.GetMarket().SetCredits(500.f);
 
         // Wire mine callback → ProgressionSystem XP + MissionRegistry progress.
         m_InteractionLoop.SetOnMineSuccess(
@@ -250,6 +255,36 @@ void Orchestrator::Tick(float dt)
 
     // Phase 9: advance audio mixer.
     m_AudioMixer.Update(dt);
+
+    // Phase 6: tick station (advances manufacturing queue).
+    // Auto-collect any completed crafting output into the player's inventory
+    // and notify missions.
+    m_Station.Tick(dt);
+    if (m_Station.GetFactory().HasCompletedJob())
+    {
+        NF::Game::Inventory& inv = m_InteractionLoop.GetInventory();
+
+        // Snapshot slot counts before collection to detect what was added.
+        uint32_t countsBefore[NF::Game::Inventory::kMaxSlots]{};
+        for (int i = 0; i < NF::Game::Inventory::kMaxSlots; ++i)
+            countsBefore[i] = inv.GetSlot(i).count;
+
+        m_Station.GetFactory().CollectOutput(inv);
+
+        // Notify missions for each newly-added resource type.
+        for (int i = 0; i < NF::Game::Inventory::kMaxSlots; ++i)
+        {
+            const auto& slot = inv.GetSlot(i);
+            if (slot.count > countsBefore[i])
+            {
+                const uint32_t crafted = slot.count - countsBefore[i];
+                m_Missions.NotifyCrafted(slot.type, crafted);
+                NF::Logger::Log(NF::LogLevel::Info, "Game",
+                    "Crafted " + std::to_string(crafted) + "x " +
+                    std::to_string(static_cast<int>(slot.type)));
+            }
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------

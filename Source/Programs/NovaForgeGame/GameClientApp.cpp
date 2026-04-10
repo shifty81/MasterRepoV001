@@ -7,6 +7,7 @@
 #include "Game/Interaction/Inventory.h"
 #include "Game/Interaction/ResourceItem.h"
 #include "Game/Gameplay/SolarSystem/DevSolarSystem.h"
+#include "Game/Gameplay/Economy/TradeMarket.h"
 #include "Game/Voxel/VoxelType.h"
 #include <chrono>
 #include <algorithm>
@@ -404,6 +405,42 @@ void GameClientApp::TickFrame(float dt)
         if (m_DevSolarMapEnabled && m_KeysJustPressed[0x4D]) // VK_M
             m_ShowSolarMap = !m_ShowSolarMap;
 
+        // F key toggles dock/undock at Homebase station.
+        if (m_KeysJustPressed[0x46]) { // VK_F
+            auto& station = m_Orchestrator.GetStation();
+            if (station.IsDocked())
+                station.Undock();
+            else
+                station.Dock();
+        }
+
+        // T key sells all sellable items at the station (requires docked).
+        if (m_KeysJustPressed[0x54]) { // VK_T
+            auto& station = m_Orchestrator.GetStation();
+            auto& inv     = m_Orchestrator.GetInteractionLoop().GetInventory();
+            auto& market  = station.GetMarket();
+            if (station.IsDocked()) {
+                // Sell each held resource type.
+                using RT = NF::Game::ResourceType;
+                static constexpr RT kTypes[] = {
+                    RT::Stone, RT::Ore, RT::Dirt, RT::Rock,
+                    RT::Metal, RT::Ice, RT::Organic
+                };
+                uint32_t totalSold = 0;
+                for (const auto t : kTypes) {
+                    const uint32_t held = inv.GetCount(t);
+                    if (held > 0) {
+                        const auto result = market.Sell(t, held, inv);
+                        if (result == NF::Game::Gameplay::TradeResult::Success) {
+                            m_Orchestrator.GetMissions().NotifySold(t, held);
+                            totalSold += held;
+                        }
+                    }
+                }
+                (void)totalSold;
+            }
+        }
+
         // Update mine flash timer
         if (m_MineFlashTimer > 0.f)
             m_MineFlashTimer -= dt;
@@ -463,12 +500,12 @@ void GameClientApp::DrawHUD()
     const float padX  = 8.f  * dpi;
     const float hudW  = 260.f * dpi;
     const float hudX  = padX;
-    const float hudY  = static_cast<float>(m_ClientHeight) - (lineH * 7.f + 12.f * dpi);
+    const float hudY  = static_cast<float>(m_ClientHeight) - (lineH * 9.f + 12.f * dpi);
     const float scale = 2.f;
 
     // HUD background panel
     m_UIRenderer.DrawRect({hudX - 4.f * dpi, hudY - 4.f * dpi,
-                            hudW + 8.f * dpi, lineH * 7.f + 16.f * dpi}, kHudBg);
+                            hudW + 8.f * dpi, lineH * 9.f + 16.f * dpi}, kHudBg);
 
     const NF::Game::RigState&   rig = m_Orchestrator.GetInteractionLoop().GetRig();
     const NF::Game::Inventory&  inv = m_Orchestrator.GetInteractionLoop().GetInventory();
@@ -541,6 +578,21 @@ void GameClientApp::DrawHUD()
         const uint32_t flashAlpha = static_cast<uint32_t>(alpha * 255.f);
         const uint32_t flashCol = (kFlashColor & 0xFFFFFF00u) | flashAlpha;
         m_UIRenderer.DrawText("MINED!", hudX, cy, flashCol, scale);
+        cy += lineH;
+    }
+
+    // Economy: credits + station status (Phase 6)
+    {
+        const auto& station = m_Orchestrator.GetStation();
+        const float credits = station.GetMarket().GetCredits();
+        const std::string creditStr = "Credits: " + std::to_string(static_cast<int>(credits));
+        m_UIRenderer.DrawText(creditStr.c_str(), hudX, cy, kItemColor, scale);
+        cy += lineH;
+
+        const std::string stationStr = station.IsDocked()
+            ? "[F] Undock  [T] Sell"
+            : "[F] Dock at Homebase";
+        m_UIRenderer.DrawText(stationStr.c_str(), hudX, cy, kTextColor, scale);
     }
 }
 

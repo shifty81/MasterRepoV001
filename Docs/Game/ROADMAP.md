@@ -130,3 +130,30 @@ Do not prioritize these until earlier phases are complete:
 - advanced AI systems
 - broad server/admin platform work
 - luxury editor panels not tied to core authoring loop
+
+## Phase 6 — Economy, Manufacturing & Station Loop
+Status: Current Active Phase
+
+Goal:
+Wire the economy and manufacturing subsystems into the live gameplay loop.
+All work must be exercised in DevWorld/DevSolarSystem before it goes to main.
+
+### Phase 6 Checklist
+
+**Mission System**
+- [x] Two new starter missions — "First Trade" (sell 3 resources) and "First Craft" (manufacture 1 Metal)
+- [x] MissionRegistry — `SellResources` + `CraftItem` objective types; `NotifySold()` + `NotifyCrafted()` notifiers
+
+**Economy Integration**
+- [x] ResourceRegistry + TradeMarket wired into Orchestrator via StationServices
+- [x] Starter credits (500) seeded at session start; station named "Homebase"
+- [x] ManufacturingQueue auto-collect in Orchestrator::Tick — output deposited into player inventory; `NotifyCrafted` fired
+
+**In-Game (GameClientApp)**
+- [x] F key — dock / undock at Homebase station
+- [x] T key — sell all held resources at station market (requires docked)
+- [x] HUD shows credits balance + station context hint (F/T bindings)
+
+**Editor**
+- [x] EconomyPanel — market price table, credits balance, station status, manufacturing recipes
+- [x] EconomyPanel wired into bottom dock as "Economy" tab
