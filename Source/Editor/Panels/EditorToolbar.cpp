@@ -92,9 +92,10 @@ bool EditorToolbar::DrawButton(float x, float y, float bw, float bh,
     }
 
     const float dpi = m_Renderer->GetDpiScale();
+    const float btnR = ActiveTheme().buttonCornerRadius * dpi;
     const uint32_t fill = hovered ? kBtnBgHover : bgColor;
-    m_Renderer->DrawRect({x, y, bw, bh}, fill);
-    m_Renderer->DrawOutlineRect({x, y, bw, bh}, kSepColor);
+    m_Renderer->DrawRoundedRect({x, y, bw, bh}, fill, btnR);
+    m_Renderer->DrawRoundedOutlineRect({x, y, bw, bh}, kSepColor, btnR);
 
     // Bevel/depth effect: lighter top-left inner edge, darker bottom-right inner edge.
     m_Renderer->DrawRect({x + 1.f, y + 1.f, bw - 2.f, 1.f},         0xFFFFFF20U); // top

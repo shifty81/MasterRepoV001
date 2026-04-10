@@ -83,8 +83,13 @@ void EditorApp::DispatchOsEvent(unsigned msg, uintptr_t wParam, intptr_t lParam)
     {
         const float newX = static_cast<float>(GET_X_LPARAM(lp));
         const float newY = static_cast<float>(GET_Y_LPARAM(lp));
-        m_Input.mouseDeltaX = newX - m_Input.mouseX;
-        m_Input.mouseDeltaY = newY - m_Input.mouseY;
+        // During FPS capture, look delta is computed via
+        // GetCursorPos/SetCursorPos in HandlePieInput; skip
+        // WM_MOUSEMOVE delta to avoid double-counting.
+        if (!m_FpsCursorHidden) {
+            m_Input.mouseDeltaX += newX - m_Input.mouseX;
+            m_Input.mouseDeltaY += newY - m_Input.mouseY;
+        }
         m_Input.mouseX = newX;
         m_Input.mouseY = newY;
         break;
@@ -2073,17 +2078,45 @@ void EditorApp::HandlePieInput(float dt)
 
     m_PiePlayer.SetMoveInput(forward, right, jump, sprint);
 
+    // ---- Mouse look delta ----
+    // During FPS capture (PIE or RMB-drag), use GetCursorPos relative to
+    // window centre and re-centre cursor each frame for infinite 360°
+    // rotation.  Otherwise fall back to WM_MOUSEMOVE deltas.
+    float lookDX = 0.f, lookDY = 0.f;
+    if (m_FpsCursorHidden) {
+        HWND hwnd = static_cast<HWND>(m_Hwnd);
+        RECT rc{};
+        GetClientRect(hwnd, &rc);
+        POINT center{(rc.left + rc.right) / 2, (rc.top + rc.bottom) / 2};
+        ClientToScreen(hwnd, &center);
+
+        POINT cur;
+        GetCursorPos(&cur);
+        lookDX = static_cast<float>(cur.x - center.x);
+        lookDY = static_cast<float>(cur.y - center.y);
+
+        if (lookDX != 0.f || lookDY != 0.f)
+            SetCursorPos(center.x, center.y);
+
+        // Keep m_Input.mouseX/Y at the client-area centre so the invisible
+        // cursor doesn't trigger hover states on surrounding UI panels.
+        m_Input.mouseX = static_cast<float>((rc.left + rc.right) / 2);
+        m_Input.mouseY = static_cast<float>((rc.top + rc.bottom) / 2);
+    } else {
+        lookDX = m_Input.mouseDeltaX;
+        lookDY = m_Input.mouseDeltaY;
+    }
+
     // Apply mouse look:
     //   - During PIE: always active (mouse is captured).
     //   - During edit: only when right mouse button is held.
     // Honour the invertLookY preference.
     const bool isPiePlaying = m_Toolbar.IsPiePlaying();
     const bool applyLook = isPiePlaying ||
-                           (m_Input.rightDown && (m_Input.mouseDeltaX != 0.f || m_Input.mouseDeltaY != 0.f));
-    if (applyLook && (m_Input.mouseDeltaX != 0.f || m_Input.mouseDeltaY != 0.f)) {
+                           (m_Input.rightDown && (lookDX != 0.f || lookDY != 0.f));
+    if (applyLook && (lookDX != 0.f || lookDY != 0.f)) {
         const float dySign = m_PreferencesPanel.GetData().invertLookY ? -1.f : 1.f;
-        m_PiePlayer.ApplyMouseLook(m_Input.mouseDeltaX,
-                                   m_Input.mouseDeltaY * dySign);
+        m_PiePlayer.ApplyMouseLook(lookDX, lookDY * dySign);
     }
 #endif
 }

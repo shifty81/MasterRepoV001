@@ -59,10 +59,12 @@ void EditorModeManager::Draw(float x, float y, float w, float h)
         uint32_t bg = active  ? theme.selectBg
                     : hovered ? theme.hoverBg
                               : theme.buttonBg;
-        m_Renderer->DrawRect({cx, y + 2.f, tabW, tabH}, bg);
+        m_Renderer->DrawRoundedRect({cx, y + 2.f, tabW, tabH}, bg,
+                                    theme.tabCornerRadius * dpi);
 
         // Tab outline so each tab is visually distinct.
-        m_Renderer->DrawOutlineRect({cx, y + 2.f, tabW, tabH}, theme.panelBorder);
+        m_Renderer->DrawRoundedOutlineRect({cx, y + 2.f, tabW, tabH}, theme.panelBorder,
+                                           theme.tabCornerRadius * dpi);
 
         // Active accent bar at the bottom of the tab.
         if (active)

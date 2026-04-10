@@ -943,8 +943,8 @@ NF::Matrix4x4 GameClientApp::GetViewMatrix() const noexcept
     const NF::Vector3 target{eye.X + viewDir.X, eye.Y + viewDir.Y, eye.Z + viewDir.Z};
 
     NF::Vector3 forward = viewDir;
-    NF::Vector3 right   = NF::Vector3{0.f, 1.f, 0.f}.Cross(forward).Normalized();
-    NF::Vector3 up      = forward.Cross(right);
+    NF::Vector3 right   = forward.Cross(NF::Vector3{0.f, 1.f, 0.f}).Normalized();
+    NF::Vector3 up      = right.Cross(forward);
 
     NF::Matrix4x4 v = NF::Matrix4x4::Identity();
     v.M[0][0] = right.X;    v.M[1][0] = right.Y;    v.M[2][0] = right.Z;
