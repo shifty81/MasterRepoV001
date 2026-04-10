@@ -1,0 +1,534 @@
+Vector2 arithmetic 1 0.00547415
+Vector2 length 1 0.00439834
+Vector2 dot product 1 0.00419549
+Vector3 arithmetic 1 0.00413388
+Vector3 dot and cross product 1 0.00468259
+Vector3 normalize 1 0.0043466
+Quaternion identity 1 0.00413868
+Quaternion normalize 1 0.0042047
+Matrix4x4 identity multiply 1 0.00454928
+Matrix4x4 transpose 1 0.00459037
+LogLevel ordering 1 0.00419767
+Logger::Log does not throw 1 0.00417742
+NF_LOG macros compile and run without throwing 1 0.0041818
+Logger::Init creates log directory and master file 1 0.00433818
+Logger writes to master log and per-channel log 1 0.00494342
+Logger works without Init (console-only mode) 1 0.00408286
+Logger level strings are correct 1 0.00424629
+EventBus delivers event to a single subscriber 1 0.00468385
+EventBus delivers event to multiple subscribers 1 0.00448748
+EventBus does not call subscribers for other event types 1 0.00422215
+EventBus Publish with no subscribers is a no-op 1 0.00418637
+EventBus Clear removes all handlers 1 0.00473699
+EventBus passes event data correctly to handler 1 0.00419068
+EventBus supports multiple independent event types simultaneously 1 0.00413487
+TaskSystem executes a submitted task 1 0.00434675
+TaskSystem executes multiple tasks 1 0.00451066
+TaskSystem future propagates exceptions 1 0.0043986
+TaskSystem Shutdown with no tasks does not hang 1 0.00445622
+TaskSystem Init with 0 threads uses hardware concurrency 1 0.00459008
+World creates entities with unique IDs 1 0.0041527
+AddComponent and GetComponent round-trip 1 0.00417975
+HasComponent returns false for missing components 1 0.00411922
+HasComponent returns false for missing component type 1 0.00414586
+Multiple components on the same entity 1 0.00413836
+DestroyEntity removes the entity and its components 1 0.00415214
+View iterates only entities with the requested component 1 0.00411552
+BTLeaf returns configured status 1 0.0041033
+BTSequence succeeds when all children succeed 1 0.00417057
+BTSequence fails on first failing child 1 0.00432805
+BTSequence returns Running when a child returns Running 1 0.00415847
+BTSelector succeeds on first successful child 1 0.00412757
+BTSelector fails when all children fail 1 0.00471845
+BTSelector returns Running when a child returns Running 1 0.0041912
+BehaviorTree::Tick delegates to root 1 0.00419045
+BehaviorTree with no root returns Failure 1 0.00416371
+GraphVM::CreateContext initialises a fresh context 1 0.00423818
+GraphVM::Nop does nothing 1 0.00432386
+GraphVM::Return marks context finished 1 0.00417523
+GraphVM: empty instruction list finishes immediately 1 0.00412902
+GraphVM::PushNull pushes a null value 1 0.0042034
+GraphVM::PushBool pushes true when operand != 0 1 0.00413932
+GraphVM::PushBool pushes false when operand == 0 1 0.00411357
+GraphVM::PushInt pushes integer operand 1 0.00411847
+GraphVM::PushFloat pushes float operand 1 0.00413598
+GraphVM::PushString pushes string from table 1 0.00414666
+GraphVM::PushString out-of-range idx pushes empty string 1 0.00427032
+GraphVM::Pop removes top value 1 0.00416272
+GraphVM::Dup duplicates top value 1 0.00416027
+GraphVM::AddInt adds two integers 1 0.00416219
+GraphVM::SubInt subtracts two integers 1 0.00417001
+GraphVM::MulInt multiplies two integers 1 0.00417833
+GraphVM::DivInt divides two integers 1 0.00412912
+GraphVM::DivInt returns 0 on divide-by-zero 1 0.00419572
+GraphVM::AddFloat adds two floats 1 0.00413234
+GraphVM::MulFloat multiplies two floats 1 0.00417042
+GraphVM::DivFloat returns 0 on divide-by-zero 1 0.00423583
+GraphVM::EqInt returns true when equal 1 0.00432297
+GraphVM::NeInt returns true when not equal 1 0.00422675
+GraphVM::LtInt returns true when a < b 1 0.00437776
+GraphVM::GtInt returns false when a < b 1 0.00421394
+GraphVM::And returns true when both true 1 0.00422499
+GraphVM::And returns false when one is false 1 0.00425917
+GraphVM::Or returns true when one is true 1 0.00420995
+GraphVM::Not flips bool 1 0.00415704
+GraphVM::StoreVar and LoadVar round-trip an integer 1 0.0043075
+GraphVM::LoadVar of unset variable pushes null 1 0.00422645
+GraphVM::Jump jumps unconditionally 1 0.00417719
+GraphVM::JumpTrue jumps when top is true 1 0.00415938
+GraphVM::JumpFalse jumps when top is false 1 0.00421349
+GraphVM::JumpTrue does not jump when top is false 1 0.00413042
+GraphVM::Yield suspends execution 1 0.00416263
+GraphVM::Resume continues after Yield 1 0.00418009
+GraphVM::Step does nothing on finished context 1 0.00415396
+GraphVM::Step does nothing on suspended context 1 0.00416665
+GraphVM::CallTool invokes registered tool 1 0.00417337
+GraphVM::CallTool pushes null for unknown tool 1 0.00474821
+GraphVM::UnregisterTool removes a tool 1 0.00423728
+GraphVM::Run respects maxSteps limit 1 0.00417935
+GraphVM::Disassemble returns non-empty string 1 0.00414994
+GraphVM Log builtin tool does not crash 1 0.00424908
+Blackboard::Set and Get round-trip a bool 1 0.00418625
+Blackboard::Set and Get round-trip an int 1 0.0041622
+Blackboard::Set and Get round-trip a float 1 0.00413624
+Blackboard::Set and Get round-trip a string 1 0.0042563
+Blackboard::Has returns false for missing key 1 0.00416369
+Blackboard::GetBool returns default for missing key 1 0.00413202
+Blackboard::GetInt returns default for missing key 1 0.0041681
+Blackboard::GetFloat returns default for missing key 1 0.00415609
+Blackboard::GetString returns default for missing key 1 0.00418987
+Blackboard::Clear removes a key 1 0.00412503
+Blackboard::ClearAll removes all keys 1 0.00415687
+Blackboard::Get returns null GraphValue for missing key 1 0.00422652
+FactionManager::GetReputation returns neutral by default 1 0.00424551
+FactionManager::ApplyReputation adds delta 1 0.00424202
+FactionManager::ApplyReputation is symmetric (A|B == B|A) 1 0.00419203
+FactionManager::ApplyReputation clamps to max 1 0.00415134
+FactionManager::ApplyReputation clamps to min 1 0.00422195
+FactionManager::SetReputation sets exact value 1 0.00416125
+FactionManager::IsHostile returns true below threshold 1 0.00415341
+FactionManager::IsHostile returns false above threshold 1 0.00431316
+FactionManager::IsFriendly returns true above threshold 1 0.00430929
+FactionManager::IsFriendly returns false below threshold 1 0.00425439
+FactionManager::SetAlliance marks factions as friendly 1 0.00435157
+FactionManager::SetWar marks factions as hostile 1 0.0041698
+FactionManager::Clear resets all reputations 1 0.00426874
+AIAgent::GetEntityId returns the constructed id 1 0.00416801
+AIAgent::AddGoal and GetActiveGoal return highest-priority goal 1 0.00420491
+AIAgent::RemoveGoal removes the goal by id 1 0.00422368
+AIAgent::AddGoal deduplicates by id 1 0.00420314
+AIAgent::GetActiveGoal returns null when no goals exist 1 0.00412868
+AIAgent::SetVar and GetVar round-trip via graph context 1 0.00412575
+AIAgent::GetVar returns null when no graph context 1 0.00415497
+AIAgent::SetBehaviorGraph sets graph context 1 0.00418377
+AIAgent::SetBehaviorGraph with nullptr clears context 1 0.00411499
+UtilitySelector::SelectBest returns empty string with no actions 1 0.00417607
+UtilitySelector::SelectBest picks highest-scoring action 1 0.00417454
+UtilitySelector::SelectAndExecute executes the best action 1 0.00417121
+UtilitySelector::RemoveAction removes by id 1 0.00420362
+UtilitySelector::ClearActions leaves no selectable actions 1 0.00416037
+AISystem::Init and Shutdown do not throw 1 0.00427272
+AISystem::RegisterAgent creates and returns a valid agent 1 0.00424191
+AISystem::UnregisterAgent removes the agent 1 0.00425262
+AISystem::GetAgent returns nullptr for unknown entity 1 0.00420164
+AISystem::RegisterAgent replaces existing agent for same entity 1 0.00423397
+AISystem::Tick does not crash with agents that have no graph 1 0.00421994
+AISystem::Tick runs graph to completion for agent with a Yield-free graph 1 0.00424973
+AISystem::GetFactionManager is accessible and mutable 1 0.00424607
+AISystem::GetGlobalBlackboard stores shared world data 1 0.00430086
+Gamepad is disconnected by default 1 0.00420981
+Gamepad marks connected after Update with connected state 1 0.00425664
+IsButtonDown returns true when button is held 1 0.0041779
+IsButtonPressed fires only on first frame 1 0.00421141
+IsButtonReleased fires only when button goes up 1 0.00427052
+Left stick dead-zone zeroes small values 1 0.00414984
+Left stick values outside dead-zone are non-zero 1 0.00424701
+Trigger values are clamped to [0, 1] 1 0.00421335
+DPad buttons can be pressed independently 1 0.00418128
+RigidBody default state 1 0.00417371
+RigidBody Integrate moves position 1 0.00441819
+RigidBody ApplyForce changes velocity via integration 1 0.00445008
+RigidBody accumulated force resets after Integrate 1 0.004301
+RigidBody ApplyImpulse changes velocity immediately 1 0.00413872
+RigidBody kinematic body ignores forces and impulses 1 0.00420233
+RigidBody zero dt does not move body 1 0.00467946
+AABB overlap when touching faces 1 0.00423067
+AABB no overlap when separated on X 1 0.00415786
+AABB overlap when one contains the other 1 0.0043666
+Spheres overlap when distance < sum of radii 1 0.00448364
+Spheres do not overlap when distance > sum of radii 1 0.00622786
+Spheres overlap exactly at tangent point 1 0.00449985
+Raycast hits AABB from outside along +X 1 0.00422976
+Raycast misses AABB aimed away 1 0.0047542
+Raycast respects maxDist and misses a distant box 1 0.00421003
+PhysicsWorld Step integrates all bodies 1 0.00417888
+PhysicsWorld RemoveBody excludes body from Step 1 0.00417838
+PhysicsWorld AddBody ignores duplicates 1 0.00416029
+PhysicsWorld Raycast hits nearest body 1 0.00414852
+PhysicsWorld Raycast returns false when no body is hit 1 0.00411518
+Skeleton is empty by default 1 0.00418308
+Skeleton AddBone increments bone count 1 0.00420902
+Skeleton GetBoneIndex returns correct index 1 0.00423713
+Skeleton GetBoneIndex returns -1 for unknown name 1 0.0041644
+Skeleton GetBone retrieves correct bone data 1 0.00414753
+Skeleton GetBone throws on out-of-range index 1 0.00427954
+ClipNode advances CurrentTime on Evaluate 1 0.00415949
+ClipNode respects PlaybackSpeed 1 0.00415401
+BlendNode2 with alpha=0 evaluates only NodeA side 1 0.00413241
+BlendNode2 with null nodes does not crash and leaves pose unchanged 1 0.0041458
+BlendNode2 alpha is clamped to [0,1] 1 0.00418948
+AnimStateMachine has empty current state by default 1 0.00415226
+AnimStateMachine first AddState becomes active state 1 0.00413704
+AnimStateMachine transitions when condition is true 1 0.00420877
+AnimStateMachine does not transition when condition is false 1 0.00415458
+AnimStateMachine Update evaluates active state blend tree 1 0.00413601
+ProjectManifest loads novaforge.project.json 1 0.0048164
+ProjectManifest fails gracefully on missing file 1 0.00417994
+Bootstrap runs successfully with valid RepoRoot 1 0.0048394
+Bootstrap fails with empty RepoRoot 1 0.00411102
+ProjectContext resolves paths from manifest 1 0.0041618
+Session lifecycle transitions work correctly 1 0.00423595
+DevWorldConfig::Defaults returns valid config 1 0.00414051
+DevWorldConfig::Defaults has correct spawn point 1 0.00415176
+DevWorldConfig::Defaults has correct camera config 1 0.00414664
+DevWorldConfig loads from DevWorld.json 1 0.00435854
+DevWorldConfig fails gracefully on missing file 1 0.00415622
+WorldSaveLoad round-trips through memory 1 0.00414923
+WorldSaveLoad validates magic number 1 0.00411815
+WorldSaveLoad rejects truncated data 1 0.00423613
+WorldSaveLoad round-trips with zero entities 1 0.00421301
+WorldSaveLoad file round-trip 1 0.00425594
+WorldDebugOverlay generates lines when enabled 1 0.00428098
+WorldDebugOverlay produces no lines when disabled 1 0.00430767
+WorldDebugOverlay includes seed 1 0.00416913
+GameWorld initializes with defaults when config missing 1 0.00555419
+GameWorld initializes with DevWorld.json 1 0.00557579
+GameWorld spawn point matches config 1 0.00552158
+GameWorld save and load round-trip 1 0.00572192
+GameWorld debug overlay works 1 0.00569312
+GameWorld tick does not crash 1 0.00554557
+GameWorld cannot save when not initialized 1 0.0042153
+DevWorldSerializer loads DevWorld.json 1 0.00422598
+DevWorldSerializer fails gracefully on missing file 1 0.00416724
+DevWorldSerializer round-trips through file 1 0.00432215
+WorldFileService loads DevWorld.json 1 0.00429148
+WorldFileService save and reload round-trip 1 0.00439393
+WorldFileService fails on empty path 1 0.00417153
+Voxel edits persist across save and reload 1 0.141616
+VoxelSerializer map round-trip preserves all chunk data 1 0.0598885
+VoxelTypeInfo: Air is id 0 and not solid 1 0.00474156
+VoxelTypeInfo: Stone is solid and minable 1 0.00442574
+VoxelTypeInfo: Ore has higher hardness than Dirt 1 0.00427294
+VoxelTypeInfo: unknown id falls back to Air 1 0.00424166
+WorldToChunk: positive coords 1 0.0043178
+WorldToChunk: negative coords floor-divide correctly 1 0.00415874
+WorldToLocal: within chunk bounds 1 0.00425163
+WorldToLocal: negative coords wrap correctly 1 0.00416567
+LocalToIndex: x varies fastest 1 0.00443261
+ChunkCoord equality 1 0.00422113
+kChunkVolume is 32768 1 0.00417156
+Chunk: default state is all Air and not dirty 1 0.00429824
+Chunk: SetVoxel marks dirty 1 0.00413943
+Chunk: ClearDirty resets flag 1 0.0041752
+Chunk: CountSolid counts non-air voxels 1 0.00413783
+Chunk: SetVoxel out of bounds returns false 1 0.00431686
+Chunk: GetCoord returns construction coord 1 0.00419873
+ChunkMap: initially empty 1 0.00442056
+ChunkMap: CreateChunk inserts and returns a chunk 1 0.00435803
+ChunkMap: GetOrCreateChunk creates on first access 1 0.00425988
+ChunkMap: UnloadChunk removes it 1 0.00421292
+ChunkMap: Clear removes all chunks 1 0.00431974
+ChunkMap: GetDirtyChunks returns only dirty chunks 1 0.00433283
+VoxelEditApi: GetVoxel returns Air for unloaded chunk 1 0.00422766
+VoxelEditApi: SetVoxel creates chunk and writes voxel 1 0.00431764
+VoxelEditApi: SetVoxel across chunk boundary 1 0.00426912
+VoxelEditApi: Mine instantly removes mineable voxel 1 0.00428685
+VoxelEditApi: Mine fails on Air 1 0.00432091
+VoxelEditApi: Mine with durability reports remaining 1 0.00423578
+VoxelEditApi: Damage destroys voxel when durability <= hardness 1 0.00429302
+VoxelEditApi: Repair places a voxel back 1 0.00416391
+VoxelEditApi: negative world coords work correctly 1 0.00430972
+VoxelSerializer: single chunk round-trip 1 0.0120088
+VoxelSerializer: chunk map round-trip in memory 1 0.0493219
+VoxelSerializer: empty map serializes to minimal bytes 1 0.00470924
+VoxelSerializer: corrupt magic rejected 1 0.01141
+VoxelDebugOverlay: ValidateMap returns true on clean data 1 0.00470149
+VoxelDebugOverlay: ValidateMap passes for empty map 1 0.00442185
+VoxelDebugOverlay: BuildStatsString is non-empty 1 0.00436639
+PCGWorldGen: default seed is non-zero 1 0.00421972
+PCGWorldGen: SetSeed round-trips 1 0.0042131
+PCGWorldGen: same seed produces identical chunks 1 0.00535992
+PCGWorldGen: different seeds produce different chunks 1 0.00531434
+PCGWorldGen: chunk is clean after generation 1 0.00475109
+PCGWorldGen: top Y layer is not all Stone 1 0.00471672
+PCGWorldGen: bottom Y layer is not all Air 1 0.00474472
+PCGWorldGen: only recognised VoxelType values are produced 1 0.00797256
+PCGWorldGen: increasing StoneDepth produces more Stone 0 0
+PCGWorldGen: increasing DirtThickness produces more Dirt 0 0
+PCGWorldGen: adjacent chunks produced with same seed are deterministic 1 0.00616052
+PCGWorldGen: chunk at non-zero coord differs from origin chunk 1 0.00516519
+PCGWorldGen: chunk coord is unchanged after generation 1 0.00469983
+VoxelMesher: empty chunk produces no geometry 1 0.00432504
+VoxelMesher: single voxel produces 6 faces (24 verts, 36 indices) 1 0.00453425
+VoxelMesher: two adjacent voxels share an internal face (cull it) 1 0.00459742
+VoxelMesher: vertex positions include chunk world offset 1 0.00479236
+VoxelMesher: normals point outward on each face 1 0.00451194
+VoxelMesher: type ID encoded in TexCoord.x 1 0.0044986
+VoxelMesher: VoxelColor returns distinct palette per type 1 0.00414903
+VoxelMesher: full-layer generates correct face count (top only exposed) 1 0.00586794
+VoxelMesher: filled chunk only produces surface faces 1 0.00968764
+VoxelMesher: neighbour chunk occludes boundary face 1 0.00478291
+RigState: default rig is alive with full health and energy 1 0.00414254
+RigState: named constructor stores name 1 0.00413093
+RigState: TakeDamage reduces health and clamps at 0 1 0.00413904
+RigState: RepairHealth restores health and clamps at max 1 0.00408489
+RigState: ConsumeEnergy returns false when insufficient 1 0.0041769
+RigState: RechargeEnergy clamps at max 1 0.00414395
+RigState: Tick recharges energy when alive 1 0.00413379
+RigState: Tick does not recharge when dead 1 0.00422371
+RigState: SetToolSlot clamps to valid range 1 0.00410124
+RigState: Reset restores full state 1 0.00416824
+ResourceStack: default is empty 1 0.00420989
+ResourceStack: non-zero count is not empty 1 0.00413071
+VoxelTypeToResource: maps minable ids correctly 1 0.00423523
+VoxelTypeToResource: id 0 (Air) returns None 1 0.00413849
+ResourceToVoxelId: round-trips correctly 1 0.0042637
+Inventory: starts empty 1 0.00432553
+Inventory: AddItem and GetCount 1 0.00431336
+Inventory: AddItem merges same type 1 0.0042734
+Inventory: RemoveItem decrements count 1 0.00418474
+Inventory: RemoveItem fails when insufficient 1 0.00418008
+Inventory: RemoveItem frees slot at count 0 1 0.00431769
+Inventory: Clear resets all slots 1 0.00428158
+Inventory: AddItem fails when all slots full with different types 1 0.00435213
+Inventory: HasItem checks minimum count 1 0.00429255
+InteractionLoop: Mine extracts resource and deposits to inventory 1 0.00425742
+InteractionLoop: Mine on Air returns NotMineable 1 0.00421933
+InteractionLoop: Place consumes inventory and writes voxel 1 0.00420917
+InteractionLoop: Place fails when inventory empty 1 0.00424533
+InteractionLoop: Repair places voxel and consumes item 1 0.0042014
+InteractionLoop: Repair fails when inventory empty 1 0.00421267
+InteractionLoop: Reset clears rig and inventory 1 0.00414065
+InteractionLoop: Tick recharges rig energy 1 0.0041296
+ChunkMap: IsSolidAt returns false for air 1 0.00418031
+ChunkMap: IsSolidAt returns true for solid voxels 1 0.00410906
+ChunkMap: IsSolidAt unloaded chunk default 1 0.00415337
+ChunkMap: IsSolidAt negative coordinates 1 0.00417686
+ChunkMap: RaycastVoxel hits a solid block 1 0.00425877
+ChunkMap: RaycastVoxel misses when no solid 1 0.00424482
+ChunkMap: RaycastVoxel reports previous air voxel 1 0.00432472
+PlayerMovement: default spawn position 1 0.00482627
+PlayerMovement: eye position is above feet 1 0.00430841
+PlayerMovement: forward direction at yaw=0 is +Z 1 0.00420212
+PlayerMovement: right direction at yaw=0 is +X 1 0.00416126
+PlayerMovement: mouse look changes yaw and pitch 1 0.00414423
+PlayerMovement: pitch is clamped 1 0.00414704
+PlayerMovement: gravity pulls player down in empty world 1 0.00417788
+PlayerMovement: player lands on solid ground 1 0.0044159
+PlayerMovement: WASD moves player horizontally 1 0.00421481
+PlayerMovement: sprint moves faster than walk 1 0.0041591
+PlayerMovement: jump gives upward velocity when grounded 1 0.0042858
+PlayerMovement: collision prevents walking into solid wall 1 0.0044522
+PlayerMovement: SetPosition teleports player 1 0.00413239
+PlayerMovement: view direction incorporates pitch 1 0.00417165
+NetMessage: header size is 8 bytes 1 0.00414557
+NetMessage: Seal produces correct header + payload 1 0.00414163
+NetMessage: round-trip from bytes 1 0.00425735
+NetMessage: ClientHello carries player name 1 0.00416271
+NetMessage: ServerPing round-trip 1 0.00426652
+NetMessage: empty payload 1 0.00416513
+NetChannel: queue and flush without socket does not crash 1 0.00432887
+NetChannel: attached to listening socket reports connected 1 0.00431662
+NetChannel: BytesSent starts at zero 1 0.00424941
+NetChannel: ReceivedCount starts at zero 1 0.00434474
+NetChannel: PopReceived returns false when empty 1 0.00436673
+NetReplicator: BuildSnapshot increments sequence 1 0.0043368
+NetReplicator: BuildSnapshot consumes pending edits 1 0.00435301
+NetReplicator: ApplySnapshot rejects stale 1 0.00426575
+NetReplicator: serialize/deserialize snapshot round-trip 1 0.00460195
+NetReplicator: empty snapshot serialization 1 0.00441111
+NetReplicator: RecordVoxelEdit assigns sequences 1 0.00415677
+GameServer: Init succeeds with valid world 1 0.00543688
+GameServer: Init fails with null world 1 0.00416395
+GameServer: AddLocalClient assigns incrementing ids 1 0.00550066
+GameServer: Tick advances tick counter 1 0.00559037
+GameServer: GetClientState returns valid state after tick 1 0.00539592
+GameServer: SubmitLocalInput moves player 1 0.0061048
+GameServer: snapshot contains all players 1 0.00549016
+GameClient: initial state is Disconnected 1 0.00413717
+GameClient: Connect to real server succeeds 1 0.00562869
+GameClient: double Connect returns false 1 0.00443624
+GameClient: Update does not crash when connected 1 0.00438886
+GameClient: SubmitInput does not crash when connected 1 0.004333
+GameClient: GetLocalPlayerState returns nullptr before snapshot 1 0.00410209
+Socket: default-constructed is not connected 1 0.0040992
+Socket: Listen on port 0 picks ephemeral port 1 0.00428665
+Socket: Connect to listener succeeds 1 0.00427765
+Socket: Send and Receive round-trip 1 0.0143982
+Socket: NonBlocking accept returns invalid when no pending 1 0.00428172
+Socket: Connect to nothing fails 1 0.00416924
+Socket: move semantics 1 0.00416442
+NetChannel: send and receive over real socket 1 0.0143697
+NetChannel: bidirectional message exchange 1 0.0247396
+GameServer: listen on real port 1 0.00578492
+GameServer: accept remote client and handshake 1 0.0259527
+GameServer: snapshot broadcast to remote client 1 0.04649
+Orchestrator: Solo mode backward compat 1 0.0239406
+Orchestrator: ListenServer mode 1 0.0244013
+Orchestrator: Dedicated mode 1 0.0251722
+Orchestrator: Client mode connects to listen-server 1 0.0618721
+Integration: full loopback server+client handshake+snapshot 1 0.0578518
+Integration: multiple remote clients 1 0.0481411
+ChunkStreamer: default-constructed is not initialized 1 0.00533443
+ChunkStreamer: Init and Shutdown lifecycle 1 0.0047091
+ChunkStreamer: Tick loads chunks within radius 1 0.228203
+ChunkStreamer: does not reload existing chunks 1 0.210463
+ChunkStreamer: evicts chunks beyond unload radius 1 0.111315
+ChunkStreamer: chunks within unload radius are kept 1 0.00510262
+ChunkStreamer: enforces MaxLoadedChunks budget 1 0.0051645
+ChunkStreamer: background thread generates terrain 1 0.511219
+ChunkStreamer: custom generator is used 1 0.207184
+ChunkStreamer: DefaultGenerator Y=0 produces terrain 1 0.00538072
+ChunkStreamer: DefaultGenerator Y<0 is solid rock 1 0.0047547
+ChunkStreamer: DefaultGenerator Y>0 is empty air 1 0.00423951
+ChunkStreamer: DefaultGenerator is seed-deterministic 1 0.00796118
+ChunkStreamer: ComputeLOD returns Full for close chunks 1 0.00467644
+ChunkStreamer: ComputeLOD returns Simplified for mid-range 1 0.00446043
+ChunkStreamer: ComputeLOD returns None for distant chunks 1 0.0042271
+ChunkStreamer: DistanceSq at origin is zero 1 0.00409916
+ChunkStreamer: DistanceSq is symmetric 1 0.00467788
+ChunkStreamer: DistanceSq computes correctly 1 0.00440801
+ChunkStreamer: dirty chunk saved before eviction 1 0.0118261
+ChunkStreamer: chunks stream in as viewer moves 1 0.818498
+Orchestrator: Solo mode creates ChunkStreamer 1 0.0250142
+AudioDevice: default state before Init 1 0.00506783
+AudioDevice: Init and Shutdown lifecycle 1 0.00430253
+AudioDevice: master volume clamps to [0,1] 1 0.00420346
+AudioDevice: WASAPI backend falls back to Null on Linux 1 0.00413863
+SoundAsset: default is invalid 1 0.00470424
+SoundAsset: populated asset reports valid 1 0.00431111
+SoundBank: GenerateTone creates a valid asset 1 0.00457615
+SoundBank: GenerateNoise creates a valid asset 1 0.0219388
+SoundBank: GetByName lookup 1 0.0044273
+SoundBank: Clear removes all assets 1 0.00520978
+SoundBank: LoadWav reads 16-bit PCM mono 1 0.00452589
+SoundBank: LoadWav returns 0 for missing file 1 0.00420499
+SoundBank: LoadWav returns 0 for invalid format 1 0.00434308
+AudioMixer: Play creates an active channel 1 0.00503141
+AudioMixer: Stop halts a channel 1 0.00497709
+AudioMixer: StopAll stops everything 1 0.00654818
+AudioMixer: Update advances playback 1 0.00548291
+AudioMixer: non-looping channel expires after duration 1 0.00482647
+AudioMixer: looping channel wraps around 1 0.0049926
+AudioMixer: SetChannelVolume and SetChannelPan 1 0.00503508
+AudioMixer: channel limit enforced 1 0.00550619
+SpatialAudio: ComputeAttenuation at min distance is 1.0 1 0.00438616
+SpatialAudio: ComputeAttenuation at max distance is 0.0 1 0.00420172
+SpatialAudio: ComputeAttenuation inverse distance 1 0.00418245
+SpatialAudio: ComputeAttenuation with rolloff factor 2 1 0.00469343
+SpatialAudio: pan is 0 for source on top of listener 1 0.0044011
+SpatialAudio: pan is positive for source to the right 1 0.00422328
+SpatialAudio: pan is negative for source to the left 1 0.00422317
+SpatialAudio: pan is ~0 for source directly ahead 1 0.00466593
+SpatialAudio: PlayAt creates a mixer channel with attenuation 1 0.00519846
+SpatialAudio: PlayAt returns 0 with no mixer 1 0.00421793
+Orchestrator: Solo mode initialises audio subsystem 1 0.0238153
+Orchestrator: audio mixer update runs per tick 1 0.0246128
+ProgressionSystem: starts at level 1 with 0 XP 1 0.00497888
+ProgressionSystem: XPThreshold for level 1 is 0 1 0.00441878
+ProgressionSystem: level-up fires callback 1 0.00423357
+ProgressionSystem: multiple level-ups in one AddXP 1 0.00419327
+ProgressionSystem: skills unlock at correct levels 1 0.00477409
+ProgressionSystem: Reset returns to level 1 1 0.00447151
+ProgressionSystem: GetXPForNextLevel decreases as XP is added 1 0.00420214
+MiningSystem: default tier is Tier1 1 0.00423167
+MiningSystem: SyncTier advances with progression level 1 0.00472615
+MiningSystem: higher tiers have higher yield multiplier 1 0.00425045
+MiningSystem: Mine awards XP on success 1 0.00430981
+MiningSystem: TotalMined increments on success 1 0.00431771
+BuilderSystem: FindRecipe returns non-null for Stone 1 0.00427034
+BuilderSystem: Build succeeds with sufficient resources 1 0.00431012
+BuilderSystem: Build fails without resources 1 0.00423206
+BuilderSystem: Metal build requires AdvancedBuild unlock 1 0.00420464
+BuilderSystem: Teardown refunds resources 1 0.00416817
+InventorySystem: AddContainer returns unique IDs 1 0.00420147
+InventorySystem: GetContainer returns correct inventory 1 0.00415636
+InventorySystem: FindContainer by name 1 0.00426223
+InventorySystem: Transfer moves items between containers 1 0.00480558
+InventorySystem: Transfer fails when source has insufficient items 1 0.00461957
+InventorySystem: RemoveContainer decrements count 1 0.00431298
+StorageSystem: AddBox returns unique IDs 1 0.00429861
+StorageSystem: FindNearest returns closest box within radius 1 0.00477523
+StorageSystem: FindNearest returns invalid when none in range 1 0.00444552
+StorageSystem: Deposit moves items from inventory into box 1 0.00425974
+StorageSystem: Withdraw moves items from box into inventory 1 0.00421984
+CombatSystem: RegisterEntity creates alive entity at full health 1 0.00481102
+CombatSystem: DealDamage reduces health 1 0.00422217
+CombatSystem: armor mitigates physical damage 1 0.00423636
+CombatSystem: armor does not mitigate energy damage 1 0.00417615
+CombatSystem: lethal damage fires death callback and sets not-alive 1 0.00414756
+CombatSystem: DealDamage on dead entity returns AlreadyDead 1 0.00424488
+CombatSystem: Heal restores health clamped to max 1 0.00416352
+CombatSystem: Respawn brings dead entity back to full health 1 0.00423004
+CombatSystem: Respawn returns false for unknown entity 1 0.00426715
+CombatSystem: UnregisterEntity removes entity 1 0.00418824
+SalvageSystem: PlaceWreck returns unique IDs 1 0.00418029
+SalvageSystem: AddLoot stores resources in wreck 1 0.004223
+SalvageSystem: Salvage extracts resources into inventory 1 0.00421726
+SalvageSystem: Salvage returns 0 on empty wreck 1 0.00424167
+SalvageSystem: FindNearest returns closest non-empty wreck 1 0.0041408
+SalvageSystem: FindNearest ignores empty wrecks 1 0.00429002
+SalvageSystem: RemoveWreck removes the site 1 0.00423448
+MissionRegistry: NotifyDeposited advances DepositToStorage mission 1 0.00429489
+MissionRegistry: NotifySalvaged advances SalvageWreck mission 1 0.00414994
+ResourceRegistry: Stone definition has correct base price 1 0.00415564
+ResourceRegistry: Metal is craftable 1 0.00428278
+ResourceRegistry: None type is not tradeable 1 0.0042173
+ResourceRegistry: FindByName returns correct entry 1 0.00417223
+ResourceRegistry: FindByName with unknown name returns None 1 0.00413944
+ResourceRegistry: out-of-range Get returns None 1 0.00428542
+TradeMarket: Initialize seeds stock from registry 1 0.00426896
+TradeMarket: Buy reduces stock and deducts credits 1 0.0043443
+TradeMarket: Buy fails when insufficient funds 1 0.00426398
+TradeMarket: Buy fails when insufficient stock 1 0.00447648
+TradeMarket: Sell moves items from inventory to market and adds credits 1 0.0043774
+TradeMarket: Sell fails when inventory has insufficient items 1 0.00425113
+TradeMarket: price increases after buying (demand) 1 0.0042136
+TradeMarket: price decreases after selling (supply) 1 0.00429492
+TradeMarket: price is clamped to floor when selling repeatedly 1 0.0041791
+ManufacturingQueue: has built-in recipes 1 0.00428334
+ManufacturingQueue: FindRecipe returns correct recipe for Metal 1 0.00419598
+ManufacturingQueue: Enqueue deducts ingredients 1 0.0042447
+ManufacturingQueue: Enqueue fails without sufficient ingredients 1 0.0041791
+ManufacturingQueue: Tick completes job after duration 1 0.00410394
+ManufacturingQueue: CollectOutput deposits results and removes job 1 0.00425182
+ManufacturingQueue: second job starts after first collected 1 0.0042917
+StationServices: Dock and Undock transitions 1 0.00419366
+StationServices: Repair restores rig health when docked with credits 1 0.0042083
+StationServices: Repair fails when not docked 1 0.00416916
+StationServices: Repair returns AlreadyFullHealth when rig is intact 1 0.00424895
+StationServices: Refuel restores rig energy when docked with credits 1 0.00423266
+StationServices: Tick advances manufacturing queue 1 0.00423164
+StationServices: GetName returns station name 1 0.00410024
+DevSolarSystem: default seed generates bodies 1 0.00420093
+DevSolarSystem: star is always first body 1 0.00416855
+DevSolarSystem: generates 3-7 planets 1 0.00456822
+DevSolarSystem: different seeds produce different systems 1 0.00425291
+DevSolarSystem: FindBody returns correct body 1 0.00416707
+DevSolarSystem: planets have deposits 1 0.0045802
+DevSolarSystem: star has no deposits 1 0.00466847
+DevSolarSystem: body FlatX/FlatY match orbit math 1 0.00443183
+DevSolarSystem: moons have parent planet 1 0.00431984
+DevSolarSystem: RegenerateDeposits replaces deposits 1 0.00446001
+DevSolarSystem: CelestialBodyTypeName returns valid strings 1 0.00418117
+PCGItemGen: generates items for a body with deposits 1 0.00417622
+PCGItemGen: generates items for full system 1 0.00474863
+PCGItemGen: items have valid positions 1 0.00442383
+PCGItemGen: FindItem returns correct item 1 0.00427938
+PCGItemGen: ItemsForBody filters correctly 1 0.00413938
+PCGItemGen: user-edited items preserved across regeneration 1 0.00487493
+PCGItemGen: Clear removes all items 1 0.00443658
+PCGItemGen: items have valid quantities 1 0.00420321
+---
+PCGWorldGen: increasing StoneDepth produces more Stone
+PCGWorldGen: increasing DirtThickness produces more Dirt

@@ -82,7 +82,8 @@ void EditorViewport::Update(float dt) {
     // with WASD so the overall behaviour feels like a free-fly camera.
     if (m_Input->rightDown && (dx != 0.f || dy != 0.f)) {
         m_Yaw   -= dx * kOrbitSensitivity;
-        m_Pitch -= dy * kOrbitSensitivity; // invert Y for natural feel
+        const float pitchDir = m_InvertLookY ? 1.f : -1.f;
+        m_Pitch += pitchDir * dy * kOrbitSensitivity;
         m_Pitch  = std::clamp(m_Pitch, -kMaxPitch, kMaxPitch);
     }
 

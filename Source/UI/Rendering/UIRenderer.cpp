@@ -7,6 +7,7 @@
 #endif
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -334,6 +335,88 @@ void UIRenderer::DrawOutlineRect(const Rect& rect, uint32_t color) {
     DrawRect({rect.X, rect.Y + rect.Height - t, rect.Width, t}, color);
     DrawRect({rect.X, rect.Y, t, rect.Height}, color);
     DrawRect({rect.X + rect.Width - t, rect.Y, t, rect.Height}, color);
+}
+
+// ---------------------------------------------------------------------------
+// DrawRoundedRect — filled rectangle with Godot-style rounded corners.
+//
+// Implemented as a set of axis-aligned quads that approximate quarter-circle
+// arcs at each corner.  Each corner is rasterised row-by-row using the
+// standard circle equation (x² + y² = r²) so the curve shape is accurate
+// even at small radii (6–8 px).  The batching overhead is acceptable: at
+// r = 8 each call emits at most 1 + 4 * r ≈ 33 quads.
+// ---------------------------------------------------------------------------
+
+void UIRenderer::DrawRoundedRect(const Rect& rect, uint32_t color, float radius) {
+    if (radius <= 0.f) {
+        DrawRect(rect, color);
+        return;
+    }
+    const float r  = std::min(radius, std::min(rect.Width * 0.5f, rect.Height * 0.5f));
+    const float x  = rect.X;
+    const float y  = rect.Y;
+    const float w  = rect.Width;
+    const float h  = rect.Height;
+
+    // Centre cross: one wide horizontal strip + two vertical side strips.
+    DrawRect({x + r, y,         w - 2.f * r, h          }, color); // horizontal band
+    DrawRect({x,     y + r,     r,            h - 2.f * r}, color); // left side
+    DrawRect({x + w - r, y + r, r,            h - 2.f * r}, color); // right side
+
+    // Corner arcs — scan rows inside the r×r corner bounding boxes.
+    const int steps = static_cast<int>(std::ceil(r));
+    for (int i = 0; i < steps; ++i) {
+        // Distance from the arc origin along the y-axis for this row (0 at
+        // the corner tip, r at the straight edge).
+        const float yo  = r - static_cast<float>(i) - 0.5f; // row centre
+        const float xo  = r - std::sqrt(std::max(0.f, r * r - yo * yo));
+        const float sw  = r - xo; // pixel width covered inside the circle
+        if (sw <= 0.f) continue;
+
+        const float row = static_cast<float>(i);
+        DrawRect({x + xo,         y + row,             sw, 1.f}, color); // top-left
+        DrawRect({x + w - r,      y + row,             sw, 1.f}, color); // top-right
+        DrawRect({x + xo,         y + h - row - 1.f,  sw, 1.f}, color); // bot-left
+        DrawRect({x + w - r,      y + h - row - 1.f,  sw, 1.f}, color); // bot-right
+    }
+}
+
+// ---------------------------------------------------------------------------
+// DrawRoundedOutlineRect — 1-pixel outline with rounded corners.
+// ---------------------------------------------------------------------------
+
+void UIRenderer::DrawRoundedOutlineRect(const Rect& rect, uint32_t color, float radius) {
+    if (radius <= 0.f) {
+        DrawOutlineRect(rect, color);
+        return;
+    }
+    const float r  = std::min(radius, std::min(rect.Width * 0.5f, rect.Height * 0.5f));
+    const float x  = rect.X;
+    const float y  = rect.Y;
+    const float w  = rect.Width;
+    const float h  = rect.Height;
+
+    // Straight edges (inset by r at each end).
+    DrawRect({x + r, y,             w - 2.f * r, 1.f}, color); // top
+    DrawRect({x + r, y + h - 1.f,  w - 2.f * r, 1.f}, color); // bottom
+    DrawRect({x,     y + r,         1.f, h - 2.f * r}, color); // left
+    DrawRect({x + w - 1.f, y + r,  1.f, h - 2.f * r}, color); // right
+
+    // Corner arc pixels — one texel per row.
+    const int steps = static_cast<int>(std::ceil(r));
+    for (int i = 0; i < steps; ++i) {
+        const float yo     = r - static_cast<float>(i) - 0.5f;
+        const float xInner = r - std::sqrt(std::max(0.f, r * r - yo * yo));
+        // We only want a single-pixel arc; draw at the outermost covered pixel.
+        const float px = std::floor(xInner);
+        if (px < r) {
+            const float row = static_cast<float>(i);
+            DrawRect({x + px,           y + row,            1.f, 1.f}, color); // TL
+            DrawRect({x + w - px - 1.f, y + row,            1.f, 1.f}, color); // TR
+            DrawRect({x + px,           y + h - row - 1.f,  1.f, 1.f}, color); // BL
+            DrawRect({x + w - px - 1.f, y + h - row - 1.f,  1.f, 1.f}, color); // BR
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------

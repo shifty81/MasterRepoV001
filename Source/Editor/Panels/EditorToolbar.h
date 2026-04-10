@@ -45,6 +45,9 @@ public:
     /// @brief Returns the full PIE state.
     [[nodiscard]] PieState GetPieState() const noexcept { return m_PieState; }
 
+    /// @brief Request an immediate PIE stop (e.g. from an Esc keybind).
+    void RequestStop() noexcept { m_PieState = PieState::Stopped; }
+
 private:
     UIRenderer*                m_Renderer{nullptr};
     NF::Game::InteractionLoop* m_Loop{nullptr};

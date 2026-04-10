@@ -1,0 +1,5 @@
+if(EXISTS "/home/runner/work/MasterRepoV001/MasterRepoV001/Build/Tests/NFTests-b12d07c_tests.cmake")
+  include("/home/runner/work/MasterRepoV001/MasterRepoV001/Build/Tests/NFTests-b12d07c_tests.cmake")
+else()
+  add_test(NFTests_NOT_BUILT-b12d07c NFTests_NOT_BUILT-b12d07c)
+endif()

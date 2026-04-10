@@ -65,6 +65,16 @@ CMAKE_BINARY_DIR = /home/runner/work/MasterRepoV001/MasterRepoV001/Build
 #=============================================================================
 # Targets provided globally by CMake.
 
+# Special rule for the target test
+test:
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Running tests..."
+	/usr/local/bin/ctest --force-new-ctest-process $(ARGS)
+.PHONY : test
+
+# Special rule for the target test
+test/fast: test
+.PHONY : test/fast
+
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Running CMake cache editor..."
@@ -394,6 +404,30 @@ Panels/DockingSystem.cpp.s:
 	cd /home/runner/work/MasterRepoV001/MasterRepoV001/Build && $(MAKE) $(MAKESILENT) -f Source/Editor/CMakeFiles/NFEditor.dir/build.make Source/Editor/CMakeFiles/NFEditor.dir/Panels/DockingSystem.cpp.s
 .PHONY : Panels/DockingSystem.cpp.s
 
+Panels/EconomyPanel.o: Panels/EconomyPanel.cpp.o
+.PHONY : Panels/EconomyPanel.o
+
+# target to build an object file
+Panels/EconomyPanel.cpp.o:
+	cd /home/runner/work/MasterRepoV001/MasterRepoV001/Build && $(MAKE) $(MAKESILENT) -f Source/Editor/CMakeFiles/NFEditor.dir/build.make Source/Editor/CMakeFiles/NFEditor.dir/Panels/EconomyPanel.cpp.o
+.PHONY : Panels/EconomyPanel.cpp.o
+
+Panels/EconomyPanel.i: Panels/EconomyPanel.cpp.i
+.PHONY : Panels/EconomyPanel.i
+
+# target to preprocess a source file
+Panels/EconomyPanel.cpp.i:
+	cd /home/runner/work/MasterRepoV001/MasterRepoV001/Build && $(MAKE) $(MAKESILENT) -f Source/Editor/CMakeFiles/NFEditor.dir/build.make Source/Editor/CMakeFiles/NFEditor.dir/Panels/EconomyPanel.cpp.i
+.PHONY : Panels/EconomyPanel.cpp.i
+
+Panels/EconomyPanel.s: Panels/EconomyPanel.cpp.s
+.PHONY : Panels/EconomyPanel.s
+
+# target to generate assembly for a file
+Panels/EconomyPanel.cpp.s:
+	cd /home/runner/work/MasterRepoV001/MasterRepoV001/Build && $(MAKE) $(MAKESILENT) -f Source/Editor/CMakeFiles/NFEditor.dir/build.make Source/Editor/CMakeFiles/NFEditor.dir/Panels/EconomyPanel.cpp.s
+.PHONY : Panels/EconomyPanel.cpp.s
+
 Panels/EditorTheme.o: Panels/EditorTheme.cpp.o
 .PHONY : Panels/EditorTheme.o
 
@@ -489,6 +523,30 @@ Panels/Inspector.s: Panels/Inspector.cpp.s
 Panels/Inspector.cpp.s:
 	cd /home/runner/work/MasterRepoV001/MasterRepoV001/Build && $(MAKE) $(MAKESILENT) -f Source/Editor/CMakeFiles/NFEditor.dir/build.make Source/Editor/CMakeFiles/NFEditor.dir/Panels/Inspector.cpp.s
 .PHONY : Panels/Inspector.cpp.s
+
+Panels/InventoryPanel.o: Panels/InventoryPanel.cpp.o
+.PHONY : Panels/InventoryPanel.o
+
+# target to build an object file
+Panels/InventoryPanel.cpp.o:
+	cd /home/runner/work/MasterRepoV001/MasterRepoV001/Build && $(MAKE) $(MAKESILENT) -f Source/Editor/CMakeFiles/NFEditor.dir/build.make Source/Editor/CMakeFiles/NFEditor.dir/Panels/InventoryPanel.cpp.o
+.PHONY : Panels/InventoryPanel.cpp.o
+
+Panels/InventoryPanel.i: Panels/InventoryPanel.cpp.i
+.PHONY : Panels/InventoryPanel.i
+
+# target to preprocess a source file
+Panels/InventoryPanel.cpp.i:
+	cd /home/runner/work/MasterRepoV001/MasterRepoV001/Build && $(MAKE) $(MAKESILENT) -f Source/Editor/CMakeFiles/NFEditor.dir/build.make Source/Editor/CMakeFiles/NFEditor.dir/Panels/InventoryPanel.cpp.i
+.PHONY : Panels/InventoryPanel.cpp.i
+
+Panels/InventoryPanel.s: Panels/InventoryPanel.cpp.s
+.PHONY : Panels/InventoryPanel.s
+
+# target to generate assembly for a file
+Panels/InventoryPanel.cpp.s:
+	cd /home/runner/work/MasterRepoV001/MasterRepoV001/Build && $(MAKE) $(MAKESILENT) -f Source/Editor/CMakeFiles/NFEditor.dir/build.make Source/Editor/CMakeFiles/NFEditor.dir/Panels/InventoryPanel.cpp.s
+.PHONY : Panels/InventoryPanel.cpp.s
 
 Panels/LiveProfilerBackend.o: Panels/LiveProfilerBackend.cpp.o
 .PHONY : Panels/LiveProfilerBackend.o
@@ -810,6 +868,7 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... test"
 	@echo "... NFEditor"
 	@echo "... Application/ContextToolShelf.o"
 	@echo "... Application/ContextToolShelf.i"
@@ -844,6 +903,9 @@ help:
 	@echo "... Panels/DockingSystem.o"
 	@echo "... Panels/DockingSystem.i"
 	@echo "... Panels/DockingSystem.s"
+	@echo "... Panels/EconomyPanel.o"
+	@echo "... Panels/EconomyPanel.i"
+	@echo "... Panels/EconomyPanel.s"
 	@echo "... Panels/EditorTheme.o"
 	@echo "... Panels/EditorTheme.i"
 	@echo "... Panels/EditorTheme.s"
@@ -856,6 +918,9 @@ help:
 	@echo "... Panels/Inspector.o"
 	@echo "... Panels/Inspector.i"
 	@echo "... Panels/Inspector.s"
+	@echo "... Panels/InventoryPanel.o"
+	@echo "... Panels/InventoryPanel.i"
+	@echo "... Panels/InventoryPanel.s"
 	@echo "... Panels/LiveProfilerBackend.o"
 	@echo "... Panels/LiveProfilerBackend.i"
 	@echo "... Panels/LiveProfilerBackend.s"

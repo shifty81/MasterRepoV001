@@ -65,6 +65,16 @@ CMAKE_BINARY_DIR = /home/runner/work/MasterRepoV001/MasterRepoV001/Build
 #=============================================================================
 # Targets provided globally by CMake.
 
+# Special rule for the target test
+test:
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Running tests..."
+	/usr/local/bin/ctest --force-new-ctest-process $(ARGS)
+.PHONY : test
+
+# Special rule for the target test
+test/fast: test
+.PHONY : test/fast
+
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Running CMake cache editor..."
@@ -129,20 +139,6 @@ NovaForgeEditor: Source/Programs/CMakeFiles/NovaForgeEditor.dir/rule
 NovaForgeEditor/fast:
 	cd /home/runner/work/MasterRepoV001/MasterRepoV001/Build && $(MAKE) $(MAKESILENT) -f Source/Programs/CMakeFiles/NovaForgeEditor.dir/build.make Source/Programs/CMakeFiles/NovaForgeEditor.dir/build
 .PHONY : NovaForgeEditor/fast
-
-# Convenience name for target.
-Source/Programs/CMakeFiles/NovaForgeServer.dir/rule:
-	cd /home/runner/work/MasterRepoV001/MasterRepoV001/Build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Source/Programs/CMakeFiles/NovaForgeServer.dir/rule
-.PHONY : Source/Programs/CMakeFiles/NovaForgeServer.dir/rule
-
-# Convenience name for target.
-NovaForgeServer: Source/Programs/CMakeFiles/NovaForgeServer.dir/rule
-.PHONY : NovaForgeServer
-
-# fast build rule for target.
-NovaForgeServer/fast:
-	cd /home/runner/work/MasterRepoV001/MasterRepoV001/Build && $(MAKE) $(MAKESILENT) -f Source/Programs/CMakeFiles/NovaForgeServer.dir/build.make Source/Programs/CMakeFiles/NovaForgeServer.dir/build
-.PHONY : NovaForgeServer/fast
 
 # Convenience name for target.
 Source/Programs/CMakeFiles/NovaForgeGame.dir/rule:
@@ -230,30 +226,6 @@ NovaForgeGame/main.cpp.s:
 	cd /home/runner/work/MasterRepoV001/MasterRepoV001/Build && $(MAKE) $(MAKESILENT) -f Source/Programs/CMakeFiles/NovaForgeGame.dir/build.make Source/Programs/CMakeFiles/NovaForgeGame.dir/NovaForgeGame/main.cpp.s
 .PHONY : NovaForgeGame/main.cpp.s
 
-NovaForgeServer/main.o: NovaForgeServer/main.cpp.o
-.PHONY : NovaForgeServer/main.o
-
-# target to build an object file
-NovaForgeServer/main.cpp.o:
-	cd /home/runner/work/MasterRepoV001/MasterRepoV001/Build && $(MAKE) $(MAKESILENT) -f Source/Programs/CMakeFiles/NovaForgeServer.dir/build.make Source/Programs/CMakeFiles/NovaForgeServer.dir/NovaForgeServer/main.cpp.o
-.PHONY : NovaForgeServer/main.cpp.o
-
-NovaForgeServer/main.i: NovaForgeServer/main.cpp.i
-.PHONY : NovaForgeServer/main.i
-
-# target to preprocess a source file
-NovaForgeServer/main.cpp.i:
-	cd /home/runner/work/MasterRepoV001/MasterRepoV001/Build && $(MAKE) $(MAKESILENT) -f Source/Programs/CMakeFiles/NovaForgeServer.dir/build.make Source/Programs/CMakeFiles/NovaForgeServer.dir/NovaForgeServer/main.cpp.i
-.PHONY : NovaForgeServer/main.cpp.i
-
-NovaForgeServer/main.s: NovaForgeServer/main.cpp.s
-.PHONY : NovaForgeServer/main.s
-
-# target to generate assembly for a file
-NovaForgeServer/main.cpp.s:
-	cd /home/runner/work/MasterRepoV001/MasterRepoV001/Build && $(MAKE) $(MAKESILENT) -f Source/Programs/CMakeFiles/NovaForgeServer.dir/build.make Source/Programs/CMakeFiles/NovaForgeServer.dir/NovaForgeServer/main.cpp.s
-.PHONY : NovaForgeServer/main.cpp.s
-
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -262,9 +234,9 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... test"
 	@echo "... NovaForgeEditor"
 	@echo "... NovaForgeGame"
-	@echo "... NovaForgeServer"
 	@echo "... NovaForgeEditor/main.o"
 	@echo "... NovaForgeEditor/main.i"
 	@echo "... NovaForgeEditor/main.s"
@@ -274,9 +246,6 @@ help:
 	@echo "... NovaForgeGame/main.o"
 	@echo "... NovaForgeGame/main.i"
 	@echo "... NovaForgeGame/main.s"
-	@echo "... NovaForgeServer/main.o"
-	@echo "... NovaForgeServer/main.i"
-	@echo "... NovaForgeServer/main.s"
 .PHONY : help
 
 

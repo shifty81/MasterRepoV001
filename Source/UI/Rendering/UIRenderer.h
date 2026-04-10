@@ -46,6 +46,21 @@ public:
 
     void DrawRect(const Rect& rect, uint32_t color);
     void DrawOutlineRect(const Rect& rect, uint32_t color);
+
+    /// @brief Draw a filled rectangle with rounded corners.
+    /// @param rect   Bounding rectangle.
+    /// @param color  Fill colour (0xRRGGBBAA).
+    /// @param radius Corner radius in logical pixels (clamped to half the
+    ///               smaller side).  Values ≤ 0 fall back to DrawRect().
+    void DrawRoundedRect(const Rect& rect, uint32_t color, float radius);
+
+    /// @brief Draw a 1-pixel outline rectangle with rounded corners.
+    /// @param rect   Bounding rectangle.
+    /// @param color  Outline colour (0xRRGGBBAA).
+    /// @param radius Corner radius in logical pixels.  Values ≤ 0 fall back
+    ///               to DrawOutlineRect().
+    void DrawRoundedOutlineRect(const Rect& rect, uint32_t color, float radius);
+
     void DrawText(std::string_view text, float x, float y, uint32_t color,
                   float scale = 1.0f);
 

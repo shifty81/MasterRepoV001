@@ -1564,6 +1564,14 @@ void EditorApp::TickFrame(float dt)
     // Process hotkeys before anything else.
     ProcessHotkeys();
 
+    // Esc stops PIE when it is playing or paused.
+#ifdef _WIN32
+    if (m_Input.keysJustPressed[VK_ESCAPE] &&
+        (m_Toolbar.IsPiePlaying() || m_Toolbar.IsPiePaused())) {
+        m_Toolbar.RequestStop();
+    }
+#endif
+
     // Compute docking layout FIRST so we know viewport bounds before the 3D pass.
     // Four-band top structure:
     //   Band 1: Menu bar + compact toolbar  (m_Toolbar.GetHeight())
@@ -1645,11 +1653,14 @@ void EditorApp::TickFrame(float dt)
         m_RenderDevice->SetScissorRect(glX, glY, glW, glH);
         m_RenderDevice->Clear(0.12f, 0.12f, 0.14f, 1.f);
 
-        // Always use the FPS editor player camera.
-        // In edit mode the player flies freely (noclip); during PIE normal
-        // physics apply.  HandlePieInput runs whenever the viewport has mouse
-        // focus or RMB is held, allowing WASD+look at any time.
-        if (m_Viewport.IsMouseInside() || m_Input.rightDown) {
+        // Viewport navigation (editor fly) — gated strictly on RMB held AND
+        // mouse inside the viewport to prevent input bleed.
+        // PIE gameplay gets WASD without requiring RMB (game-style controls).
+        if (isPiePlaying) {
+            // PIE: always route WASD to player; mouse look still needs RMB.
+            HandlePieInput(dt);
+        } else if (m_Viewport.IsMouseInside() && m_Input.rightDown) {
+            // Edit mode: viewport nav only when RMB held inside the viewport.
             HandlePieInput(dt);
         }
         if (isPiePlaying) {
@@ -1832,6 +1843,8 @@ void EditorApp::TickFrame(float dt)
     }
     // Apply Show Grid preference to the viewport.
     m_Viewport.SetShowGrid(m_PreferencesPanel.GetData().showGrid);
+    // Apply InvertLookY preference to the viewport.
+    m_Viewport.SetInvertLookY(m_PreferencesPanel.GetData().invertLookY);
     // Sync the serialized docking layout so the next autosave captures any
     // split-ratio or tab changes the user made this frame.
     m_PreferencesPanel.GetData().dockLayout = m_DockingSystem.SerializeLayout();
@@ -2019,8 +2032,12 @@ void EditorApp::HandlePieInput(float /*dt*/)
     m_PiePlayer.SetMoveInput(forward, right, jump, sprint);
 
     // Apply mouse look only when right mouse button is held (matching game controls).
-    if (m_Input.rightDown && (m_Input.mouseDeltaX != 0.f || m_Input.mouseDeltaY != 0.f))
-        m_PiePlayer.ApplyMouseLook(m_Input.mouseDeltaX, m_Input.mouseDeltaY);
+    // Honour the invertLookY preference.
+    if (m_Input.rightDown && (m_Input.mouseDeltaX != 0.f || m_Input.mouseDeltaY != 0.f)) {
+        const float dySign = m_PreferencesPanel.GetData().invertLookY ? -1.f : 1.f;
+        m_PiePlayer.ApplyMouseLook(m_Input.mouseDeltaX,
+                                   m_Input.mouseDeltaY * dySign);
+    }
 #endif
 }
 

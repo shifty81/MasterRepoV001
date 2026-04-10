@@ -285,15 +285,17 @@ void DockingSystem::DrawNode(DockNode& node,
                 if (n == activeName) { isTransparent = true; break; }
 
             if (!isTransparent) {
-                // Panel background
-                m_Renderer->DrawRect({x, y, w, h}, theme.panelBg);
+                // Panel background with rounded corners
+                m_Renderer->DrawRoundedRect({x, y, w, h}, theme.panelBg,
+                                            theme.panelCornerRadius * dpi);
                 // Content shade
                 if (contentH > 0.f)
                     m_Renderer->DrawRect({x, contentY, w, contentH}, theme.contentShade);
             }
 
             // ---- Title bar / tab bar ----
-            m_Renderer->DrawRect({x, y, w, titleBarH}, theme.titleBarBg);
+            m_Renderer->DrawRoundedRect({x, y, w, titleBarH}, theme.titleBarBg,
+                                        theme.panelCornerRadius * dpi);
 
             if (hasTabs) {
                 // Draw clickable tab headers.
@@ -364,8 +366,9 @@ void DockingSystem::DrawNode(DockNode& node,
                 }
             }
 
-            // Panel border
-            m_Renderer->DrawOutlineRect({x, y, w, h}, theme.panelBorder);
+            // Panel border with rounded corners
+            m_Renderer->DrawRoundedOutlineRect({x, y, w, h}, theme.panelBorder,
+                                               theme.panelCornerRadius * dpi);
         }
 
         // Call the active panel's content draw callback.
