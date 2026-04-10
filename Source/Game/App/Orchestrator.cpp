@@ -69,8 +69,10 @@ bool Orchestrator::Init(RenderDevice* renderDevice, const NetParams& params)
         m_Missions.Init();
 
         // Phase 6: initialise station market from the resource registry.
-        // Seed the player with 500 starting credits.
-        m_Station.GetMarket().Initialize(m_Resources, 100u);
+        // Seed the player with 500 starting credits and 100 units of initial
+        // stock per tradeable resource type.
+        static constexpr uint32_t kInitialStockPerType = 100u;
+        m_Station.GetMarket().Initialize(m_Resources, kInitialStockPerType);
         m_Station.GetMarket().SetCredits(500.f);
 
         // Wire mine callback → ProgressionSystem XP + MissionRegistry progress.

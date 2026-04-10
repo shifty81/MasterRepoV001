@@ -426,18 +426,14 @@ void GameClientApp::TickFrame(float dt)
                     RT::Stone, RT::Ore, RT::Dirt, RT::Rock,
                     RT::Metal, RT::Ice, RT::Organic
                 };
-                uint32_t totalSold = 0;
                 for (const auto t : kTypes) {
                     const uint32_t held = inv.GetCount(t);
                     if (held > 0) {
                         const auto result = market.Sell(t, held, inv);
-                        if (result == NF::Game::Gameplay::TradeResult::Success) {
+                        if (result == NF::Game::Gameplay::TradeResult::Success)
                             m_Orchestrator.GetMissions().NotifySold(t, held);
-                            totalSold += held;
-                        }
                     }
                 }
-                (void)totalSold;
             }
         }
 
