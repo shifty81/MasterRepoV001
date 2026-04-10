@@ -44,8 +44,9 @@ bool ContextToolShelf::DrawShelfButton(float& cx, float y, float h,
     uint32_t bg = active  ? theme.buttonActive
                 : hovered ? theme.buttonHover
                           : theme.buttonBg;
-    m_Renderer->DrawRect({cx, btnY, btnW, btnH}, bg);
-    m_Renderer->DrawOutlineRect({cx, btnY, btnW, btnH}, theme.panelBorder);
+    const float btnR = theme.buttonCornerRadius * dpi;
+    m_Renderer->DrawRoundedRect({cx, btnY, btnW, btnH}, bg, btnR);
+    m_Renderer->DrawRoundedOutlineRect({cx, btnY, btnW, btnH}, theme.panelBorder, btnR);
 
     // Bevel depth effect inside the border.
     m_Renderer->DrawRect({cx + 1.f, btnY + 1.f, btnW - 2.f, 1.f},      0xFFFFFF1AU); // top

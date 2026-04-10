@@ -108,10 +108,10 @@ TEST_CASE("PlayerMovement: forward direction at yaw=0 is +Z", "[Movement]") {
     REQUIRE(fwd.Z == Approx(1.f).margin(0.01f));
 }
 
-TEST_CASE("PlayerMovement: right direction at yaw=0 is +X", "[Movement]") {
+TEST_CASE("PlayerMovement: right direction at yaw=0 is -X (matches view matrix)", "[Movement]") {
     PlayerMovement pm;
     auto right = pm.GetRightXZ();
-    REQUIRE(right.X == Approx(1.f).margin(0.01f));
+    REQUIRE(right.X == Approx(-1.f).margin(0.01f));
     REQUIRE(right.Z == Approx(0.f).margin(0.01f));
 }
 
@@ -121,7 +121,7 @@ TEST_CASE("PlayerMovement: mouse look changes yaw and pitch", "[Movement]") {
     REQUIRE(pm.GetPitch() == Approx(0.f));
 
     pm.ApplyMouseLook(100.f, 0.f);
-    REQUIRE(pm.GetYaw() == Approx(100.f * PlayerMovement::kMouseSens));
+    REQUIRE(pm.GetYaw() == Approx(-100.f * PlayerMovement::kMouseSens));
 
     pm.ApplyMouseLook(0.f, 100.f);
     REQUIRE(pm.GetPitch() == Approx(-100.f * PlayerMovement::kMouseSens));

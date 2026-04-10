@@ -67,6 +67,7 @@ struct Theme {
     // -- Rounded corner radii (Godot-style) ---------------------------------
     float    panelCornerRadius; ///< Corner radius for panel chrome (px, pre-DPI).
     float    tabCornerRadius;   ///< Corner radius for tab buttons (px, pre-DPI).
+    float    buttonCornerRadius;///< Corner radius for toolbar/shelf buttons (px, pre-DPI).
 
     // -- Semantic colours ---------------------------------------------------
     uint32_t dirty;            ///< Unsaved-changes indicator (orange).
@@ -159,6 +160,7 @@ inline constexpr Theme kDarkTheme {
     // Corner radii (Godot-like 7 px)
     .panelCornerRadius = 7.f,
     .tabCornerRadius   = 5.f,
+    .buttonCornerRadius = 4.f,
 
     // Semantic
     .dirty          = 0xFFAA44FF,
@@ -247,8 +249,8 @@ inline constexpr Theme kLightTheme {
     // Corner radii
     .panelCornerRadius = 7.f,
     .tabCornerRadius   = 5.f,
+    .buttonCornerRadius = 4.f,
 
-    // Semantic
     .dirty          = 0xE08820FF,
     .worldAccent    = 0x2080C0FF,
     .toggleOn       = 0x2E8A2EFF,
@@ -335,9 +337,9 @@ inline constexpr Theme kHighContrastTheme {
     // Corner radii
     .panelCornerRadius = 7.f,
     .tabCornerRadius   = 5.f,
+    .buttonCornerRadius = 4.f,
 
     // Semantic
-    .dirty          = 0xFFAA00FF,
     .worldAccent    = 0x00FFFFFF,
     .toggleOn       = 0x00FF00FF,
     .toggleOff      = 0xFF0000FF,
