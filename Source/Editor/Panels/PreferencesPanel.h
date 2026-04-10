@@ -26,6 +26,7 @@ struct PreferenceData {
     // ---- Viewport / camera controls ----------------------------------------
     bool        invertLookY{false};         ///< Invert pitch direction for viewport mouse look.
     float       viewportSensitivity{1.0f};  ///< Multiplier applied to orbit/look sensitivity.
+                                            ///< TODO: wire into EditorViewport kOrbitSensitivity.
 };
 
 /// @brief Editor preferences panel.

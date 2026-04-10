@@ -364,12 +364,13 @@ void UIRenderer::DrawRoundedRect(const Rect& rect, uint32_t color, float radius)
     DrawRect({x + w - r, y + r, r,            h - 2.f * r}, color); // right side
 
     // Corner arcs — scan rows inside the r×r corner bounding boxes.
-    const int steps = static_cast<int>(std::ceil(r));
+    const int   steps    = static_cast<int>(r) + 1;
+    const float r_sq     = r * r;
     for (int i = 0; i < steps; ++i) {
         // Distance from the arc origin along the y-axis for this row (0 at
         // the corner tip, r at the straight edge).
         const float yo  = r - static_cast<float>(i) - 0.5f; // row centre
-        const float xo  = r - std::sqrt(std::max(0.f, r * r - yo * yo));
+        const float xo  = r - std::sqrt(std::max(0.f, r_sq - yo * yo));
         const float sw  = r - xo; // pixel width covered inside the circle
         if (sw <= 0.f) continue;
 
@@ -403,10 +404,11 @@ void UIRenderer::DrawRoundedOutlineRect(const Rect& rect, uint32_t color, float 
     DrawRect({x + w - 1.f, y + r,  1.f, h - 2.f * r}, color); // right
 
     // Corner arc pixels — one texel per row.
-    const int steps = static_cast<int>(std::ceil(r));
+    const int   steps = static_cast<int>(r) + 1;
+    const float r_sq  = r * r;
     for (int i = 0; i < steps; ++i) {
         const float yo     = r - static_cast<float>(i) - 0.5f;
-        const float xInner = r - std::sqrt(std::max(0.f, r * r - yo * yo));
+        const float xInner = r - std::sqrt(std::max(0.f, r_sq - yo * yo));
         // We only want a single-pixel arc; draw at the outermost covered pixel.
         const float px = std::floor(xInner);
         if (px < r) {

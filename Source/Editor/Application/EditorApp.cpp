@@ -1656,19 +1656,13 @@ void EditorApp::TickFrame(float dt)
         // Viewport navigation (editor fly) — gated strictly on RMB held AND
         // mouse inside the viewport to prevent input bleed.
         // PIE gameplay gets WASD without requiring RMB (game-style controls).
-        if (isPiePlaying) {
-            // PIE: always route WASD to player; mouse look still needs RMB.
-            HandlePieInput(dt);
-        } else if (m_Viewport.IsMouseInside() && m_Input.rightDown) {
-            // Edit mode: viewport nav only when RMB held inside the viewport.
+        const bool routeInput = isPiePlaying ||
+                                (m_Viewport.IsMouseInside() && m_Input.rightDown);
+        if (routeInput) {
             HandlePieInput(dt);
         }
-        if (isPiePlaying) {
-            m_PiePlayer.Update(dt, m_GameWorld.GetChunkMap());
-        } else {
-            // Edit / paused: noclip fly — still call Update so input moves player.
-            m_PiePlayer.Update(dt, m_GameWorld.GetChunkMap());
-        }
+        // m_PiePlayer.Update is always called so physics/noclip both advance.
+        m_PiePlayer.Update(dt, m_GameWorld.GetChunkMap());
         const Matrix4x4 view = GetPieViewMatrix();
         const Matrix4x4 proj = GetPieProjectionMatrix();
 
