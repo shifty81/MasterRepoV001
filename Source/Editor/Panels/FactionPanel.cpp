@@ -7,6 +7,11 @@
 
 namespace NF::Editor {
 
+// Standing colours (0xRRGGBBAA)
+static constexpr uint32_t kStandingAllied   = 0x44FF88FFu;
+static constexpr uint32_t kStandingFriendly = 0x88CCFFFFu;
+static constexpr uint32_t kStandingHostile  = 0xFF4444FFu;
+
 // ---------------------------------------------------------------------------
 // Update
 // ---------------------------------------------------------------------------
@@ -63,10 +68,10 @@ void FactionPanel::Draw(float x, float y, float w, float h)
         uint32_t standingCol = t.textSecondary;
         switch (standing)
         {
-        case FactionStanding::Allied:   standingCol = 0x44FF88FFu; break;
-        case FactionStanding::Friendly: standingCol = 0x88CCFFFF;  break;
-        case FactionStanding::Neutral:  standingCol = t.textPrimary; break;
-        case FactionStanding::Hostile:  standingCol = 0xFF4444FFu; break;
+        case FactionStanding::Allied:   standingCol = kStandingAllied;   break;
+        case FactionStanding::Friendly: standingCol = kStandingFriendly; break;
+        case FactionStanding::Neutral:  standingCol = t.textPrimary;     break;
+        case FactionStanding::Hostile:  standingCol = kStandingHostile;  break;
         }
 
         m_Renderer->DrawText(fs.name.c_str(),  x + padX, cy, t.textPrimary, 1.f);

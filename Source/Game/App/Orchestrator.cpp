@@ -124,10 +124,11 @@ bool Orchestrator::Init(RenderDevice* renderDevice, const NetParams& params)
                 m_Missions.NotifyInventoryChanged(type, held);
 
                 // Phase 10: faction rep for mining.
+                // NotifyRepGained takes the current positive rep total (clamped to 0
+                // when negative) so mission progress tracks "reach N reputation".
                 m_Factions.NotifyMined();
-                // Notify missions if Miners Guild rep threshold is reached.
-                m_Missions.NotifyRepGained(
-                    static_cast<uint32_t>(m_Factions.GetRep(NF::Game::Gameplay::FactionId::MinersGuild)));
+                const int minersRep = m_Factions.GetRep(NF::Game::Gameplay::FactionId::MinersGuild);
+                m_Missions.NotifyRepGained(static_cast<uint32_t>(std::max(0, minersRep)));
 
                 NF::Logger::Log(NF::LogLevel::Debug, "Game",
                     "Mine: +" + std::to_string(10u * count) + " XP, level "
@@ -166,8 +167,9 @@ bool Orchestrator::Init(RenderDevice* renderDevice, const NetParams& params)
             m_Factions.NotifyInvestigated();
             m_Missions.NotifyInvestigated();
             // Notify missions about Traders Union rep (anomaly investigation awards +2).
-            m_Missions.NotifyRepGained(
-                static_cast<uint32_t>(std::max(0, m_Factions.GetRep(NF::Game::Gameplay::FactionId::TradersUnion))));
+            // Clamp to 0 when negative — GainFactionRep missions track "reach N total".
+            const int tradersRep = m_Factions.GetRep(NF::Game::Gameplay::FactionId::TradersUnion);
+            m_Missions.NotifyRepGained(static_cast<uint32_t>(std::max(0, tradersRep)));
         });
 
         // Phase 9: initialise chunk streamer.

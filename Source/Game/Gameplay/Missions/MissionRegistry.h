@@ -133,8 +133,10 @@ public:
     /// @brief Report that @p count items were salvaged from a wreck site.
     void NotifySalvaged(uint32_t count);
 
-    /// @brief Report that the player gained reputation with any faction.
-    ///        @p totalRep is the faction's new total reputation value.
+    /// @brief Report the player's current (positive) reputation total for a faction.
+    ///        The GainFactionRep objective completes when @p totalRep >= objectiveTarget,
+    ///        so this models "reach N total reputation" rather than incremental accumulation.
+    ///        Call whenever faction rep changes; passing 0 when rep is negative is safe.
     void NotifyRepGained(uint32_t totalRep);
 
     /// @brief Report that the player investigated an anomaly site.
